@@ -17,8 +17,8 @@ const client = new Client({
     },
     intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions"],
 });
-//@ts-ignore
-client.commands = new Collection();
+
+const clientCommands = new Collection<string, { execute: Function }>();
 
 const token = process.env.TOKEN!;
 const clientID = process.env.CLIENT_ID!;
@@ -36,8 +36,7 @@ for (const commandPath of commandPaths) {
     const command = (await import(filePath)) as { default: { data: SlashCommandBuilder; execute: Function } };
 
     if ("data" in command.default && "execute" in command.default) {
-        //@ts-ignore
-        client.commands.set(command.default.data.name, command.default);
+        clientCommands.set(command.default.data.name, command.default);
         commands.push(command.default.data.toJSON());
     } else {
         console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
@@ -68,8 +67,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.guildId !== guildID) return;
 
     if (interaction.isChatInputCommand()) {
-        //@ts-ignore
-        const command = interaction.client.commands.get(interaction.commandName) as { execute: Function } | undefined;
+        const command = clientCommands.get(interaction.commandName);
 
         if (!command) {
             console.error(`No command matching ${interaction.commandName} was found.`);

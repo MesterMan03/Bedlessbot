@@ -1,0 +1,17 @@
+{
+  "name": "bedlessbot",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.0.12"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "csv-parser": "^3.0.0",
+    "discord.js": "^14.14.1",
+    "googleapis": "^134.0.0",
+    "openai": "^4.32.1"
+  }
+}

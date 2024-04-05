@@ -14,6 +14,8 @@ bun run setup_db.ts
 
 This will create an empty `data.db` SQLite database file in the root directory with the correct tables set up.
 
+Then set up .env by following the instructions in `.env.example`.
+
 To run:
 
 ```bash

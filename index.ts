@@ -93,12 +93,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 });
 
-client.on(Events.MessageCreate, (message) => {
-    if (message.author.bot) return;
-
-    if (message.guildId !== guildID) return;
-});
-
 client.on(Events.ClientReady, () => {
     console.log(`Logged in as ${client.user?.tag}!`);
 });

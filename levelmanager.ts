@@ -1,4 +1,4 @@
-import type { GuildMember, GuildTextBasedChannel, Message, TextBasedChannel } from "discord.js";
+import type { GuildMember, Message } from "discord.js";
 import client, { GetGuild, db } from ".";
 import config from "./config";
 
@@ -51,7 +51,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-const xpMultiplier = 500;
+const xpMultiplier = 2;
 
 /**
  * A function for getting the xp from a message.
@@ -150,4 +150,5 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
     levelupChannel.send(content);
 }
 
-export { XPToLevel, LevelToXP, XPToLevelUp, GetLeaderboardPos, GetXPFromMessage, type LevelInfo };
+export { GetLeaderboardPos, GetXPFromMessage, LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo };
+

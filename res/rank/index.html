@@ -1,0 +1,44 @@
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<main>
+	<div class="content">
+		<img width="223" height="223" alt="literally nobody is going to read this"/>
+		<div class="info">
+			<header>
+				<div class="name">
+					<div class="leaderboard"># <span id="leaderboard"></span></div>
+					<span id="username"></span>
+				</div>
+				<div class="level">Level <span id="level">10</span></div>
+			</header>
+			<footer>
+				<div class="total"><b>Total:</b> <span id="total-xp"></span> XP</div>
+				<div class="xp">
+                    <div class="progress-wrapper">
+                        <label for="progress">
+                            <span id="current-xp"></span>/<span id="max-xp"></span> XP (<span id="percentage"></span>%)
+                        </label>
+                    </div>
+					<progress id="progress"></progress>
+				</div>
+			</footer>
+		</div>
+	</div>
+</main>
+
+<script src="script.js"></script>
+<script>
+    const search = new URLSearchParams(window.location.search);
+	const userValues = {
+		userImage: search.get("avatar"),
+		leaderboard: parseInt(search.get("leaderboard")),
+		username: search.get("username"),
+		level: parseInt(search.get("level")),
+		totalXP: parseInt(search.get("total")),
+		currentXP: parseInt(search.get("current")),
+		maxXP: parseInt(search.get("max")),
+	};
+
+	setUserValues(userValues);
+</script>

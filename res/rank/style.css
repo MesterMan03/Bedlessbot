@@ -1,0 +1,138 @@
+html, body {
+    max-width: 1200px;
+    max-height: 300px;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: 1 44 52;
+    --accent: 0 153 131;
+    --text: 255 255 255;
+    --secondary: 1 71 78;
+
+    font-family: "Montserrat", sans-serif;
+}
+
+main {
+    position: relative;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    width: 100%;
+    height: 100%;
+    padding: 38px;
+
+    box-sizing: border-box;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        background-image: linear-gradient(to right, rgb(var(--accent) / 15%), rgb(var(--bg)));
+        height: 100%;
+        width: 35%;
+        border-radius: 50% 0 0 50% / 300%;
+    }
+}
+
+.content {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+
+    height: 223px;
+
+    &>* {
+        z-index: 2;
+    }
+}
+
+img {
+    border-radius: 1.5rem;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Head */
+header {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.name {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.leaderboard {
+    padding: 0.75rem 1rem;
+    width: fit-content;
+    height: min-content;
+    border-radius: 1rem;
+    background-color: rgb(var(--secondary));
+}
+
+#username,
+.level {
+    font-weight: bold;
+}
+
+/* Foot */
+footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.total {
+    font-size: 2rem;
+}
+
+.xp {
+    position: relative;
+    height: 100%;
+}
+
+label {
+    display: inline-flex;
+    align-items: center;
+    position: absolute;
+    z-index: 2;
+    font-size: 1.75rem;
+    left: 26px; /* Align to the left */
+    top: 50%; /* Vertically center */
+    transform: translateY(47%); /* Adjust vertical centering */
+}
+
+.progress-wrapper {
+    position: relative; /* Add this line */
+    padding-left: 5px;
+}
+
+progress {
+    width: 100%;
+    appearance: none;
+    height: 64px;
+
+    /* For WebKit/Blink-based browsers */
+    &::-webkit-progress-bar {
+        background-color: rgb(var(--secondary));
+        border-radius: 0.75rem;
+        height: 64px;
+        padding: 4px;
+    }
+
+    &::-webkit-progress-value {
+        background-color: rgb(var(--accent));
+        border-radius: 0.5rem;
+        height: 3.5rem;
+    }
+}

@@ -3,15 +3,21 @@
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "^1.0.12"
+    "@types/bun": "^1.0.12",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "csv-parser": "^3.0.0",
+    "bufferutil": "^4.0.8",
     "discord.js": "^14.14.1",
     "googleapis": "^134.0.0",
-    "openai": "^4.32.1"
+    "nerdamer": "^1.1.13",
+    "openai": "^4.32.1",
+    "puppeteer": "^22.6.3",
+    "utf-8-validate": "^6.0.3",
+    "zlib-sync": "^0.1.9"
   }
 }

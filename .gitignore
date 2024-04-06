@@ -180,3 +180,6 @@ BLN-Roles.csv
 data.db*
 give_roles.ts
 db_test.ts
+BLN-xp.csv
+extract_xp.ts
+give_xp.ts

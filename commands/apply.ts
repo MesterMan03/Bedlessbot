@@ -1,4 +1,3 @@
-import { Database } from "bun:sqlite";
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -7,11 +6,10 @@ import {
     ChatInputCommandInteraction,
     EmbedBuilder,
     SlashCommandBuilder,
-    channelLink,
     type TextBasedChannel,
 } from "discord.js";
 import { google } from "googleapis";
-import client from "..";
+import client, { GetGuild, db } from "..";
 
 /**
  * A map storing the last time a user used a command.
@@ -23,9 +21,6 @@ const youtubeAPI = google.youtube({
     version: "v3",
     auth: process.env.YOUTUBE_API_KEY,
 });
-
-const db = new Database("data.db");
-db.exec("PRAGMA journal_mode = WAL;");
 
 enum VideoPrivacyResult {
     Private,
@@ -58,10 +53,10 @@ async function checkVideoPrivacy(videoId: string): Promise<VideoPrivacyResult> {
 
 function increaseCheaterPoint(userID: string) {
     // update the cheatpoints
-    if (!db.query(`SELECT * FROM cheatpoints WHERE userid = '${userID}'`).get()) {
-        db.exec(`INSERT INTO cheatpoints (userid, cheatpoint) VALUES ('${userID}', 1)`);
+    if (db.query(`SELECT * FROM cheatpoints WHERE userid = '${userID}'`).get() == null) {
+        db.run(`INSERT INTO cheatpoints (userid, cheatpoint) VALUES ('${userID}', 1)`);
     } else {
-        db.exec(`UPDATE cheatpoints SET cheatpoint = cheatpoint + 1 WHERE userid = '${userID}'`);
+        db.run(`UPDATE cheatpoints SET cheatpoint = cheatpoint + 1 WHERE userid = '${userID}'`);
     }
 }
 
@@ -124,7 +119,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         return;
     }
 
-    const member = await client.guilds.cache.get(process.env.GUILD_ID!)?.members.fetch(userid);
+    const member = await GetGuild().members.fetch(userid);
     if (!member) {
         embed.setDescription(`The member has left the server`).setColor("Red");
         interaction.update({ embeds: [embed], components: [] });
@@ -138,7 +133,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         outcomeChannel.send(`Congratulations <@${member.user.id}>! Your role application for ${shortRoleToName(role)} has been accepted!`);
 
         const roleToAdd = shortRoleToRoleID(role);
-        if (!roleToAdd || !client.guilds.cache.get(process.env.GUILD_ID!)?.roles.cache.has(roleToAdd)) return;
+        if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) return;
 
         member.roles.add(roleToAdd);
     }
@@ -268,9 +263,8 @@ export default {
             await interaction.deferReply({ ephemeral: false });
 
             // check if user has reacted to the guide message with a thumbsup
-            const guideMessage = await client.guilds.cache
-                .get(process.env.GUILD_ID!)
-                ?.channels.fetch(process.env.GUIDE_CHANNEL!)
+            const guideMessage = await GetGuild()
+                .channels.fetch(process.env.GUIDE_CHANNEL!)
                 .then((channel) => {
                     if (!channel?.isTextBased()) return;
 
@@ -321,7 +315,7 @@ export default {
             const proofURL = new URL(proof);
 
             // check if user already has this role
-            const member = await client.guilds.cache.get(process.env.GUILD_ID!)?.members.fetch(interaction.user.id)!;
+            const member = await GetGuild().members.fetch(interaction.user.id)!;
             const roleToCheck = shortRoleToRoleID(role);
             if (roleToCheck && member.roles.cache.has(roleToCheck)) {
                 await interaction.editReply("You already have this role.");

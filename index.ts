@@ -104,9 +104,12 @@ client.on(Events.MessageCreate, (message) => {
         return void message.react("🇭🇺");
     }
 
-    // give xp
     if (message.author.bot) return;
-    if (!["709584818010062868"].includes(message.channelId)) GetXPFromMessage(message);
+
+    // check for blocked channels and no-xp role
+    if (["709584818010062868"].includes(message.channelId) || message.member?.roles.cache.has("709426191404368053")) return;
+
+    GetXPFromMessage(message);
 });
 
 client.on(Events.ClientReady, () => {

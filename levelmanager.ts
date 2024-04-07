@@ -51,7 +51,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-const xpMultiplier = 2000;
+const xpMultiplier = process.env.NODE_ENV === "production" ? 2 : 2000;
 
 /**
  * A function for getting the xp from a message.
@@ -155,4 +155,4 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
     levelupChannel.send(content);
 }
 
-export { GetLeaderboardPos, GetXPFromMessage, LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo };
+export { GetLeaderboardPos, GetXPFromMessage, LevelToXP, XPToLevel, XPToLevelUp, GetLevelConfig, type LevelInfo };

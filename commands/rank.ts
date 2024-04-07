@@ -117,3 +117,7 @@ function AddRankFieldEmbeds(embed: EmbedBuilder, levelInfo: LevelInfo) {
         },
     ]);
 }
+
+export {
+    AddRankFieldEmbeds
+}

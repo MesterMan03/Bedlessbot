@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import {
     Client,
     Collection,
@@ -6,14 +7,12 @@ import {
     Routes,
     SlashCommandBuilder,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
-    type GuildTextBasedChannel,
 } from "discord.js";
 import * as fs from "fs";
 import * as path from "path";
-import { processInteraction } from "./commands/apply";
-import { Database } from "bun:sqlite";
 import { join } from "path";
 import puppeteer from "puppeteer";
+import { processInteraction } from "./commands/apply";
 import { GetXPFromMessage } from "./levelmanager";
 
 const client = new Client({
@@ -106,7 +105,8 @@ client.on(Events.MessageCreate, (message) => {
     }
 
     // give xp
-    GetXPFromMessage(message);
+    if (message.author.bot) return;
+    if (!["709584818010062868"].includes(message.channelId)) GetXPFromMessage(message);
 });
 
 client.on(Events.ClientReady, () => {
@@ -199,6 +199,6 @@ function GetGuild() {
 const db = new Database("data.db");
 db.exec("PRAGMA journal_mode = wal;");
 
-export { GetResFolder, db, browser, GetGuild };
+export { GetGuild, GetResFolder, browser, db };
 
 export default client;

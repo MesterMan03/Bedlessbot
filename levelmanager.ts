@@ -51,7 +51,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-const xpMultiplier = 2;
+const xpMultiplier = 2000;
 
 /**
  * A function for getting the xp from a message.
@@ -81,11 +81,11 @@ function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
     // update the user's xp
     db.exec(`UPDATE levels SET xp = xp + ${Math.floor(xp)} WHERE userid = '${levelInfo.userid}'`);
 
-    // We leveled up!
-    const level = XPToLevel(levelInfo.xp);
-    if (level > XPToLevel(levelInfo.xp - xp) && level !== 0) {
-        const newRole = ManageLevelRole(member, level);
-        AlertMember(member, level, newRole);
+    const newLevel = XPToLevel(levelInfo.xp + xp);
+    if (newLevel > XPToLevel(levelInfo.xp) && newLevel !== 0) {
+        // We leveled up!
+        const newRole = ManageLevelRole(member, newLevel);
+        AlertMember(member, newLevel, newRole);
     }
 }
 
@@ -97,20 +97,25 @@ function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
  */
 function ManageLevelRole(member: GuildMember, memberLevel: number) {
     // get the role that the user should have
-    const levelRole = config.LevelRoles.find((role) => role.level == memberLevel);
+    const levelRole = config.LevelRoles.find((role) => role.level === memberLevel);
     if (!levelRole) {
         return null;
     }
 
     try {
         // get the current level role id that the user has
-        const currRole = config.LevelRoles.filter((role) => member.roles.cache.has(role.id)).at(-1);
+        const currRoles = config.LevelRoles.filter((role) => member.roles.cache.has(role.id));
 
-        if (currRole) {
-            member.roles.remove(currRole.id, "level up");
+        if (currRoles.length !== 0) {
+            member.roles.remove(
+                currRoles.map((role) => role.id),
+                "level up - old role"
+            );
         }
         member.roles.add(levelRole.id, "level up");
-    } catch {}
+    } catch (err) {
+        console.error(err);
+    }
 
     return levelRole.id;
 }
@@ -151,4 +156,3 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
 }
 
 export { GetLeaderboardPos, GetXPFromMessage, LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo };
-

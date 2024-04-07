@@ -61,7 +61,7 @@ const xpCooldown = new Collection<string, number>();
  * @returns The amount of xp gained from the message.
  */
 async function GetXPFromMessage(message: Message<true>) {
-    if (!message.member) {
+    if (!message.member || message.content.length === 0) {
         return;
     }
 

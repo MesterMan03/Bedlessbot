@@ -39,7 +39,7 @@ function setUserValues({ userImage, leaderboard, username, level, totalXP, curre
     currentXPElem.innerHTML = `${currentXP}&nbsp`;
     maxXPElem.innerHTML = `	&nbsp;${maxXP}`;
 
-    percentageElem.innerHTML = Math.floor((currentXP / maxXP) * 100);
+    percentageElem.innerHTML = ((currentXP / maxXP) * 100).toFixed(2);
 
     XPProgressElem.max = maxXP;
     XPProgressElem.value = currentXP;

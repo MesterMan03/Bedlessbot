@@ -1,4 +1,4 @@
-import type { GuildMember, Message } from "discord.js";
+import { Collection, type GuildMember, type Message } from "discord.js";
 import client, { GetGuild, db } from ".";
 import config from "./config";
 
@@ -53,6 +53,8 @@ function GetLeaderboardPos(userid: string) {
 
 const xpMultiplier = process.env.NODE_ENV === "production" ? 2 : 2000;
 
+const xpCooldown = new Collection<string, number>();
+
 /**
  * A function for getting the xp from a message.
  * @param message The message to extract the xp from.
@@ -62,6 +64,13 @@ async function GetXPFromMessage(message: Message<true>) {
     if (!message.member) {
         return;
     }
+
+    const cooldown = xpCooldown.get(message.author.id);
+    if (cooldown && cooldown + 5000 > Date.now()) {
+        return 0;
+    }
+
+    xpCooldown.set(message.author.id, Date.now());
 
     const levelInfo = GetLevelConfig(message.author.id);
 

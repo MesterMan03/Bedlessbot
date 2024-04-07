@@ -1,4 +1,4 @@
-import { Collection, type GuildMember, type Message } from "discord.js";
+import { Collection, VoiceState, type GuildMember, type Message } from "discord.js";
 import client, { GetGuild, db } from ".";
 import config from "./config";
 
@@ -51,7 +51,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-const xpMultiplier = process.env.NODE_ENV === "production" ? 2 : 2000;
+let xpMultiplier = process.env.NODE_ENV === "production" ? 2 : 20000;
 
 const xpCooldown = new Collection<string, number>();
 
@@ -86,14 +86,14 @@ async function GetXPFromMessage(message: Message<true>) {
  * @param levelInfo The level config of the user.
  * @param xp The xp to add - not sanitised, so make sure it's a whole number.
  */
-function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
+async function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
     // update the user's xp
     db.exec(`UPDATE levels SET xp = xp + ${Math.floor(xp)} WHERE userid = '${levelInfo.userid}'`);
 
     const newLevel = XPToLevel(levelInfo.xp + xp);
     if (newLevel > XPToLevel(levelInfo.xp) && newLevel !== 0) {
         // We leveled up!
-        const newRole = ManageLevelRole(member, newLevel);
+        const newRole = await ManageLevelRole(member, newLevel);
         AlertMember(member, newLevel, newRole);
     }
 }
@@ -104,23 +104,27 @@ function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
  * @param memberLevel The level of the user.
  * @return The role id that was added, undefined if no role was added.
  */
-function ManageLevelRole(member: GuildMember, memberLevel: number) {
+async function ManageLevelRole(member: GuildMember, memberLevel: number) {
     // get the role that the user should have
-    const levelRole = config.LevelRoles.find((role) => role.level === memberLevel);
-    if (!levelRole) {
+    const levelRole = config.LevelRoles.filter((role) => memberLevel >= role.level)
+        // get the role with highest level
+        .sort((a, b) => a.level - b.level)
+        .at(-1);
+    if (!levelRole || member.roles.cache.has(levelRole.id)) {
         return null;
     }
 
     try {
         // get the current level role id that the user has
-        const currRoles = config.LevelRoles.filter((role) => member.roles.cache.has(role.id));
+        const currRoles = config.LevelRoles.filter((role) => member.roles.cache.has(role.id) && role.id !== levelRole.id);
 
         if (currRoles.length !== 0) {
-            member.roles.remove(
+            await member.roles.remove(
                 currRoles.map((role) => role.id),
                 "level up - old role"
             );
         }
+
         member.roles.add(levelRole.id, "level up");
     } catch (err) {
         console.error(err);
@@ -149,7 +153,7 @@ function GetLevelConfig(userId: string) {
 async function AlertMember(member: GuildMember, newlevel: number, newRole: string | null = null) {
     let content = `Congratulations ${member}, you've successfully achieved level ${newlevel}!`;
 
-    //if newRole is not null, get the role name
+    // if there is a new role, fetch the role name
     if (newRole) {
         const roleName = await GetGuild()
             .roles.fetch(newRole)
@@ -164,4 +168,57 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
     levelupChannel.send(content);
 }
 
-export { GetLeaderboardPos, GetXPFromMessage, LevelToXP, XPToLevel, XPToLevelUp, GetLevelConfig, type LevelInfo };
+const voiceStates = new Collection<string, number>();
+const talkingTimes = new Collection<string, number>();
+
+function StartVoiceChat(vs: VoiceState) {
+    if (!vs.member) return;
+
+    // store timestamp
+    voiceStates.set(vs.member.id, Date.now());
+}
+
+function EndVoiceChat(vs: VoiceState) {
+    if (!vs.member) return;
+
+    // end timestamp + calculate xp (1 xp per second)
+    const storedVoiceState = voiceStates.get(vs.member.id);
+    if (!storedVoiceState) return;
+
+    const time = Date.now() - storedVoiceState;
+    const talkingTime = talkingTimes.get(vs.member.id) ?? 0;
+
+    // 1 xp for every 5 seconds + 1 xp for every second of talking
+    const xp = Math.floor(time / 1000 / 5) + Math.floor(talkingTime / 1000);
+
+    console.log(
+        `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`
+    );
+
+    AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
+}
+
+function StartTalking(userId: string) {
+
+}
+
+function EndTalking(userId: string) {
+    
+}
+
+function SetXPMultiplier(multipler: number) {
+    xpMultiplier = multipler;
+}
+
+export {
+    GetLeaderboardPos,
+    GetXPFromMessage,
+    LevelToXP,
+    XPToLevel,
+    XPToLevelUp,
+    GetLevelConfig,
+    StartVoiceChat,
+    EndVoiceChat,
+    SetXPMultiplier,
+    type LevelInfo,
+};

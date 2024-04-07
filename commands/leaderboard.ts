@@ -67,7 +67,7 @@ async function ReadLevels(levels: { userid: string; xp: number }[], page: number
         // now we do some serious shit to turn it into a nice string
         levelPercentage -= levelPercentage % 10;
         levelPercentage /= 10;
-        levelPercentage = isNaN(levelPercentage) ? 0 : levelPercentage;
+        levelPercentage = isNaN(levelPercentage) ? 0 : Math.min(levelPercentage, 9);
 
         // preview: [####x.....]
         const levelPercentageString = `[${"#".repeat(levelPercentage)}x${".".repeat(9 - levelPercentage)}]`;

@@ -13,13 +13,14 @@ import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
 import { processInteraction } from "./commands/apply";
-import { GetXPFromMessage } from "./levelmanager";
+import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
+import { joinVoiceChannel } from "@discordjs/voice";
 
 const client = new Client({
     allowedMentions: {
         parse: ["users"],
     },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions"],
+    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates"],
 });
 
 const clientCommands = new Collection<string, { execute: Function }>();
@@ -106,14 +107,77 @@ client.on(Events.MessageCreate, (message) => {
 
     if (message.author.bot) return;
 
+    // check if message starts with the bots mention and member has admin
+    if (message.content.startsWith(`<@${clientID}>`)) {
+        if (!message.member?.permissions.has("Administrator")) return;
+
+        const command = message.content.split(" ")[1];
+        const args = message.content.split(" ").slice(2);
+
+        if (command === "set-xpmul") {
+            SetXPMultiplier(parseInt(args[0], 10));
+            message.reply(`Set XP multiplier to ${args[0]}`);
+        }
+
+        return;
+    }
+
     // check for blocked channels and no-xp role
     if (["709584818010062868"].includes(message.channelId) || message.member?.roles.cache.has("709426191404368053")) return;
 
     GetXPFromMessage(message);
 });
 
-client.on(Events.ClientReady, () => {
+client.on(Events.ClientReady, async () => {
+    // join general vc (uncomment when bun implements node:dgram)
+    // const generalVC = await client.channels.fetch(process.env.GENERALVC_CHANNEL!);
+    // if (generalVC?.isVoiceBased()) {
+    //     const connection = joinVoiceChannel({
+    //         channelId: generalVC.id,
+    //         guildId: generalVC.guildId,
+    //         adapterCreator: generalVC.guild.voiceAdapterCreator,
+    //         selfMute: true,
+    //     });
+
+    //     connection.receiver.speaking.on("start", (userId) => {
+    //         console.log(`User ${userId} started speaking`);
+    //         const start = performance.now();
+
+    //         function endCallback(userId: string) {
+    //             const end = performance.now();
+    //             const time = end - start;
+
+    //             console.log(`User ${userId} stopped speaking after ${time}ms`);
+    //             connection.receiver.speaking.removeListener("end", endCallback);
+    //         }
+
+    //         connection.receiver.speaking.addListener("end", endCallback);
+    //     });
+    // }
+
     console.log(`Logged in as ${client.user?.tag}!`);
+});
+
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+    if (oldState.guild.id !== guildID) return;
+
+    // if previously there was no channel, but now there is, we joined
+    // it also counts as joining if we go from muted or deafened to not muted or deafened or if we moved from afk channel
+    if (
+        ((!oldState.channel || oldState.channelId === GetGuild().afkChannelId) &&
+            newState.channel &&
+            newState.channelId !== GetGuild().afkChannelId) ||
+        (!(newState.mute || newState.deaf) && (oldState.mute || oldState.deaf))
+    ) {
+        StartVoiceChat(newState);
+    }
+
+    // if previously there was a channel, but now there isn't, we left
+    // we also leave when we go muted or deafened or we moved to afk channel
+    if ((oldState.channel && (!newState.channel || newState.channelId === GetGuild().afkChannelId)) || newState.mute || newState.deaf) {
+        if (newState.member?.roles.cache.has("709426191404368053")) return;
+        EndVoiceChat(newState);
+    }
 });
 
 client.login(token);

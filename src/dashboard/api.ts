@@ -5,7 +5,7 @@ import { XPToLevel, type LevelInfo, XPToLevelUp, LevelToXP } from "../levelmanag
 const PageSize = 25;
 
 async function FetchPage(page: number) {
-    if (page > GetMaxPage()) return null;
+    if (page >= GetMaxPage() || !Number.isInteger(page) || page < 0) return null;
 
     const levels = db.query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${PageSize} OFFSET ${page * PageSize}`).all();
     return Promise.all(

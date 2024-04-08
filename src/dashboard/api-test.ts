@@ -16,3 +16,5 @@ async function FetchPageTest(page: number) {
 
     return levels;
 }
+
+export { FetchPageTest };

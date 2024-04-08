@@ -14,7 +14,6 @@
 /**
  * @param {UserValues}
  */
-
 function setUserValues({ userImage, leaderboard, username, level, totalXP, currentXP, maxXP }) {
     const userImageElem = document.querySelector("img");
     const leaderboardElem = document.querySelector("#leaderboard");

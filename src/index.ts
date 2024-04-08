@@ -51,22 +51,21 @@ for (const commandPath of commandPaths) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
 
-// and deploy your commands!
-(async () => {
-    try {
-        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+// reload slash commands
+try {
+    console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-        // The put method is used to fully refresh all commands in the guild with the current set
-        const data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
+    // The put method is used to fully refresh all commands in the guild with the current set
+    const data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
 
-        //@ts-ignore
-        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
-    } catch (error) {
-        // And of course, make sure you catch and log any errors!
-        console.error(error);
-    }
-})();
+    //@ts-ignore
+    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+} catch (error) {
+    // And of course, make sure you catch and log any errors!
+    console.error(error);
+}
 
+// set up client events and log in
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) return;
     if (interaction.guildId !== guildID) return;
@@ -188,13 +187,6 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
 
 client.login(token);
 
-process.on("uncaughtException", (err) => {
-    console.error(err);
-});
-process.on("unhandledRejection", (err) => {
-    console.error(err);
-});
-
 function shutdown(reason?: string) {
     if (reason) {
         console.error(`Shutting down client: ${reason}`);
@@ -209,6 +201,13 @@ function shutdown(reason?: string) {
 setInterval(() => {
     $`bash ./backup.sh`;
 }, 1000 * 60 * 60);
+
+process.on("uncaughtException", (err) => {
+    console.error(err);
+});
+process.on("unhandledRejection", (err) => {
+    console.error(err);
+});
 
 // set up automatic shutdown when process is terminated
 process.on("exit", () => {

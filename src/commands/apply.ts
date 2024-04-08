@@ -315,7 +315,7 @@ export default {
             }
 
             // verify the proof is a valid url
-            if (canParseProof) {
+            if (!canParseProof) {
                 await interaction.editReply("Invalid proof URL.");
                 return;
             }

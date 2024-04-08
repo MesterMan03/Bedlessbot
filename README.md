@@ -10,7 +10,7 @@ To clone the repository:
 
 ```
 git clone https://github.com/MesterMan03/Bedlessbot.git
-cd Bedless
+cd Bedlessbot
 ```
 
 To install dependencies:

@@ -16,5 +16,3 @@ async function FetchPageTest(page: number) {
 
     return levels;
 }
-
-console.log(await FetchPageTest(0));

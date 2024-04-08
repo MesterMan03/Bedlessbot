@@ -14,6 +14,7 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { processInteraction } from "./commands/apply";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
+import { $ } from "bun";
 
 const client = new Client({
     allowedMentions: {
@@ -203,6 +204,11 @@ function shutdown(reason?: string) {
     db.close();
     process.exit(0);
 }
+
+// set up automatic backup
+setInterval(() => {
+    $`bash ./backup.sh`;
+}, 1000 * 60 * 60);
 
 // set up automatic shutdown when process is terminated
 process.on("exit", () => {

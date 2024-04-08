@@ -1,0 +1,136 @@
+@import url("https://fonts.googleapis.com/css?family=Noto%20Sans%20Caucasian%20Albanian:700|Noto%20Sans%20Caucasian%20Albanian:400");
+
+:root {
+    @media (prefers-color-scheme: light) {
+        --text: oklch(15.61% 0.049 18.32);
+        --background: oklch(96.31% 0.015 17.42);
+        --primary: oklch(62.61% 0.257 29.23);
+        --secondary: oklch(62.06% 0.252 27.85);
+        --accent: oklch(77.45% 0.126 66.99);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        --text: oklch(93.67% 0.028 12.12);
+        --background: oklch(12.52% 0.037 24.12);
+        --primary: oklch(62.8% 0.258 29.23);
+        --secondary: oklch(62.01% 0.252 27.99);
+        --accent: oklch(56.68% 0.124 61.83);
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    font-family: "Noto Sans Caucasian Albanian";
+    font-weight: 700;
+}
+
+html {
+    font-size: 100%; /* 16px */
+    min-height: 100dvh;
+}
+
+body {
+    font-family: "Noto Sans Caucasian Albanian";
+    font-weight: 400;
+    background-color: var(--background);
+    color: var(--text);
+    font-family: system-ui;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    margin: 0;
+    min-height: 100dvh;
+}
+
+header {
+    padding: 0.5rem 1rem;
+    text-align: center;
+
+    h1 {
+        margin: 0;
+    }
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    width: min-content;
+    margin: 0 auto;
+}
+
+.podium {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+
+    h2 {
+        margin-top: 0.25rem;
+    }
+
+    .first,
+    .second,
+    .third {
+        text-align: center;
+
+        &::before {
+            font-size: 1.5rem;
+            font-weight: bolder;
+            color: var(--accent);
+        }
+
+        &::after {
+            content: "";
+            display: block;
+            background-color: var(--primary);
+            border-radius: 0.5rem;
+        }
+    }
+
+    .first {
+        &::before {
+            content: "#1";
+        }
+
+        &::after {
+            height: 4rem;
+        }
+    }
+
+    .second {
+        &::before {
+            content: "#2";
+        }
+
+        &::after {
+            height: 2rem;
+        }
+    }
+
+    .third {
+        &::before {
+            content: "#3";
+        }
+
+        &::after {
+            height: 1rem;
+        }
+    }
+}
+
+table {
+    width: 100%;
+    border: solid 0.125rem var(--accent);
+    border-radius: 0.25rem;
+    border-collapse: collapse;
+
+    th,
+    td {
+        text-align: left;
+        padding: 0.25rem;
+        font-size: 1.125rem;
+    }
+}

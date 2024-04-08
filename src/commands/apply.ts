@@ -300,7 +300,7 @@ export default {
 
             const role = interaction.options.getString("role", true);
             const proof = interaction.options.getString("proof", true);
-            const canParseProof = URL.canParse(proof);
+            let canParseProof = URL.canParse(proof);
             
             // check if proof is valid but is missing https
             if (!canParseProof && URL.canParse("https://" + proof)) {

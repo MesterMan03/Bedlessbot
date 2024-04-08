@@ -176,10 +176,8 @@ dist
 
 .env.development
 .env.production
-BLN-Roles.csv
+
 data.db*
-give_roles.ts
-db_test.ts
-BLN-xp.csv
-extract_xp.ts
-give_xp.ts
+tools/*
+!tools/setup_db.ts
+

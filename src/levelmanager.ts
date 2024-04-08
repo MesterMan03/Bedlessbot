@@ -198,13 +198,9 @@ function EndVoiceChat(vs: VoiceState) {
     AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
 }
 
-function StartTalking(userId: string) {
+function StartTalking(userId: string) {}
 
-}
-
-function EndTalking(userId: string) {
-    
-}
+function EndTalking(userId: string) {}
 
 function SetXPMultiplier(multipler: number) {
     xpMultiplier = multipler;

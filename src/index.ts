@@ -14,7 +14,6 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { processInteraction } from "./commands/apply";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
-import { joinVoiceChannel } from "@discordjs/voice";
 
 const client = new Client({
     allowedMentions: {
@@ -256,14 +255,14 @@ const browser = await puppeteer
     });
 
 function GetResFolder() {
-    return join(__dirname, "res");
+    return join(__dirname, "..", "res");
 }
 
 function GetGuild() {
     return client.guilds.cache.get(guildID)!;
 }
 
-const db = new Database("data.db");
+const db = new Database(join(__dirname, "..", "data.db"));
 db.exec("PRAGMA journal_mode = wal;");
 
 export { GetGuild, GetResFolder, browser, db };

@@ -95,3 +95,5 @@ function GetMaxPage() {
 
     return Math.ceil(Math.max(levelCount, 1) / pageSize);
 }
+
+export { GetMaxPage };

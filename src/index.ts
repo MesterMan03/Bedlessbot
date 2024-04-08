@@ -19,7 +19,7 @@ const client = new Client({
     allowedMentions: {
         parse: ["users"],
     },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates"],
+    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
 });
 
 const clientCommands = new Collection<string, { execute: Function }>();
@@ -153,6 +153,12 @@ client.on(Events.ClientReady, async () => {
     //         connection.receiver.speaking.addListener("end", endCallback);
     //     });
     // }
+
+    await GetGuild()
+        .members.fetch()
+        .then(() => {
+            console.log("Finished fetching members");
+        });
 
     console.log(`Logged in as ${client.user?.tag}!`);
 });

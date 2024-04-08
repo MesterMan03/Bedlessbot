@@ -10,7 +10,10 @@ interface LevelInfo {
 const a = 5 / 6;
 const c = 91;
 const b = 27;
-const LevelToXP = (level: number) => Math.round(a * level * (2 * Math.pow(level, 2) + b * level + c));
+
+function LevelToXP(level: number) {
+    return Math.round(a * level * (2 * Math.pow(level, 2) + b * level + c));
+}
 
 function XPToLevel(fx: number) {
     // Define a tolerance level for comparing f(x) and fx
@@ -51,7 +54,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-let xpMultiplier = process.env.NODE_ENV === "production" ? 2 : 20000;
+let xpMultiplier = process.env.NODE_ENV === "production" ? 1 : 2000;
 
 const xpCooldown = new Collection<string, number>();
 

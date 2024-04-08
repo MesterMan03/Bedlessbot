@@ -1,4 +1,17 @@
-# bedlessbot
+# Bedlessbot
+
+## Installation
+
+Bedlessbot uses Bun and is incompatible with Node. Therefore you first have to install Bun.
+
+Follow the instructions at https://bun.sh/docs/installation
+
+To clone the repository:
+
+```
+git clone https://github.com/MesterMan03/Bedlessbot.git
+cd Bedless
+```
 
 To install dependencies:
 

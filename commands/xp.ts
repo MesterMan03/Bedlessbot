@@ -66,9 +66,9 @@ export default {
         // otherwise we add it to the current level/xp
         let newxp = 0;
         if (levelMode) {
-            newxp = setmode ? LevelToXP(numberValue) : LevelToXP(XPToLevel(levelInfo.xp) + numberValue);
+            newxp = setmode ? LevelToXP(numberValue) + 1 : LevelToXP(XPToLevel(levelInfo.xp) + numberValue) + 1;
         } else {
-            newxp = setmode ? numberValue : levelInfo.xp + numberValue;
+            newxp = setmode ? numberValue + 1 : levelInfo.xp + numberValue;
         }
 
         // check if the new xp is valid

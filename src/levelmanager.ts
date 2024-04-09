@@ -77,8 +77,8 @@ async function GetXPFromMessage(message: Message<true>) {
 
     const levelInfo = GetLevelConfig(message.author.id);
 
-    // xp is random number between 5 and 10
-    const xp = Math.floor(Math.random() * (10 - 5 + 1) + 5) * xpMultiplier;
+    // xp is random number between 10 and 15
+    const xp = Math.floor(Math.random() * 6 + 10) * xpMultiplier;
     AddXPToUser(levelInfo, xp, message.member);
 
     return xp;

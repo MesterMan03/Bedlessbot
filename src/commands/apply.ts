@@ -299,7 +299,7 @@ export default {
             }
 
             const role = interaction.options.getString("role", true);
-            const proof = interaction.options.getString("proof", true);
+            let proof = interaction.options.getString("proof", true); // is this allowed?
             let canParseProof = URL.canParse(proof);
             
             // check if proof is valid but is missing https

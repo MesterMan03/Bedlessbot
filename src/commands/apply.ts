@@ -260,6 +260,10 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
+            if (!interaction.inCachedGuild()) {
+                return await interaction.reply("This command can only be used in the server.");
+            }
+
             await interaction.deferReply({ ephemeral: false });
 
             // check if user has reacted to the guide message with a thumbsup
@@ -301,13 +305,13 @@ export default {
             const role = interaction.options.getString("role", true);
             let proof = interaction.options.getString("proof", true); // is this allowed?
             let canParseProof = URL.canParse(proof);
-            
+
             // check if proof is valid but is missing https
             if (!canParseProof && URL.canParse("https://" + proof)) {
                 proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
                 canParseProof = true;
-            }            
-            
+            }
+
             // check if the proof has been submitted before and not by the same user
             if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
                 await interaction.editReply("This proof has already been used before by someone else.");
@@ -322,9 +326,8 @@ export default {
             const proofURL = new URL(proof);
 
             // check if user already has this role
-            const member = await GetGuild().members.fetch(interaction.user.id)!;
             const roleToCheck = shortRoleToRoleID(role);
-            if (roleToCheck && member.roles.cache.has(roleToCheck)) {
+            if (roleToCheck && interaction.member.roles.cache.has(roleToCheck)) {
                 await interaction.editReply("You already have this role.");
                 return;
             }
@@ -372,7 +375,7 @@ export default {
             }
 
             // check if user is on cooldown
-            if (cooldowns.has(interaction.user.id) && !member.permissions.has("Administrator")) {
+            if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
                 const time = cooldowns.get(interaction.user.id)!;
                 if (Date.now() / 1000 < time + 60) {
                     await interaction.editReply(

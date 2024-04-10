@@ -299,8 +299,15 @@ export default {
             }
 
             const role = interaction.options.getString("role", true);
-            const proof = interaction.options.getString("proof", true);
-
+            let proof = interaction.options.getString("proof", true); // is this allowed?
+            let canParseProof = URL.canParse(proof);
+            
+            // check if proof is valid but is missing https
+            if (!canParseProof && URL.canParse("https://" + proof)) {
+                proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
+                canParseProof = true;
+            }            
+            
             // check if the proof has been submitted before and not by the same user
             if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
                 await interaction.editReply("This proof has already been used before by someone else.");
@@ -308,8 +315,8 @@ export default {
             }
 
             // verify the proof is a valid url
-            if (!URL.canParse(proof)) {
-                await interaction.editReply("Invalid proof URL. (did you forget https://?)");
+            if (!canParseProof) {
+                await interaction.editReply("Invalid proof URL.");
                 return;
             }
             const proofURL = new URL(proof);

@@ -1,6 +1,6 @@
 import { db } from "../index.js";
 import { GetLevelConfig, LevelToXP, XPToLevel } from "../levelmanager.js";
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField } from "discord.js";
 import { AddRankFieldEmbeds } from "./rank.js";
 
 export default {
@@ -27,7 +27,8 @@ export default {
                 .setDescription("Remove xp from a user.")
                 .addUserOption((option) => option.setName("member").setDescription("The member to remove the xp from.").setRequired(true))
                 .addStringOption((option) => option.setName("value").setDescription("The value to remove from the xp.").setRequired(true))
-        ),
+        )
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ ephemeral: true });

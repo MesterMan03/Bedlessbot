@@ -30,7 +30,7 @@ export default {
             return;
         }
 
-        if (!config.AllowedRolesComand.includes(role.id)) {
+        if (!config.AllowedRolesCommand.includes(role.id)) {
             await interaction.reply("You are not allowed to add or remove this role");
             return;
         }

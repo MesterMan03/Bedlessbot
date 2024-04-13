@@ -205,9 +205,9 @@ function shutdown(reason?: string) {
 }
 
 // set up automatic backup
-setInterval(() => {
+setInterval(async () => {
     console.log("Starting backup...");
-    $`bash ${join(__dirname, "..")}/backup.sh`;
+    await $`bash ${join(__dirname, "..")}/backup.sh`;
 }, 1000 * 60 * 60);
 
 process.on("uncaughtException", (err) => {

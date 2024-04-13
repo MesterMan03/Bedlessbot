@@ -70,6 +70,7 @@ try {
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) return;
     if (interaction.guildId !== guildID) return;
+
     try {
         if (interaction.isChatInputCommand()) {
             const command = clientCommands.get(interaction.commandName);

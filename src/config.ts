@@ -12,7 +12,7 @@ export default process.env.NODE_ENV === "production"
               { level: 90, id: "1226269833876996106" },
               { level: 100, id: "1226269908619493407" },
           ],
-          AllowedRolesComand: [
+          AllowedRolesCommand: [
               "706912080736944128", // German
               "692111773817503766", // Chinese
           ],
@@ -30,7 +30,7 @@ export default process.env.NODE_ENV === "production"
               { level: 90, id: "1074393963995336751" },
               { level: 100, id: "1074393963995336753" },
           ],
-          AllowedRolesComand: [
+          AllowedRolesCommand: [
               "1095817061697081454", // German
           ],
       };

@@ -15,6 +15,7 @@ import puppeteer from "puppeteer";
 import { processInteraction } from "./commands/apply";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
 import { $ } from "bun";
+import config from "./config";
 
 const client = new Client({
     allowedMentions: {
@@ -69,29 +70,34 @@ try {
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) return;
     if (interaction.guildId !== guildID) return;
+    try {
+        if (interaction.isChatInputCommand()) {
+            const command = clientCommands.get(interaction.commandName);
 
-    if (interaction.isChatInputCommand()) {
-        const command = clientCommands.get(interaction.commandName);
-
-        if (!command) {
-            console.error(`No command matching ${interaction.commandName} was found.`);
-            return;
-        }
-
-        try {
-            await command.execute(interaction);
-        } catch (error) {
-            console.error(error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: "There was an error while executing this command!", ephemeral: true });
-            } else {
-                await interaction.reply({ content: "There was an error while executing this command!", ephemeral: true });
+            if (!command) {
+                console.error(`No command matching ${interaction.commandName} was found.`);
+                return;
             }
-        }
-    }
 
-    if (interaction.isButton() && ["accept", "deny", "hacker", "troll"].includes(interaction.customId)) {
-        await processInteraction(interaction);
+            await command.execute(interaction);
+        }
+
+        if (interaction.isButton() && ["accept", "deny", "infraction"].includes(interaction.customId)) {
+            await processInteraction(interaction);
+        }
+
+        if (interaction.isAutocomplete() && interaction.commandName === "apply") {
+            interaction.respond([{ name: "File proof (select this if you're uploading a file from your device)", value: "fileproof" }]);
+        }
+    } catch (error) {
+        console.error(error);
+        if (!interaction.isRepliable()) return;
+
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: "There was an error while executing this command!", ephemeral: true });
+        } else {
+            await interaction.reply({ content: "There was an error while executing this command!", ephemeral: true });
+        }
     }
 });
 
@@ -122,7 +128,7 @@ client.on(Events.MessageCreate, (message) => {
     }
 
     // check for blocked channels and no-xp role
-    if (["709584818010062868"].includes(message.channelId) || message.member?.roles.cache.has("709426191404368053")) return;
+    if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) return;
 
     GetXPFromMessage(message);
 });
@@ -180,7 +186,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     // if previously there was a channel, but now there isn't, we left
     // we also leave when we go muted or deafened or we moved to afk channel
     if ((oldState.channel && (!newState.channel || newState.channelId === GetGuild().afkChannelId)) || newState.mute || newState.deaf) {
-        if (newState.member?.roles.cache.has("709426191404368053")) return;
+        if (newState.member?.roles.cache.has(config.NoXPRole)) return;
         EndVoiceChat(newState);
     }
 });
@@ -199,7 +205,8 @@ function shutdown(reason?: string) {
 
 // set up automatic backup
 setInterval(() => {
-    $`bash ./backup.sh`;
+    console.log("Starting backup...");
+    $`bash ${join(__dirname, "..")}/backup.sh`;
 }, 1000 * 60 * 60);
 
 process.on("uncaughtException", (err) => {

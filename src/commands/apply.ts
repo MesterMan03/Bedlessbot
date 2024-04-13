@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { google } from "googleapis";
 import client, { GetGuild, db } from "..";
+import { SHA256 } from "bun";
 
 /**
  * A map storing the last time a user used a command.
@@ -114,6 +115,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
     const embed = EmbedBuilder.from(interaction.message.embeds[0]);
     const userid = embed.data.footer!.text;
     const role = roleNameToShort(embed.data.fields![1].value);
+
     if (!role) {
         interaction.reply("Unknown role. This is an error, contact Mester.");
         return;
@@ -136,6 +138,8 @@ export async function processInteraction(interaction: ButtonInteraction) {
         if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) return;
 
         member.roles.add(roleToAdd);
+
+        interaction.message.removeAttachments();
     }
 
     if (interaction.customId === "deny") {
@@ -167,8 +171,10 @@ export async function processInteraction(interaction: ButtonInteraction) {
             outcomeChannel.send(
                 `<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${
                     reasonMessage.content
-                }!`
+                }`
             );
+
+            interaction.message.removeAttachments();
         });
 
         reasonCollector.on("end", () => {
@@ -176,15 +182,8 @@ export async function processInteraction(interaction: ButtonInteraction) {
         });
     }
 
-    if (interaction.customId === "troll") {
-        embed.setDescription(`Application marked as troll by <@${interaction.user.id}>`).setColor("Red");
-        interaction.update({ embeds: [embed], components: [] });
-
-        outcomeChannel.send(`<@${member.id}>, your role application for ${shortRoleToName(role)} has been marked as a troll application.`);
-    }
-
-    if (interaction.customId === "hacker") {
-        embed.setDescription(`Application flagged for hacking by <@${interaction.user.id}>`).setColor("Red");
+    if (interaction.customId === "infraction") {
+        embed.setDescription(`Infraction given by <@${interaction.user.id}>`).setColor("Red");
         interaction.update({ embeds: [embed], components: [] });
 
         increaseCheaterPoint(member.id);
@@ -198,9 +197,169 @@ export async function processInteraction(interaction: ButtonInteraction) {
         outcomeChannel.send(
             `<@${member.id}>, your role application for ${shortRoleToName(
                 role
-            )} has been flagged for hacking. You now have ${cheatpoint}/3 cheater points.`
+            )} has received an infraction. You now have ${cheatpoint}/3 infractions${
+                cheatpoint === 3 ? " and have been permanently banned from role applications 💀" : ""
+            }. ${cheatpoint === 2 ? "One more and you're permanently banned from role applications." : ""}`
         );
+
+        interaction.message.removeAttachments();
     }
+}
+
+const allowedFileTypes = ["mp4", "webm", "gif", "png", "jpeg"];
+const allowedFileTypesString = allowedFileTypes.map((type) => `.${type}`).join(", ");
+const allowedWebsites = ["youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
+
+async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
+    const role = interaction.options.getString("role", true);
+    let proof = interaction.options.getString("proof", true);
+    const fileproof = interaction.options.getAttachment("fileproof", false);
+    const proofString = proof === "fileproof" ? fileproof!.url : proof;
+
+    // check if user has reacted to the guide message with a thumbsup
+    const guideMessage = await GetGuild()
+        .channels.fetch(process.env.GUIDE_CHANNEL!)
+        .then((channel) => {
+            if (!channel?.isTextBased()) return;
+
+            return channel.messages.fetch(process.env.GUIDE_MESSAGE!);
+        });
+
+    if (!guideMessage) {
+        await interaction.editReply("Role guide message couldn't be found. This is not an epic moment, contact Mester.");
+        return null;
+    }
+
+    const guideReaction = guideMessage.reactions.cache.get("👍");
+    if (
+        !guideReaction ||
+        (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id
+    ) {
+        await interaction.editReply(
+            `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
+        );
+        return null;
+    }
+
+    // check if user has at least 3 cheatpoints
+    const cheatpoint = (
+        db.query(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`).get() as {
+            cheatpoint: number;
+        } | null
+    )?.cheatpoint;
+
+    if (cheatpoint && cheatpoint >= 3) {
+        await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");
+        return null;
+    }
+
+    // validate proof
+    if (proof !== "fileproof") {
+        // check if proof is valid but is missing https
+        let canParseProof = URL.canParse(proof);
+        if (!canParseProof && URL.canParse("https://" + proof)) {
+            proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
+            canParseProof = true;
+        }
+
+        // verify the proof is a valid url
+        if (!canParseProof) {
+            await interaction.editReply("Invalid proof URL.");
+            return null;
+        }
+
+        const proofURL = new URL(proof);
+
+        // check if link is from an allowed website
+        if (!allowedWebsites.some((website) => proofURL.hostname.endsWith(website))) {
+            await interaction.editReply("The proof link must be from YouTube, Imgur, Medal or Streamable.");
+            return null;
+        }
+
+        // check if video is private
+        let isPrivate: VideoPrivacyResult;
+        if (proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com")) {
+            // extract video id using search params
+            const pathname = proofURL.pathname.split("/");
+            pathname.shift();
+
+            let videoId: string | null;
+            if (proofURL.hostname === "youtu.be") {
+                videoId = pathname[0];
+            } else if (pathname[0] === "shorts") {
+                // shorts link
+                videoId = pathname[1];
+            } else {
+                videoId = proofURL.searchParams.get("v");
+            }
+
+            if (!videoId) {
+                await interaction.editReply("Invalid YouTube link.");
+                return;
+            }
+
+            isPrivate = await checkVideoPrivacy(videoId);
+            if (isPrivate !== VideoPrivacyResult.Failed) {
+                await interaction.editReply("That video is private or doesn't exist.");
+                return;
+            }
+        }
+    } else {
+        // check if there's actually a file attached
+        if (!fileproof) {
+            await interaction.editReply("Please upload a file.");
+            return null;
+        }
+
+        // check if the file is a valid type
+        const fileType = fileproof.contentType?.split("/")[1];
+        if (fileproof.contentType && !allowedFileTypes.includes(fileType!)) {
+            await interaction.editReply(`Invalid file type. Allowed file types: ${allowedFileTypesString}`);
+            return null;
+        }
+
+        // check if the file is too big
+        if (fileproof.size > 20 * 1024 * 1024) {
+            await interaction.editReply("File is too big. Max 20MB.");
+            return null;
+        }
+
+        // calculate file hash
+        const file = await fetch(fileproof.url).then((res) => res.arrayBuffer());
+        const fileHashRaw = new Uint8Array(32);
+        SHA256.hash(file, fileHashRaw);
+        const fileHashString = Buffer.from(fileHashRaw).toString("hex");
+
+        proof = fileHashString;
+    }
+
+    // check if the proof has been submitted before and not by the same user
+    if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
+        await interaction.editReply("This proof has already been used before by someone else.");
+        return null;
+    }
+
+    // check if user already has this role
+    const roleToCheck = shortRoleToRoleID(role);
+    if (roleToCheck && interaction.member.roles.cache.has(roleToCheck)) {
+        await interaction.editReply("You already have this role.");
+        return null;
+    }
+
+    // check if user is on cooldown
+    if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
+        const time = cooldowns.get(interaction.user.id)!;
+        if (Date.now() / 1000 < time + 60) {
+            await interaction.editReply(
+                `You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`
+            );
+            return null;
+        }
+    }
+    cooldowns.set(interaction.user.id, Date.now() / 1000);
+
+    // now that the command is valid, return the values to be used in the execute function
+    return { role, proof, fileproof, proofString };
 }
 
 export default {
@@ -254,8 +413,15 @@ export default {
         .addStringOption((option) =>
             option
                 .setName("proof")
-                .setDescription("The YouTube or Imgur link that serves as your proof (don't forget to include the https:// part).")
+                .setDescription("Accepts YouTube, Imgur, Medal and Streamable links.")
                 .setRequired(true)
+                .setAutocomplete(true)
+        )
+        .addAttachmentOption((option) =>
+            option
+                .setName("fileproof")
+                .setDescription("A video/image file from your device. Allowed file types: mp4, webm, gif, png, jpg, jpeg. Max 20MB.")
+                .setRequired(false)
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -266,146 +432,25 @@ export default {
 
             await interaction.deferReply({ ephemeral: false });
 
-            // check if user has reacted to the guide message with a thumbsup
-            const guideMessage = await GetGuild()
-                .channels.fetch(process.env.GUIDE_CHANNEL!)
-                .then((channel) => {
-                    if (!channel?.isTextBased()) return;
+            const values = await validateCommand(interaction);
+            if (!values) return;
 
-                    return channel.messages.fetch(process.env.GUIDE_MESSAGE!);
-                });
-
-            if (!guideMessage) {
-                return await interaction.editReply("Role guide message couldn't be found. This is not an epic moment, contact Mester.");
-            }
-
-            const guideReaction = guideMessage.reactions.cache.get("👍");
-            if (
-                !guideReaction ||
-                (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !==
-                    interaction.user.id
-            ) {
-                await interaction.editReply(
-                    `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
-                );
-                return;
-            }
-
-            const cheatpoint = (
-                db.query(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`).get() as {
-                    cheatpoint: number;
-                } | null
-            )?.cheatpoint;
-
-            if (cheatpoint && cheatpoint >= 3) {
-                await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");
-                return;
-            }
-
-            const role = interaction.options.getString("role", true);
-            let proof = interaction.options.getString("proof", true); // is this allowed?
-            let canParseProof = URL.canParse(proof);
-
-            // check if proof is valid but is missing https
-            if (!canParseProof && URL.canParse("https://" + proof)) {
-                proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
-                canParseProof = true;
-            }
-
-            // check if the proof has been submitted before and not by the same user
-            if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
-                await interaction.editReply("This proof has already been used before by someone else.");
-                return;
-            }
-
-            // verify the proof is a valid url
-            if (!canParseProof) {
-                await interaction.editReply("Invalid proof URL.");
-                return;
-            }
-            const proofURL = new URL(proof);
-
-            // check if user already has this role
-            const roleToCheck = shortRoleToRoleID(role);
-            if (roleToCheck && interaction.member.roles.cache.has(roleToCheck)) {
-                await interaction.editReply("You already have this role.");
-                return;
-            }
-
-            // check if proof is a youtube link, except when role is good pvper, then check for imgur
-            if (
-                ["www.youtube.com", "m.youtube.com", "youtu.be", "youtube.com"].includes(proofURL.hostname) === false &&
-                role !== "goodpvp"
-            ) {
-                await interaction.editReply("Please use a YouTube video link for proof.");
-                return;
-            }
-            if (["imgur.com"].includes(proofURL.hostname) === false && role === "goodpvp") {
-                await interaction.editReply("Please use an Imgur link for proof.");
-                return;
-            }
-
-            // check if video is private
-            let isPrivate: VideoPrivacyResult;
-            if (role !== "goodpvp") {
-                // extract video id using search params
-                const pathname = proofURL.pathname.split("/");
-                pathname.shift();
-
-                let videoId: string | null;
-                if (proofURL.hostname === "youtu.be") {
-                    videoId = pathname[0];
-                } else if (pathname[0] === "shorts") {
-                    // shorts link
-                    videoId = pathname[1];
-                } else {
-                    videoId = proofURL.searchParams.get("v");
-                }
-
-                if (!videoId) {
-                    await interaction.editReply("Invalid YouTube link.");
-                    return;
-                }
-
-                isPrivate = await checkVideoPrivacy(videoId);
-                if (isPrivate !== VideoPrivacyResult.Failed) {
-                    await interaction.editReply("That video is private or doesn't exist.");
-                    return;
-                }
-            }
-
-            // check if user is on cooldown
-            if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
-                const time = cooldowns.get(interaction.user.id)!;
-                if (Date.now() / 1000 < time + 60) {
-                    await interaction.editReply(
-                        `You're on cooldown. Please wait ${Math.ceil(
-                            time + 60 - Date.now() / 1000
-                        )} seconds before running this command again.`
-                    );
-                    return;
-                }
-            }
-            cooldowns.set(interaction.user.id, Date.now() / 1000);
+            const { role, proof, fileproof, proofString: proofURL } = values;
 
             // insert proof into database
-            if (
-                db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid = '${interaction.user.id}'`).get({ $proof: proof }) == null
-            ) {
-                db.query(`INSERT INTO proofs (proof, userid) VALUES ($proof, '${interaction.user.id}')`).run({ $proof: proof });
-            }
+            db.query(`INSERT OR IGNORE INTO proofs (proof, userid) VALUES ($proof, '${interaction.user.id}')`).run({ $proof: proof });
 
             interaction.editReply("Your application has been submitted for review.");
 
             const reviewChannel = (await client.channels.fetch(process.env.TO_REVIEW_CHANNEL!)) as TextBasedChannel;
-            if (!reviewChannel) throw new Error("what the fuck");
+            if (!reviewChannel) throw new Error("No review channel");
 
             const embed = new EmbedBuilder()
                 .setTitle("Role Application")
                 .setFields(
                     { name: "Username", value: interaction.user.username, inline: true },
                     { name: "Role applied for:", value: shortRoleToName(role), inline: true },
-                    { name: "Proof", value: proof, inline: false }
+                    { name: "Proof", value: proofURL, inline: false }
                 )
                 .setColor("DarkPurple")
                 .setFooter({ text: interaction.user.id });
@@ -415,20 +460,15 @@ export default {
                     new ButtonBuilder().setCustomId("accept").setLabel("Accept").setStyle(ButtonStyle.Success),
                     new ButtonBuilder().setCustomId("deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
                     new ButtonBuilder()
-                        .setCustomId("troll")
-                        .setEmoji("907471808033349695")
-                        .setLabel("Troll")
+                        .setCustomId("infraction")
+                        .setEmoji("907725559352664154")
+                        .setLabel("Infraction")
                         .setStyle(ButtonStyle.Secondary),
-                    new ButtonBuilder()
-                        .setCustomId("hacker")
-                        .setEmoji("820606205953179649")
-                        .setLabel("Hacker")
-                        .setStyle(ButtonStyle.Secondary),
-                    new ButtonBuilder().setURL(proof).setLabel("View Proof").setStyle(ButtonStyle.Link)
+                    new ButtonBuilder().setURL(proofURL).setLabel("View Proof").setStyle(ButtonStyle.Link)
                 ),
             ];
 
-            reviewChannel.send({ embeds: [embed], components });
+            reviewChannel.send({ embeds: [embed], components, files: fileproof ? [fileproof.url] : [] });
         } catch (error) {
             console.log(error);
         }

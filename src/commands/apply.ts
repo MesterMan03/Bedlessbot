@@ -138,8 +138,6 @@ export async function processInteraction(interaction: ButtonInteraction) {
         if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) return;
 
         member.roles.add(roleToAdd);
-
-        interaction.message.removeAttachments();
     }
 
     if (interaction.customId === "deny") {
@@ -173,8 +171,6 @@ export async function processInteraction(interaction: ButtonInteraction) {
                     reasonMessage.content
                 }`
             );
-
-            interaction.message.removeAttachments();
         });
 
         reasonCollector.on("end", () => {
@@ -201,8 +197,6 @@ export async function processInteraction(interaction: ButtonInteraction) {
                 cheatpoint === 3 ? " and have been permanently banned from role applications 💀" : ""
             }. ${cheatpoint === 2 ? "One more and you're permanently banned from role applications." : ""}`
         );
-
-        interaction.message.removeAttachments();
     }
 }
 

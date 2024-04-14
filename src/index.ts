@@ -12,10 +12,10 @@ import * as fs from "fs";
 import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
+import { cronjob } from "./birthdaymanager";
 import { processInteraction } from "./commands/apply";
-import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
-import { $ } from "bun";
 import config from "./config";
+import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
 
 const client = new Client({
     allowedMentions: {
@@ -76,7 +76,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             const command = clientCommands.get(interaction.commandName);
 
             if (!command) {
-                console.error(`No command matching ${interaction.commandName} was found.`);
+                await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
                 return;
             }
 
@@ -108,7 +108,8 @@ client.on(Events.MessageCreate, (message) => {
     // this is sorta just a joke thing
     // if bedless sends a youtube notification, react with Hungarian flag
     if (message.channelId === "692075656921481310") {
-        return void message.react("🇭🇺");
+        message.react("🇭🇺");
+        return;
     }
 
     if (message.author.bot) return;
@@ -201,6 +202,7 @@ function shutdown(reason?: string) {
     browser?.close();
     client.destroy();
     db.close();
+    cronjob.stop();
     process.exit(0);
 }
 

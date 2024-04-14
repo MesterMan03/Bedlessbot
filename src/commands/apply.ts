@@ -214,7 +214,7 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
     const role = interaction.options.getString("role", true);
     let proof = interaction.options.getString("proof", true);
     const fileproof = interaction.options.getAttachment("fileproof", false);
-    const proofString = proof === "fileproof" ? fileproof!.url : proof;
+    const proofString = proof === "fileproof" && fileproof ? fileproof.url : proof;
 
     // check if user has reacted to the guide message with a thumbsup
     const guideMessage = await GetGuild()
@@ -277,32 +277,32 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         }
 
         // check if video is private
+        if (!(proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com"))) return;
         let isPrivate: VideoPrivacyResult;
-        if (proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com")) {
-            // extract video id using search params
-            const pathname = proofURL.pathname.split("/");
-            pathname.shift();
 
-            let videoId: string | null;
-            if (proofURL.hostname === "youtu.be") {
-                videoId = pathname[0];
-            } else if (pathname[0] === "shorts") {
-                // shorts link
-                videoId = pathname[1];
-            } else {
-                videoId = proofURL.searchParams.get("v");
-            }
+        // extract video id using search params
+        const pathname = proofURL.pathname.split("/");
+        pathname.shift();
 
-            if (!videoId) {
-                await interaction.editReply("Invalid YouTube link.");
-                return;
-            }
+        let videoId: string | null;
+        if (proofURL.hostname === "youtu.be") {
+            videoId = pathname[0];
+        } else if (pathname[0] === "shorts") {
+            // shorts link
+            videoId = pathname[1];
+        } else {
+            videoId = proofURL.searchParams.get("v");
+        }
 
-            isPrivate = await checkVideoPrivacy(videoId);
-            if (isPrivate !== VideoPrivacyResult.Failed) {
-                await interaction.editReply("That video is private or doesn't exist.");
-                return;
-            }
+        if (!videoId) {
+            await interaction.editReply("Invalid YouTube link.");
+            return;
+        }
+
+        isPrivate = await checkVideoPrivacy(videoId);
+        if (isPrivate !== VideoPrivacyResult.Failed) {
+            await interaction.editReply("That video is private or doesn't exist.");
+            return;
         }
     } else {
         // check if there's actually a file attached

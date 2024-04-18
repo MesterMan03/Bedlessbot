@@ -1,6 +1,6 @@
+import { SHA256 } from "bun";
 import {
     ActionRowBuilder,
-    Attachment,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
@@ -8,11 +8,10 @@ import {
     EmbedBuilder,
     SlashCommandBuilder,
     SlashCommandStringOption,
-    type TextBasedChannel,
+    type TextBasedChannel
 } from "discord.js";
 import { google } from "googleapis";
 import client, { GetGuild, db } from "..";
-import { SHA256 } from "bun";
 
 /**
  * A map storing the last time a user used a command.

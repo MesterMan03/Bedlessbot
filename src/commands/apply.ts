@@ -1,11 +1,13 @@
 import {
     ActionRowBuilder,
+    Attachment,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
     EmbedBuilder,
     SlashCommandBuilder,
+    SlashCommandStringOption,
     type TextBasedChannel,
 } from "discord.js";
 import { google } from "googleapis";
@@ -200,15 +202,18 @@ export async function processInteraction(interaction: ButtonInteraction) {
     }
 }
 
-const allowedFileTypes = ["mp4", "webm", "gif", "png", "jpeg"];
+const allowedFileTypes = ["mp4", "mov", "webm", "gif", "png", "jpeg"];
 const allowedFileTypesString = allowedFileTypes.map((type) => `.${type}`).join(", ");
 const allowedWebsites = ["youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("role", true);
-    let proof = interaction.options.getString("proof", true);
-    const fileproof = interaction.options.getAttachment("fileproof", false);
-    const proofString = proof === "fileproof" && fileproof ? fileproof.url : proof;
+    let proof =
+        interaction.options.getSubcommand(true) === "link"
+            ? interaction.options.getString("proof", true)
+            : interaction.options.getAttachment("proof", true);
+    let proofString = "";
+    const isLink = interaction.options.getSubcommand(true) === "link";
 
     // check if user has reacted to the guide message with a thumbsup
     const guideMessage = await GetGuild()
@@ -247,8 +252,8 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         return null;
     }
 
-    // validate proof
-    if (proof !== "fileproof") {
+    // validate link proof
+    if (typeof proof === "string") {
         // check if proof is valid but is missing https
         let canParseProof = URL.canParse(proof);
         if (!canParseProof && URL.canParse("https://" + proof)) {
@@ -271,58 +276,57 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         }
 
         // check if video is private
-        if (!(proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com"))) return;
-        let isPrivate: VideoPrivacyResult;
+        if (proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com")) {
+            let isPrivate: VideoPrivacyResult;
 
-        // extract video id using search params
-        const pathname = proofURL.pathname.split("/");
-        pathname.shift();
+            // extract video id using search params
+            const pathname = proofURL.pathname.split("/");
+            pathname.shift();
 
-        let videoId: string | null;
-        if (proofURL.hostname === "youtu.be") {
-            videoId = pathname[0];
-        } else if (pathname[0] === "shorts") {
-            // shorts link
-            videoId = pathname[1];
-        } else {
-            videoId = proofURL.searchParams.get("v");
+            let videoId: string | null;
+            if (proofURL.hostname === "youtu.be") {
+                videoId = pathname[0];
+            } else if (pathname[0] === "shorts") {
+                // shorts link
+                videoId = pathname[1];
+            } else {
+                videoId = proofURL.searchParams.get("v");
+            }
+
+            if (!videoId) {
+                await interaction.editReply("Invalid YouTube link.");
+                return null;
+            }
+
+            isPrivate = await checkVideoPrivacy(videoId);
+            if (isPrivate !== VideoPrivacyResult.Failed) {
+                await interaction.editReply("That video is private or doesn't exist.");
+                return null;
+            }
         }
 
-        if (!videoId) {
-            await interaction.editReply("Invalid YouTube link.");
-            return;
-        }
-
-        isPrivate = await checkVideoPrivacy(videoId);
-        if (isPrivate !== VideoPrivacyResult.Failed) {
-            await interaction.editReply("That video is private or doesn't exist.");
-            return;
-        }
+        proofString = proof;
     } else {
-        // check if there's actually a file attached
-        if (!fileproof) {
-            await interaction.editReply("Please upload a file.");
-            return null;
-        }
-
         // check if the file is a valid type
-        const fileType = fileproof.contentType?.split("/")[1];
-        if (fileproof.contentType && !allowedFileTypes.includes(fileType!)) {
+        const fileType = proof.contentType?.split("/")[1];
+        if (proof.contentType && !allowedFileTypes.includes(fileType!)) {
             await interaction.editReply(`Invalid file type. Allowed file types: ${allowedFileTypesString}`);
             return null;
         }
 
         // check if the file is too big
-        if (fileproof.size > 20 * 1024 * 1024) {
+        if (proof.size > 20 * 1024 * 1024) {
             await interaction.editReply("File is too big. Max 20MB.");
             return null;
         }
 
         // calculate file hash
-        const file = await fetch(fileproof.url).then((res) => res.arrayBuffer());
+        const file = await fetch(proof.url).then((res) => res.arrayBuffer());
         const fileHashRaw = new Uint8Array(32);
         SHA256.hash(file, fileHashRaw);
         const fileHashString = Buffer.from(fileHashRaw).toString("hex");
+
+        proofString = proof.url;
 
         proof = fileHashString;
     }
@@ -353,69 +357,80 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
     cooldowns.set(interaction.user.id, Date.now() / 1000);
 
     // now that the command is valid, return the values to be used in the execute function
-    return { role, proof, fileproof, proofString };
+    return { role, proof, proofString, isLink };
 }
+
+const commandRoleOption = new SlashCommandStringOption()
+    .setName("role")
+    .setDescription("The role you want to apply for.")
+    .setRequired(true)
+    .setChoices(
+        {
+            name: "Drag clicker",
+            value: "dragclick",
+        },
+        {
+            name: "16+ CPS",
+            value: "16cps",
+        },
+        {
+            name: "Eagle Bridger",
+            value: "eagle",
+        },
+        {
+            name: "Witchly Bridger",
+            value: "witchly",
+        },
+        {
+            name: "Breezily Bridger",
+            value: "breezily",
+        },
+        {
+            name: "Good PvPer",
+            value: "goodpvp",
+        },
+        {
+            name: "Moonwalker",
+            value: "moonwalk",
+        },
+        {
+            name: "Godbridger",
+            value: "god",
+        },
+        {
+            name: "Diagonal Godbridger",
+            value: "diagod",
+        },
+        {
+            name: "Telly Bridger",
+            value: "telly",
+        }
+    );
 
 export default {
     data: new SlashCommandBuilder()
         .setName("apply")
         .setDescription("Apply for a role")
-        .addStringOption((option) =>
-            option.setName("role").setDescription("The role you want to apply for.").setRequired(true).setChoices(
-                {
-                    name: "Drag clicker",
-                    value: "dragclick",
-                },
-                {
-                    name: "16+ CPS",
-                    value: "16cps",
-                },
-                {
-                    name: "Eagle Bridger",
-                    value: "eagle",
-                },
-                {
-                    name: "Witchly Bridger",
-                    value: "witchly",
-                },
-                {
-                    name: "Breezily Bridger",
-                    value: "breezily",
-                },
-                {
-                    name: "Good PvPer",
-                    value: "goodpvp",
-                },
-                {
-                    name: "Moonwalker",
-                    value: "moonwalk",
-                },
-                {
-                    name: "Godbridger",
-                    value: "god",
-                },
-                {
-                    name: "Diagonal Godbridger",
-                    value: "diagod",
-                },
-                {
-                    name: "Telly Bridger",
-                    value: "telly",
-                }
-            )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("link")
+                .setDescription("Apply with a link.")
+                .addStringOption(commandRoleOption)
+                .addStringOption((option) =>
+                    option.setName("proof").setDescription("Accepts YouTube, Imgur, Medal and Streamable links.").setRequired(true)
+                )
         )
-        .addStringOption((option) =>
-            option
-                .setName("proof")
-                .setDescription("Accepts YouTube, Imgur, Medal and Streamable links.")
-                .setRequired(true)
-                .setAutocomplete(true)
-        )
-        .addAttachmentOption((option) =>
-            option
-                .setName("fileproof")
-                .setDescription("A video/image file from your device. Allowed file types: mp4, webm, gif, png, jpg, jpeg. Max 20MB.")
-                .setRequired(false)
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("file")
+                .setDescription("Apply with a file.")
+                .addStringOption(commandRoleOption)
+                .addAttachmentOption((option) =>
+                    option
+                        .setName("proof")
+                        .setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.")
+                        .setRequired(true)
+                )
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -429,7 +444,7 @@ export default {
             const values = await validateCommand(interaction);
             if (!values) return;
 
-            const { role, proof, fileproof, proofString: proofURL } = values;
+            const { role, proof, proofString, isLink } = values;
 
             // insert proof into database
             db.query(`INSERT OR IGNORE INTO proofs (proof, userid) VALUES ($proof, '${interaction.user.id}')`).run({ $proof: proof });
@@ -444,7 +459,7 @@ export default {
                 .setFields(
                     { name: "Username", value: interaction.user.username, inline: true },
                     { name: "Role applied for:", value: shortRoleToName(role), inline: true },
-                    { name: "Proof", value: proofURL, inline: false }
+                    { name: "Proof", value: proofString, inline: false }
                 )
                 .setColor("DarkPurple")
                 .setFooter({ text: interaction.user.id });
@@ -458,11 +473,11 @@ export default {
                         .setEmoji("907725559352664154")
                         .setLabel("Infraction")
                         .setStyle(ButtonStyle.Secondary),
-                    new ButtonBuilder().setURL(proofURL).setLabel("View Proof").setStyle(ButtonStyle.Link)
+                    new ButtonBuilder().setURL(proofString).setLabel("View Proof").setStyle(ButtonStyle.Link)
                 ),
             ];
 
-            reviewChannel.send({ embeds: [embed], components, files: fileproof ? [fileproof.url] : [] });
+            reviewChannel.send({ embeds: [embed], components, files: !isLink ? [proofString] : [] });
         } catch (error) {
             console.log(error);
         }

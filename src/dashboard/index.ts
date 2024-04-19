@@ -1,11 +1,25 @@
 const server = Bun.serve({
-  fetch({ url }) {
+  async fetch({ url }) {
     const path = new URL(url).pathname;
 
-    if (path === "/style.css") return new Response(Bun.file("./style.css"));
+    if (path === "/")
+      return new Response(Bun.file(`${import.meta.dir}/index.html`));
 
-    return new Response(Bun.file("./index.html"));
+    if (path === "/script.js") {
+      const script = await (
+        await Bun.build({
+          entrypoints: [`${import.meta.dir}/script.ts`],
+          minify: true,
+        })
+      ).outputs[0].text();
+
+      return new Response(script, {
+        headers: { "Content-Type": "application/javascript" },
+      });
+    }
+
+    return new Response(Bun.file(`${import.meta.dir}${path}`));
   },
 });
 
-console.log(`Server started at ${server.url}.`);
+console.log(`Server started at ${server.url}`);

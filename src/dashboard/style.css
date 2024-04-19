@@ -1,6 +1,15 @@
-@import url("https://fonts.googleapis.com/css?family=Noto%20Sans%20Caucasian%20Albanian:700|Noto%20Sans%20Caucasian%20Albanian:400");
+@font-face {
+    font-family: "Noto Sans Caucasian Albanian";
+    src: url("./Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf")
+        format("truetype");
+    font-display: swap;
+}
 
 :root {
+    --gold: oklch(88.68% 0.182 95.33);
+    --silver: oklch(80.78% 0 0);
+    --bronze: oklch(66.61% 0.132 61.29);
+
     @media (prefers-color-scheme: light) {
         --text: oklch(15.61% 0.049 18.32);
         --background: oklch(96.31% 0.015 17.42);
@@ -16,6 +25,8 @@
         --secondary: oklch(62.01% 0.252 27.99);
         --accent: oklch(56.68% 0.124 61.83);
     }
+
+    accent-color: var(--primary);
 }
 
 h1,
@@ -24,7 +35,6 @@ h3,
 h4,
 h5 {
     font-family: "Noto Sans Caucasian Albanian";
-    font-weight: 700;
 }
 
 html {
@@ -62,6 +72,11 @@ main {
     margin: 0 auto;
 }
 
+img {
+    height: 1.5em;
+    border-radius: 0.5rem;
+}
+
 .podium {
     display: flex;
     gap: 1rem;
@@ -71,10 +86,40 @@ main {
         margin-top: 0.25rem;
     }
 
-    .first,
-    .second,
-    .third {
+    #first,
+    #second,
+    #third {
         text-align: center;
+        position: relative;
+
+        h2 span {
+            cursor: copy;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        #xp {
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: translateX(-50%);
+            width: fit-content;
+            text-align: center;
+            background-color: var(--background);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition:
+                opacity 0.25s,
+                visibility 0.25s;
+        }
+
+        &:hover #xp {
+            opacity: 1;
+            visibility: visible;
+        }
 
         &::before {
             font-size: 1.5rem;
@@ -85,52 +130,111 @@ main {
         &::after {
             content: "";
             display: block;
-            background-color: var(--primary);
-            border-radius: 0.5rem;
+            border-radius: 0.25rem;
         }
     }
 
-    .first {
+    #first {
         &::before {
             content: "#1";
         }
 
         &::after {
             height: 4rem;
+            background-image: linear-gradient(
+                to top,
+                var(--gold),
+                oklch(0 0 0 / 0%)
+            );
         }
     }
 
-    .second {
+    #second {
         &::before {
             content: "#2";
         }
 
         &::after {
             height: 2rem;
+            background-image: linear-gradient(
+                to top,
+                var(--silver),
+                oklch(0 0 0 / 0%)
+            );
         }
     }
 
-    .third {
+    #third {
         &::before {
             content: "#3";
         }
 
         &::after {
             height: 1rem;
+            background-image: linear-gradient(
+                to top,
+                var(--bronze),
+                oklch(0 0 0 / 0%)
+            );
         }
     }
 }
 
-table {
+/* Listings */
+.listings {
     width: 100%;
-    border: solid 0.125rem var(--accent);
-    border-radius: 0.25rem;
-    border-collapse: collapse;
 
-    th,
-    td {
-        text-align: left;
-        padding: 0.25rem;
+    .user {
+        background-color: oklch(from var(--accent) l c h / 50%);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 0 1rem;
+        margin: 0.5rem 0;
+        border-radius: 0.5rem;
+        transition: background-color 0.25s;
+
+        &:hover {
+            background-color: var(--accent);
+        }
+    }
+
+    .name {
+        display: flex;
+        gap: 0.5rem;
         font-size: 1.125rem;
+        align-items: center;
+        width: min-content;
+
+        &:hover {
+            cursor: copy;
+        }
+    }
+
+    label {
+        position: relative;
+
+        span {
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            width: fit-content;
+            text-align: center;
+            background-color: var(--background);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition:
+                opacity 0.25s,
+                visibility 0.25s;
+        }
+
+        &:hover span {
+            opacity: 1;
+            visibility: visible;
+        }
     }
 }

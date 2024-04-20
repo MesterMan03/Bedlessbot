@@ -93,7 +93,7 @@ async function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember
     xp = Math.floor(xp);
 
     // update the user's xp
-    db.exec(`UPDATE levels SET xp = xp + ${xp} WHERE userid = '${levelInfo.userid}'`);
+    db.run(`UPDATE levels SET xp = xp + ${xp} WHERE userid = '${levelInfo.userid}'`);
 
     const newLevel = XPToLevel(levelInfo.xp + xp);
     if (newLevel > XPToLevel(levelInfo.xp) && newLevel !== 0) {
@@ -144,7 +144,7 @@ async function ManageLevelRole(member: GuildMember, memberLevel: number) {
  * @returns The level info object of the user.
  */
 function GetLevelConfig(userId: string) {
-    db.exec(`INSERT OR IGNORE INTO levels (userid, xp) VALUES ('${userId}', 0)`);
+    db.run(`INSERT OR IGNORE INTO levels (userid, xp) VALUES ('${userId}', 0)`);
     return db.query<LevelInfo, []>(`SELECT * FROM levels WHERE userid = '${userId}'`).get()!;
 }
 
@@ -174,7 +174,6 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
 }
 
 const voiceStates = new Collection<string, number>();
-const talkingTimes = new Collection<string, number>();
 
 function StartVoiceChat(vs: VoiceState) {
     if (!vs.member) return;
@@ -203,10 +202,6 @@ function EndVoiceChat(vs: VoiceState) {
     AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
 }
 
-function StartTalking(userId: string) {}
-
-function EndTalking(userId: string) {}
-
 function SetXPMultiplier(multipler: number) {
     xpMultiplier = multipler;
 }
@@ -221,5 +216,6 @@ export {
     StartVoiceChat,
     EndVoiceChat,
     SetXPMultiplier,
+    AddXPToUser,
     type LevelInfo,
 };

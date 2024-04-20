@@ -48,7 +48,6 @@ const browser = await puppeteer
     .catch((error) => {
         console.warn("Could not launch puppeteer, some functionalities might not work");
         console.warn(error);
-        return null;
     });
 
 const client = new Client({

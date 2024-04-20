@@ -16,18 +16,14 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.9.0",
-    "@discordjs/voice": "^0.16.1",
     "bufferutil": "^4.0.8",
     "discord.js": "^14.14.1",
     "googleapis": "^134.0.0",
     "moment-timezone": "^0.5.45",
-    "nerdamer": "^1.1.13",
     "node-cron": "^3.0.3",
     "openai": "^4.32.1",
     "ordinal": "^1.0.3",
     "puppeteer": "^22.6.5",
-    "sodium": "^3.0.2",
     "utf-8-validate": "^6.0.3",
     "zlib-sync": "^0.1.9"
   }

@@ -1,9 +1,16 @@
 /// <reference lib="dom" />
 
-import { FetchPageTest } from "./api-test";
+import { type FetchPage as IFetchPage } from "./api";
+
+async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
+  const res = await fetch(`/page?page=${page}`);
+  if (!res.ok) return null;
+
+  return res.json();
+}
 
 async function loadUsers(pageCursor: number) {
-  const page = await FetchPageTest(pageCursor);
+  const page = await FetchPage(pageCursor);
   if (!page) return;
 
   for (const user of page) {

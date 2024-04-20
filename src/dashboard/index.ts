@@ -1,4 +1,6 @@
 import { join } from "path";
+// import { FetchPage } from "./api"; uncomment when ready for production
+import { FetchPageTest } from "./api-test";
 
 const __dirname = new URL(".", import.meta.url).pathname;
 
@@ -22,6 +24,21 @@ const server = Bun.serve({
         if (path === "/script.js") {
             return new Response(script, {
                 headers: { "Content-Type": "application/javascript" },
+            });
+        }
+
+        if (path === "/page") { // TODO: possible DOS without a ratelimit, add one?
+            // get the page number from the query string
+            const urlObj = new URL(url);
+            const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page")!) : 1;
+
+            // fetch the page
+            // const page = await FetchPage(pageNum); // uncomment when ready for production
+            const page = await FetchPageTest(pageNum);
+            if (!page) return new Response("Invalid page number", { status: 400 });
+
+            return new Response(JSON.stringify(page), {
+                headers: { "Content-Type": "application/json" },
             });
         }
 

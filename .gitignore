@@ -180,4 +180,3 @@ dist
 data.db*
 tools/*
 !tools/setup_db.ts
-

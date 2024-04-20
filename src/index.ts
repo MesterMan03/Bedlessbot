@@ -30,7 +30,6 @@ const commands = new Array<RESTPostAPIChatInputApplicationCommandsJSONBody>();
 
 // Grab all the command folders from the commands directory you created earlier
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
-console.log(__dirname);
 const foldersPath = path.join(__dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 

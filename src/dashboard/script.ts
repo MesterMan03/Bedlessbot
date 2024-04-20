@@ -11,7 +11,6 @@ async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
 
 async function loadUsers(pageCursor: number) {
   const page = await FetchPage(pageCursor);
-  if (!page) return;
 
   for (const user of page) {
     const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
@@ -60,7 +59,6 @@ async function loadUsers(pageCursor: number) {
 }
 
 let pageCursor = 0;
-const maxPage = 10;
 
 // Initial load
 await loadUsers(pageCursor);
@@ -69,7 +67,7 @@ pageCursor++;
 addEventListener("scroll", async () => {
   if (
     scrollY + innerHeight == document.body.clientHeight &&
-    pageCursor < maxPage
+    (await FetchPage(pageCursor))
   ) {
     await loadUsers(pageCursor);
     pageCursor++;

@@ -19,6 +19,7 @@ import { processInteraction } from "./commands/apply";
 import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
 import { fileURLToPath } from "bun";
+import { StartQuickTime } from "./quicktime";
 
 const clientCommands = new Collection<string, { execute: Function }>();
 
@@ -36,6 +37,13 @@ const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(
 const db = new Database(join(__dirname, "..", "data.db"));
 db.run("PRAGMA journal_mode = wal;");
 
+const client = new Client({
+    allowedMentions: {
+        parse: ["users"],
+    },
+    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
+});
+
 const browser = await puppeteer
     .launch({
         headless: true,
@@ -50,13 +58,6 @@ const browser = await puppeteer
         console.warn("Could not launch puppeteer, some functionalities might not work");
         console.warn(error);
     });
-
-const client = new Client({
-    allowedMentions: {
-        parse: ["users"],
-    },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
-});
 
 for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
@@ -150,6 +151,11 @@ client.on(Events.MessageCreate, async (message) => {
         if (Math.random() < 0.5) await message.reply("oh my god");
     }
 
+    // 0.5% chance to start a quick time event (in development mode 100%)
+    if (Math.random() < 0.005 || process.env.NODE_ENV === "development") {
+        StartQuickTime(message.channel);
+    }
+
     // check for blocked channels and no-xp role
     if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) return;
 
@@ -167,7 +173,7 @@ function ExecuteAdminCommand(message: Message) {
         return true;
     }
 
-    if(command === "wish-birthdays") {
+    if (command === "wish-birthdays") {
         WishBirthdays();
         message.reply("Wished birthdays");
 
@@ -178,32 +184,6 @@ function ExecuteAdminCommand(message: Message) {
 }
 
 client.on(Events.ClientReady, async () => {
-    // join general vc (uncomment when bun implements node:dgram)
-    // const generalVC = await client.channels.fetch(process.env.GENERALVC_CHANNEL!);
-    // if (generalVC?.isVoiceBased()) {
-    //     const connection = joinVoiceChannel({
-    //         channelId: generalVC.id,
-    //         guildId: generalVC.guildId,
-    //         adapterCreator: generalVC.guild.voiceAdapterCreator,
-    //         selfMute: true,
-    //     });
-
-    //     connection.receiver.speaking.on("start", (userId) => {
-    //         console.log(`User ${userId} started speaking`);
-    //         const start = performance.now();
-
-    //         function endCallback(userId: string) {
-    //             const end = performance.now();
-    //             const time = end - start;
-
-    //             console.log(`User ${userId} stopped speaking after ${time}ms`);
-    //             connection.receiver.speaking.removeListener("end", endCallback);
-    //         }
-
-    //         connection.receiver.speaking.addListener("end", endCallback);
-    //     });
-    // }
-
     await GetGuild()
         .members.fetch()
         .then(() => {

@@ -152,7 +152,13 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // 0.5% chance to start a quick time event (in development mode 100%)
-    if (Math.random() < 0.005 || process.env.NODE_ENV === "development") {
+    // make sure the channel has reaction and message send perms for all
+    if (
+        (message.channel.permissionsFor(GetGuild().roles.everyone).has("SendMessages") &&
+            message.channel.permissionsFor(GetGuild().roles.everyone).has("AddReactions") &&
+            Math.random() < 0.005) ||
+        process.env.NODE_ENV === "development"
+    ) {
         StartQuickTime(message.channel);
     }
 

@@ -1,8 +1,9 @@
 import { join } from "path";
 // import { FetchPage } from "./api"; uncomment when ready for production
 import { FetchPageTest } from "./api-test";
+import { fileURLToPath } from "bun";
 
-const __dirname = new URL(".", import.meta.url).pathname;
+const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 
 const indexLocation = "index.html";
 const scriptLocation = "script.ts";
@@ -27,7 +28,8 @@ const server = Bun.serve({
             });
         }
 
-        if (path === "/page") { // TODO: possible DOS without a ratelimit, add one?
+        if (path === "/page") {
+            // TODO: possible DOS without a ratelimit, add one?
             // get the page number from the query string
             const urlObj = new URL(url);
             const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page")!) : 1;
@@ -44,6 +46,8 @@ const server = Bun.serve({
 
         return new Response(Bun.file(join(__dirname, path)));
     },
+
+    port: 8146,
 });
 
 console.log(`Server started at ${server.url}`);

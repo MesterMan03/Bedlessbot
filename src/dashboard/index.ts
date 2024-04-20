@@ -1,6 +1,6 @@
 import { join } from "path";
-// import { FetchPage } from "./api"; uncomment when ready for production
-import { FetchPageTest } from "./api-test";
+//import { FetchPage } from "./api"; //uncomment when ready for production
+import { FetchPageTest as FetchPage } from "./api-test";
 import { fileURLToPath } from "bun";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
@@ -54,8 +54,7 @@ const server = Bun.serve({
         : 1;
 
       // fetch the page
-      // const page = await FetchPage(pageNum); // uncomment when ready for production
-      const page = await FetchPageTest(pageNum);
+      const page = await FetchPage(pageNum);
       if (!page) return new Response("Invalid page number", { status: 400 });
 
       return new Response(JSON.stringify(page), {

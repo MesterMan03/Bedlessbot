@@ -3,9 +3,9 @@ const PageSize = 25;
 function GenerateRandomName(): string {
     const minLength = 3;
     const maxLength = 32;
-    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789_.'; // Only lowercase letters, numbers, underscore, and period
+    const characters = "abcdefghijklmnopqrstuvwxyz0123456789_."; // Only lowercase letters, numbers, underscore, and period
     const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-    let result = '';
+    let result = "";
 
     for (let i = 0; i < length; i++) {
         const randomIndex = Math.floor(Math.random() * characters.length);
@@ -30,7 +30,11 @@ async function FetchPageTest(page: number) {
         progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)],
     }));
 
-    return levels;
+    return new Promise<typeof levels>((res, rej) => {
+        setTimeout(() => {
+            res(levels);
+        }, 1000); // add an artifical delay
+    });
 }
 
 export { FetchPageTest };

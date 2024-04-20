@@ -1,8 +1,10 @@
 import { Database } from "bun:sqlite";
 import {
+    ActivityType,
     Client,
     Collection,
     Events,
+    Message,
     REST,
     Routes,
     SlashCommandBuilder,
@@ -17,13 +19,6 @@ import { processInteraction } from "./commands/apply";
 import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
 
-const client = new Client({
-    allowedMentions: {
-        parse: ["users"],
-    },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
-});
-
 const clientCommands = new Collection<string, { execute: Function }>();
 
 const token = process.env.TOKEN!;
@@ -36,6 +31,32 @@ const commands = new Array<RESTPostAPIChatInputApplicationCommandsJSONBody>();
 const __dirname = new URL(".", import.meta.url).pathname;
 const foldersPath = path.join(__dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
+
+const db = new Database(join(__dirname, "..", "data.db"));
+db.run("PRAGMA journal_mode = wal;");
+
+const browser = await puppeteer
+    .launch({
+        headless: true,
+        userDataDir: join(__dirname, "..", "chrome-data"),
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    })
+    .then((browser) => {
+        console.log("Puppeteer launched successfully");
+        return browser;
+    })
+    .catch((error) => {
+        console.warn("Could not launch puppeteer, some functionalities might not work");
+        console.warn(error);
+        return null;
+    });
+
+const client = new Client({
+    allowedMentions: {
+        parse: ["users"],
+    },
+    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
+});
 
 for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
@@ -102,7 +123,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 });
 
-client.on(Events.MessageCreate, (message) => {
+client.on(Events.MessageCreate, async (message) => {
     if (!message.inGuild() || message.guildId !== guildID) return;
 
     // this is sorta just a joke thing
@@ -116,17 +137,17 @@ client.on(Events.MessageCreate, (message) => {
 
     // check if message starts with the bots mention and member has admin
     if (message.content.startsWith(`<@${clientID}>`)) {
-        if (!message.member?.permissions.has("Administrator")) return;
-
-        const command = message.content.split(" ")[1];
-        const args = message.content.split(" ").slice(2);
-
-        if (command === "set-xpmul") {
-            SetXPMultiplier(parseInt(args[0], 10));
-            message.reply(`Set XP multiplier to ${args[0]}`);
+        if (message.member?.permissions.has("Administrator")) {
+            // only stop if the command ran successfully
+            if (ExecuteAdminCommand(message)) return;
         }
 
         return;
+    }
+
+    if (message.content.includes("oh my god")) {
+        // 50% chance
+        if (Math.random() < 0.5) await message.reply("oh my god");
     }
 
     // check for blocked channels and no-xp role
@@ -134,6 +155,20 @@ client.on(Events.MessageCreate, (message) => {
 
     GetXPFromMessage(message);
 });
+
+function ExecuteAdminCommand(message: Message) {
+    const command = message.content.split(" ")[1];
+    const args = message.content.split(" ").slice(2);
+
+    if (command === "set-xpmul") {
+        SetXPMultiplier(parseInt(args[0], 10));
+        message.reply(`Set XP multiplier to ${args[0]}`);
+
+        return true;
+    }
+
+    return false;
+}
 
 client.on(Events.ClientReady, async () => {
     // join general vc (uncomment when bun implements node:dgram)
@@ -167,6 +202,8 @@ client.on(Events.ClientReady, async () => {
         .then(() => {
             console.log("Finished fetching members");
         });
+
+    client.user?.setActivity({ name: "Mester", type: ActivityType.Listening });
 
     console.log(`Logged in as ${client.user?.tag}!`);
 });
@@ -224,51 +261,6 @@ process.on("SIGTERM", () => {
     shutdown("SIGTERM");
 });
 
-const browser = await puppeteer
-    .launch({
-        headless: true,
-        args: [
-            "--autoplay-policy=user-gesture-required",
-            "--disable-background-networking",
-            "--disable-background-timer-throttling",
-            "--disable-backgrounding-occluded-windows",
-            "--disable-breakpad",
-            "--disable-client-side-phishing-detection",
-            "--disable-component-update",
-            "--disable-default-apps",
-            "--disable-dev-shm-usage",
-            "--disable-domain-reliability",
-            "--disable-extensions",
-            "--disable-features=AudioServiceOutOfProcess",
-            "--disable-hang-monitor",
-            "--disable-ipc-flooding-protection",
-            "--disable-notifications",
-            "--disable-offer-store-unmasked-wallet-cards",
-            "--disable-popup-blocking",
-            "--disable-print-preview",
-            "--disable-prompt-on-repost",
-            "--disable-renderer-backgrounding",
-            "--disable-setuid-sandbox",
-            "--disable-speech-api",
-            "--disable-sync",
-            "--hide-scrollbars",
-            "--ignore-gpu-blacklist",
-            "--metrics-recording-only",
-            "--mute-audio",
-            "--no-default-browser-check",
-            "--no-first-run",
-            "--no-pings",
-            "--password-store=basic",
-            "--use-gl=swiftshader",
-            "--use-mock-keychain",
-        ],
-    })
-    .catch((error) => {
-        console.warn("Could not launch puppeteer, some functionalities might not work");
-        console.warn(error);
-        return null;
-    });
-
 function GetResFolder() {
     return join(__dirname, "..", "res");
 }
@@ -276,9 +268,6 @@ function GetResFolder() {
 function GetGuild() {
     return client.guilds.cache.get(guildID)!;
 }
-
-const db = new Database(join(__dirname, "..", "data.db"));
-db.exec("PRAGMA journal_mode = wal;");
 
 export { GetGuild, GetResFolder, browser, db };
 

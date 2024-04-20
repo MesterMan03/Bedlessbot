@@ -182,3 +182,4 @@ tools/*
 !tools/setup_db.ts
 
 backup
+chrome-data

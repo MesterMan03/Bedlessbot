@@ -29,6 +29,8 @@ This will create an empty `data.db` SQLite database file in the root directory w
 
 Then set up .env by following the instructions in `.env.example`.
 
+Finally, set up `src/config.ts`. It's already set up, so you should only change the values.
+
 To run:
 
 ```bash

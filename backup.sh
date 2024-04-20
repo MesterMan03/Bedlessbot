@@ -14,4 +14,4 @@ mkdir "$backup_subdir"
 # Copy files matching "data.db*" into the newly created directory
 cp data.db* "$backup_subdir"
 
-echo "Backup completed successfully."
+echo "Backup completed successfully in $backup_subdir."

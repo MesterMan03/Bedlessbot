@@ -77,8 +77,8 @@ async function GetXPFromMessage(message: Message<true>) {
 
     const levelInfo = GetLevelConfig(message.author.id);
 
-    // xp is random number between 5 and 10
-    const xp = Math.floor(Math.random() * (10 - 5 + 1) + 5) * xpMultiplier;
+    // xp is random number between 10 and 15
+    const xp = Math.floor((Math.random() * 6 + 10) * xpMultiplier);
     AddXPToUser(levelInfo, xp, message.member);
 
     return xp;
@@ -90,8 +90,10 @@ async function GetXPFromMessage(message: Message<true>) {
  * @param xp The xp to add - not sanitised, so make sure it's a whole number.
  */
 async function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
+    xp = Math.floor(xp);
+
     // update the user's xp
-    db.exec(`UPDATE levels SET xp = xp + ${Math.floor(xp)} WHERE userid = '${levelInfo.userid}'`);
+    db.exec(`UPDATE levels SET xp = xp + ${xp} WHERE userid = '${levelInfo.userid}'`);
 
     const newLevel = XPToLevel(levelInfo.xp + xp);
     if (newLevel > XPToLevel(levelInfo.xp) && newLevel !== 0) {
@@ -189,10 +191,10 @@ function EndVoiceChat(vs: VoiceState) {
     if (!storedVoiceState) return;
 
     const time = Date.now() - storedVoiceState;
-    const talkingTime = talkingTimes.get(vs.member.id) ?? 0;
+    //const talkingTime = talkingTimes.get(vs.member.id) ?? 0;
 
     // 1 xp for every 5 seconds + 1 xp for every second of talking
-    const xp = Math.floor(time / 1000 / 5) + Math.floor(talkingTime / 1000);
+    const xp = Math.floor(time / 1000 / 5) /*+ Math.floor(talkingTime / 1000)*/;
 
     console.log(
         `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`

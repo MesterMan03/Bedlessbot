@@ -67,7 +67,6 @@ export default {
         await page.goto(destination.toString(), { waitUntil: "networkidle0" });
 
         const buffer = await page.screenshot({ type: "png" });
-        page.close();
 
         interaction
             .editReply({

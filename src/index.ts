@@ -18,6 +18,7 @@ import { WishBirthdays, cronjob } from "./birthdaymanager";
 import { processInteraction } from "./commands/apply";
 import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
+import { fileURLToPath } from "bun";
 
 const clientCommands = new Collection<string, { execute: Function }>();
 
@@ -28,7 +29,7 @@ const guildID = process.env.GUILD_ID!;
 const commands = new Array<RESTPostAPIChatInputApplicationCommandsJSONBody>();
 
 // Grab all the command folders from the commands directory you created earlier
-const __dirname = new URL(".", import.meta.url).pathname;
+const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const foldersPath = path.join(__dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 
@@ -48,7 +49,6 @@ const browser = await puppeteer
     .catch((error) => {
         console.warn("Could not launch puppeteer, some functionalities might not work");
         console.warn(error);
-        return null;
     });
 
 const client = new Client({

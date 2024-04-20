@@ -10,7 +10,11 @@ async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
 }
 
 async function loadUsers(pageCursor: number) {
+  const loadingIndicator =
+    document.querySelector<HTMLParagraphElement>("#loading-indicator")!;
   const page = await FetchPage(pageCursor);
+  if (!page) return false;
+  loadingIndicator.style.display = "initial";
 
   for (const user of page) {
     const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
@@ -56,6 +60,9 @@ async function loadUsers(pageCursor: number) {
     </div>`,
     );
   }
+
+  loadingIndicator.style.display = "none";
+  return true;
 }
 
 let pageCursor = 0;
@@ -65,12 +72,9 @@ await loadUsers(pageCursor);
 pageCursor++;
 
 addEventListener("scroll", async () => {
-  if (
-    scrollY + innerHeight == document.body.clientHeight &&
-    (await FetchPage(pageCursor))
-  ) {
-    await loadUsers(pageCursor);
-    pageCursor++;
+  if (scrollY + innerHeight == document.body.clientHeight) {
+    const success = await loadUsers(pageCursor);
+    if (success) pageCursor++;
   }
 });
 

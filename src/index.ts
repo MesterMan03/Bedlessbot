@@ -14,7 +14,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
-import { cronjob } from "./birthdaymanager";
+import { WishBirthdays, cronjob } from "./birthdaymanager";
 import { processInteraction } from "./commands/apply";
 import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
@@ -145,7 +145,7 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
-    if (message.content.includes("oh my god")) {
+    if (message.content.toLowerCase().includes("oh my god")) {
         // 50% chance
         if (Math.random() < 0.5) await message.reply("oh my god");
     }
@@ -163,6 +163,13 @@ function ExecuteAdminCommand(message: Message) {
     if (command === "set-xpmul") {
         SetXPMultiplier(parseInt(args[0], 10));
         message.reply(`Set XP multiplier to ${args[0]}`);
+
+        return true;
+    }
+
+    if(command === "wish-birthdays") {
+        WishBirthdays();
+        message.reply("Wished birthdays");
 
         return true;
     }

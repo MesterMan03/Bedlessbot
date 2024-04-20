@@ -22,12 +22,14 @@ const timezone = "Europe/London";
 
 async function WishBirthdays() {
     try {
+        console.log("Started wishing birthdays...");
+
         // remove the birthday role from everyone
         const guild = GetGuild();
         const birthdayRole = await guild.roles.fetch(process.env.BIRTHDAY_ROLE!);
         if (!birthdayRole) throw new Error("Couldn't find birthday role");
 
-        for (const member of guild.members.cache.values()) {
+        for (const member of guild.members.cache.filter(m => m.roles.cache.has(birthdayRole.id)).values()) {
             await member.roles.remove(birthdayRole);
         }
 
@@ -36,7 +38,6 @@ async function WishBirthdays() {
 
         // find everyone with a birthday today
         const query = db.query<Omit<Birthday, "datenum">, []>(`SELECT userid, date FROM birthdays WHERE date LIKE '${today}%'`).all();
-
         for (const birthday of query) {
             // get the year component of date
             const year = moment(birthday.date, "DD/MM/YYYY").year();
@@ -64,7 +65,7 @@ async function WishBirthdays() {
     }
 }
 
-// set up cronjob that runs every day at 10:00 in the Europe/London timezone
-const cronjob = cron.schedule("0 10 * * *", WishBirthdays, { timezone });
+// set up cronjob that runs every day at 8:00 in the Europe/London timezone
+const cronjob = cron.schedule("0 8 * * *", WishBirthdays, { timezone });
 
-export { DateToNumber, cronjob, type Birthday, timezone };
+export { DateToNumber, cronjob, type Birthday, timezone, WishBirthdays };

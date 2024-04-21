@@ -21,20 +21,20 @@ const cooldowns = new Map<string, number>();
 
 const youtubeAPI = google.youtube({
     version: "v3",
-    auth: process.env.YOUTUBE_API_KEY,
+    auth: process.env.YOUTUBE_API_KEY
 });
 
 enum VideoPrivacyResult {
     Private,
     NotExist,
-    Failed,
+    Failed
 }
 
 async function checkVideoPrivacy(videoId: string): Promise<VideoPrivacyResult> {
     try {
         const response = await youtubeAPI.videos.list({
             part: ["status"],
-            id: [videoId],
+            id: [videoId]
         });
 
         if (!response?.data?.items) {
@@ -74,7 +74,7 @@ function shortRoleToName(role: string) {
             moonwalk: "Moonwalker",
             god: "Godbridger",
             diagod: "Diagonal Godbridger",
-            telly: "Telly Bridger",
+            telly: "Telly Bridger"
         }[role] ?? "unknown role"
     );
 }
@@ -90,7 +90,7 @@ function roleNameToShort(name: string) {
         Moonwalker: "moonwalk",
         Godbridger: "god",
         "Diagonal Godbridger": "diagod",
-        "Telly Bridger": "telly",
+        "Telly Bridger": "telly"
     }[name];
 }
 
@@ -105,7 +105,7 @@ function shortRoleToRoleID(role: string) {
         moonwalk: "1223797542148640889",
         god: "1223797549933133866",
         diagod: "1223797545952874590",
-        telly: "1223797553703944282",
+        telly: "1223797553703944282"
     }[role];
 }
 
@@ -152,7 +152,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         const reasonCollector = reasonMessage.channel.createMessageCollector({
             filter: (m) => m.author.id === interaction.user.id && m.content.length <= 500,
             time: 60000,
-            max: 1,
+            max: 1
         });
 
         reasonCollector.on("collect", async (reasonMessage) => {
@@ -366,43 +366,43 @@ const commandRoleOption = new SlashCommandStringOption()
     .setChoices(
         {
             name: "Drag clicker",
-            value: "dragclick",
+            value: "dragclick"
         },
         {
             name: "16+ CPS",
-            value: "16cps",
+            value: "16cps"
         },
         {
             name: "Eagle Bridger",
-            value: "eagle",
+            value: "eagle"
         },
         {
             name: "Witchly Bridger",
-            value: "witchly",
+            value: "witchly"
         },
         {
             name: "Breezily Bridger",
-            value: "breezily",
+            value: "breezily"
         },
         {
             name: "Good PvPer",
-            value: "goodpvp",
+            value: "goodpvp"
         },
         {
             name: "Moonwalker",
-            value: "moonwalk",
+            value: "moonwalk"
         },
         {
             name: "Godbridger",
-            value: "god",
+            value: "god"
         },
         {
             name: "Diagonal Godbridger",
-            value: "diagod",
+            value: "diagod"
         },
         {
             name: "Telly Bridger",
-            value: "telly",
+            value: "telly"
         }
     );
 
@@ -473,12 +473,12 @@ export default {
                         .setLabel("Infraction")
                         .setStyle(ButtonStyle.Secondary),
                     new ButtonBuilder().setURL(proofString).setLabel("View Proof").setStyle(ButtonStyle.Link)
-                ),
+                )
             ];
 
             reviewChannel.send({ embeds: [embed], components, files: !isLink ? [proofString] : [] });
         } catch (error) {
             console.log(error);
         }
-    },
+    }
 };

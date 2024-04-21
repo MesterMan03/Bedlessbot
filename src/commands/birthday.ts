@@ -52,5 +52,5 @@ export default {
             .setDescription(`<@${user.id}>'s ${ageString} birthday is ${daysString} on **${nextBirthday.format("DD MMMM YYYY")}** 🕯️`);
 
         return void interaction.reply({ embeds: [embed] });
-    },
+    }
 };

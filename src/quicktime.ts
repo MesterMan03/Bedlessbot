@@ -1,7 +1,7 @@
-import { GuildMember, bold, type GuildTextBasedChannel, type Message, type MessageReaction, type User } from "discord.js";
-import { AddXPToUser, GetLevelConfig } from "./levelmanager";
-import svgCaptcha from "svg-captcha";
+import { GuildMember, type GuildTextBasedChannel, type Message, type MessageReaction } from "discord.js";
 import sharp from "sharp";
+import svgCaptcha from "svg-captcha";
+import { AddXPToUser, GetLevelConfig } from "./levelmanager";
 
 enum QuickTimeType {
     /**
@@ -244,3 +244,4 @@ function RewardUser(member: GuildMember, channel: GuildTextBasedChannel) {
 }
 
 export { StartQuickTime };
+

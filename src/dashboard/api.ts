@@ -2,7 +2,7 @@ import client, { db } from "..";
 import { GetMaxPage } from "../commands/leaderboard";
 import { XPToLevel, type LevelInfo, XPToLevelUp, LevelToXP } from "../levelmanager";
 
-const PageSize = 25;
+const PageSize = 20;
 
 async function FetchPage(page: number) {
     if (page >= GetMaxPage() || !Number.isInteger(page) || page < 0) return null;

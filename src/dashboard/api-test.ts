@@ -1,4 +1,4 @@
-const PageSize = 25;
+const PageSize = 20;
 
 function GenerateRandomName(): string {
     const minLength = 3;

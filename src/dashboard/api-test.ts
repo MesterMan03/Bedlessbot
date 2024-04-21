@@ -27,7 +27,7 @@ async function FetchPageTest(page: number) {
         avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
         // username is a random string between 3 and 32 characters
         username: GenerateRandomName(),
-        progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)],
+        progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
     }));
 
     return new Promise<typeof levels>((res, rej) => {

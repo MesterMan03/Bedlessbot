@@ -21,9 +21,10 @@ export default {
 
         // now we just need to find the offset, so find every birthday that is today or later
         const birthdays = db
-            .query<Omit<Birthday, "datenum">, []>(
-                `SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum ASC LIMIT 10`
-            )
+            .query<
+                Omit<Birthday, "datenum">,
+                []
+            >(`SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum ASC LIMIT 10`)
             .all();
 
         // problem: if we're at the end of the year, we need to wrap around to the start
@@ -83,5 +84,5 @@ export default {
             );
 
         await interaction.reply({ embeds: [embed] });
-    },
+    }
 };

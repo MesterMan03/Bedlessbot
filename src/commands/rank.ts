@@ -73,14 +73,14 @@ export default {
                 files: [
                     {
                         attachment: buffer,
-                        name: "rank.png",
-                    },
-                ],
+                        name: "rank.png"
+                    }
+                ]
             })
             .then(() => {
                 page.close();
             });
-    },
+    }
 };
 
 /**
@@ -100,12 +100,12 @@ function AddRankFieldEmbeds(embed: EmbedBuilder, levelInfo: LevelInfo) {
         {
             name: `Level (XP)`,
             value: `${userLevel} (${relativexp})`,
-            inline: true,
+            inline: true
         },
         {
             name: `Total XP`,
             value: `${levelInfo.xp}`,
-            inline: true,
+            inline: true
         },
         {
             name: `XP until next level (%)`,
@@ -113,8 +113,8 @@ function AddRankFieldEmbeds(embed: EmbedBuilder, levelInfo: LevelInfo) {
             // this weird part calculates the percentage of the xp until the next level
             value: `${XPToLevelUp(userLevel) - relativexp} (${((100 * relativexp) / XPToLevelUp(userLevel)).toFixed(2)}%)`,
 
-            inline: true,
-        },
+            inline: true
+        }
     ]);
 }
 

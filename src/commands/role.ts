@@ -44,5 +44,5 @@ export default {
             await member.roles.remove(role.id);
             await interaction.reply(`Removed the role ${role.name} from ${member.user.tag}`);
         }
-    },
+    }
 };

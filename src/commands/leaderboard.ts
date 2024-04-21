@@ -36,9 +36,9 @@ export default {
 
         // show embed
         interaction.editReply({
-            embeds: [embed],
+            embeds: [embed]
         });
-    },
+    }
 };
 
 /**
@@ -77,8 +77,8 @@ async function ReadLevels(levels: { userid: string; xp: number }[], page: number
                 // this part figures out the position of the rank in the leaderboard
                 name: `${(page * pageSize + i + 1).toString()}. ${username}`,
                 value: `Level: ${level.toString()} | Total XP: ${levelInfo.xp}\nNext level: ${levelPercentageString}`,
-                inline: false,
-            },
+                inline: false
+            }
         ]);
     }
 

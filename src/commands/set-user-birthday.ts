@@ -45,10 +45,10 @@ export default {
         db.query("INSERT OR REPLACE INTO birthdays (userid, date, datenum) VALUES ($userid, $date, $datenum)").run({
             $userid: user.id,
             $date: date.format("DD/MM/YYYY"),
-            $datenum: dateNum,
+            $datenum: dateNum
         });
 
         const embed = new EmbedBuilder().setColor("Grey").setDescription(`Set <@${user.id}>'s birthday to **${dateStr}**.`);
         return void interaction.reply({ embeds: [embed] });
-    },
+    }
 };

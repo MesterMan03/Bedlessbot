@@ -98,5 +98,5 @@ export default {
 
         // send the embed
         interaction.editReply({ embeds: [embed] });
-    },
+    }
 };

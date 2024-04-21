@@ -52,8 +52,8 @@ async function loadUsers(pageCursor: number) {
       <label>
         <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
         <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(
-                (user.progress[0] * 100) / user.progress[1]
-            )}</progress>
+            (user.progress[0] * 100) / user.progress[1]
+        )}</progress>
         ${xpInfoHTML}
       </label>
     </div>`

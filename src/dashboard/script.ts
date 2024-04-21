@@ -9,6 +9,19 @@ async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
     return res.json();
 }
 
+function showToast(el: HTMLElement) {
+  const toast = document.querySelector<HTMLDivElement>("#toast")!;
+  el.addEventListener("click", () => {
+    toast.style.opacity = "1";
+    toast.style.visibility = "visible";
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.visibility = "hidden";
+    }, 2000);
+  })
+}
+
 async function loadUsers(pageCursor: number) {
     const loadingIndicator = document.querySelector<HTMLParagraphElement>("#loading-indicator")!;
 
@@ -22,11 +35,13 @@ async function loadUsers(pageCursor: number) {
     for (const user of page) {
         const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
         const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
+
         if (user.pos === 1) {
             const first = document.querySelector<HTMLDivElement>("#first")!;
             first.querySelector("h2")!.innerHTML = podiumHTML;
             first.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             first.querySelector("#xp")!.innerHTML = xpInfoHTML;
+            showToast(first.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -35,6 +50,7 @@ async function loadUsers(pageCursor: number) {
             second.querySelector("h2")!.innerHTML = podiumHTML;
             second.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             second.querySelector("#xp")!.innerHTML = xpInfoHTML;
+            showToast(second.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -43,6 +59,7 @@ async function loadUsers(pageCursor: number) {
             third.querySelector("h2")!.innerHTML = podiumHTML;
             third.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             third.querySelector("#xp")!.innerHTML = xpInfoHTML;
+            showToast(third.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -61,6 +78,8 @@ async function loadUsers(pageCursor: number) {
       </label>
     </div>`
         );
+
+        showToast(document.querySelector(`.name[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
     }
 
     loadingIndicator.style.display = "none";
@@ -83,18 +102,4 @@ addEventListener("scroll", async () => {
         })
         if (success) pageCursor++;
     }
-});
-
-const copyButtons = document.querySelectorAll("[onclick]");
-const toast = document.querySelector<HTMLDivElement>("#toast")!;
-copyButtons.forEach((b) => {
-    b.addEventListener("click", () => {
-        toast.style.opacity = "1";
-        toast.style.visibility = "visible";
-
-        setTimeout(() => {
-            toast.style.opacity = "0";
-            toast.style.visibility = "hidden";
-        }, 2000);
-    });
 });

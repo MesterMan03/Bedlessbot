@@ -1,5 +1,7 @@
 import { GuildMember, bold, type GuildTextBasedChannel, type Message, type MessageReaction, type User } from "discord.js";
 import { AddXPToUser, GetLevelConfig } from "./levelmanager";
+import svgCaptcha from "svg-captcha";
+import sharp from "sharp";
 
 enum QuickTimeType {
     /**
@@ -9,7 +11,7 @@ enum QuickTimeType {
     /**
      * A random emoji will be picked which users have to react with.
      */
-    ReactEmoji,
+    ReactEmoji
 }
 
 // emojis that may be used in the quick time event
@@ -163,7 +165,7 @@ const emojis = [
     "🛂",
     "🛃",
     "🛄",
-    "🛅",
+    "🛅"
 ];
 
 function getRandomEmoji() {
@@ -174,45 +176,59 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
     // generate a random type from QuickTimeType
     const type = Math.floor((Math.random() * Object.keys(QuickTimeType).length) / 2);
 
-    const randomText = type === QuickTimeType.RandomText ? `${Math.random().toString(36).substring(2, 9)}` : getRandomEmoji();
+    const randomText =
+        type === QuickTimeType.RandomText
+            ? svgCaptcha.create({ ignoreChars: "0o1i", color: true, size: 7, background: "FE0000" })
+            : getRandomEmoji();
 
     // send a message based on the type
-    const message = await channel.send( 
-        `Quick time event! ${
-            type === QuickTimeType.RandomText ? "Type this text:" : "React with"
-        } ${bold(randomText)} to win! You have 30 seconds.`
-    );
+    const message = await channel.send({
+        content: `Quick time event! ${
+            type === QuickTimeType.RandomText ? "Type the text shown on the image" : "React with"
+            // a backslash is inserted before the emoji to turn it into the unicode representation, this makes it impossible to just view the name of the emoji
+        } ${typeof randomText === "string" ? "\\" + randomText : ""} to win! You have 30 seconds.`,
+        files:
+            typeof randomText === "object"
+                ? [
+                      {
+                          attachment: Buffer.from(await sharp(Buffer.from(randomText.data)).resize(300).png().toBuffer()),
+                          name: "captcha.png",
+                          contentType: "image/png"
+                      }
+                  ]
+                : undefined
+    });
 
     // set up a message collector or reaction collector based on the type
-    if (type === QuickTimeType.RandomText) {
-        const filter = (m: Message) => m.content === randomText;
+    if (typeof randomText !== "string") {
+        const filter = (m: Message) => m.content === randomText.text;
         const collector = channel.createMessageCollector({ filter, time: 30_000, max: 1 });
 
         collector.on("collect", async (m) => {
             // do something when the user types the correct text
-            if(!m.member) return;
+            if (!m.member) return;
             RewardUser(m.member, channel);
         });
 
-        collector.on("end", (collected, reason) => {
+        collector.on("end", (collected) => {
             // do something when the time runs out
-            if(collected.size === 0) {
+            if (collected.size === 0) {
                 message.reply("No one typed the text in time!");
             }
         });
     } else {
-        const filter = (reaction: MessageReaction, user: User) => reaction.emoji.name === randomText;
+        const filter = (reaction: MessageReaction) => reaction.emoji.name === randomText;
         const collector = message.createReactionCollector({ filter, time: 30_000, max: 1 });
 
-        collector.on("collect", async (reaction, user) => {
+        collector.on("collect", async (_, user) => {
             // do something when the user reacts with the correct emoji
             const member = await message.guild.members.fetch(user);
             RewardUser(member, channel);
         });
 
-        collector.on("end", (collected, reason) => {
+        collector.on("end", (collected) => {
             // do something when the time runs out
-            if(collected.size === 0) {
+            if (collected.size === 0) {
                 message.reply("No one reacted in time!");
             }
         });

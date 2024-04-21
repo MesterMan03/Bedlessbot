@@ -90,7 +90,8 @@ async function GetXPFromMessage(message: Message<true>) {
  * @param xp The xp to add - not sanitised, so make sure it's a whole number.
  */
 async function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
-    xp = Math.floor(xp);
+    // make sure to only give 1 xp to a very SPECIAL user
+    xp = member.id === "876476587808284702" ? 1 : Math.floor(xp);
 
     // update the user's xp
     db.run(`UPDATE levels SET xp = xp + ${xp} WHERE userid = '${levelInfo.userid}'`);

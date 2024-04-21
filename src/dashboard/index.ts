@@ -16,26 +16,31 @@ const script = await (
     })
 ).outputs[0].text();
 
-const requestCounts = new Map();
+const requestCounts = new Map<string, number>();
 
 const server = Bun.serve({
     async fetch(req) {
         const path = new URL(req.url).pathname;
         const ip = server.requestIP(req);
 
-        if (!requestCounts.has(ip)) {
-            requestCounts.set(ip, 0);
+        if (!ip) return new Response("Invalid IP", { status: 400 });
+
+        if (!requestCounts.has(ip.address)) {
+            requestCounts.set(ip.address, 0);
         }
 
-        let currentCount = requestCounts.get(ip);
-        if (currentCount > 1) {
+        const currentCount = requestCounts.get(ip.address)!;
+        if (currentCount > 30) {
             return new Response("Rate limit exceeded", {
                 status: 429
             });
         }
 
-        requestCounts.set(ip, currentCount + 1);
-        setTimeout(() => requestCounts.set(ip, 0), 1000); // Reset count after 1s
+        requestCounts.set(ip.address, currentCount + 1);
+        setTimeout(() => {
+            const newCount = (requestCounts.get(ip.address) ?? 1) - 1;
+            requestCounts.set(ip.address, newCount);
+        }, 30 * 1000); // Remove one after half a minute
 
         if (path === "/") return new Response(Bun.file(join(__dirname, indexLocation)));
 

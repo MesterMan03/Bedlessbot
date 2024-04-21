@@ -20,6 +20,7 @@ import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
 import { fileURLToPath } from "bun";
 import { StartQuickTime } from "./quicktime";
+import "./dashboard/index"; // load the dashboard
 
 const clientCommands = new Collection<string, { execute: Function }>();
 

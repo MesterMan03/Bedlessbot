@@ -1,6 +1,6 @@
 import { join } from "path";
-//import { FetchPage } from "./api"; //uncomment when ready for production
-import { FetchPageTest as FetchPage } from "./api-test";
+import { FetchPage } from "./api"; //uncomment when ready for production
+//import { FetchPageTest as FetchPage } from "./api-test";
 import { fileURLToPath } from "bun";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());

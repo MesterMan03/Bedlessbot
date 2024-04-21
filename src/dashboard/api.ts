@@ -24,7 +24,7 @@ async function FetchPage(page: number) {
                 xp: levelInfo.xp,
                 userid: levelInfo.userid,
                 avatar: user
-                    ? user.displayAvatarURL({ forceStatic: true, size: 256, extension: "png" })
+                    ? user.displayAvatarURL({ forceStatic: true, size: 64, extension: "webp" })
                     : "https://cdn.discordapp.com/embed/avatars/0.png",
                 username: user ? user.username : "unknown",
                 progress: [progress, progressPercent]

@@ -32,7 +32,7 @@ async function loadUsers(pageCursor: number) {
     }
 
     for (const user of page) {
-        const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
+        const podiumHTML = `<img src="${user.avatar}" loading="lazy"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
         const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
 
         if (user.pos === 1) {
@@ -64,7 +64,7 @@ async function loadUsers(pageCursor: number) {
             "beforeend",
             `<div class="user">
       <p class="pos">${user.pos}</p>
-      <p class="name" onclick="navigator.clipboard.writeText('${user.userid}')"><img src="${user.avatar}"><span>${user.username}</span></p>
+      <p class="name" onclick="navigator.clipboard.writeText('${user.userid}')"><img src="${user.avatar}" loading="lazy"><span>${user.username}</span></p>
       <label>
         <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
         <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(

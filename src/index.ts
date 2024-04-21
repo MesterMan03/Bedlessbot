@@ -20,6 +20,8 @@ import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from 
 import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
 
+console.log(`Started ${process.env.NODE_ENV} bot`);
+
 const token = process.env.TOKEN!;
 const clientID = process.env.CLIENT_ID!;
 const guildID = process.env.GUILD_ID!;

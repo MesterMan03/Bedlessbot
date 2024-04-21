@@ -9,9 +9,9 @@ async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
     return res.json();
 }
 
-function showToast(el: HTMLElement) {
-  const toast = document.querySelector<HTMLDivElement>("#toast")!;
-  el.addEventListener("click", () => {
+const toast = document.getElementById("toast")!;
+
+function showToast() {
     toast.style.opacity = "1";
     toast.style.visibility = "visible";
 
@@ -19,7 +19,6 @@ function showToast(el: HTMLElement) {
         toast.style.opacity = "0";
         toast.style.visibility = "hidden";
     }, 2000);
-  })
 }
 
 async function loadUsers(pageCursor: number) {
@@ -28,9 +27,9 @@ async function loadUsers(pageCursor: number) {
     loadingIndicator.style.display = "initial";
     const page = await FetchPage(pageCursor);
     if (!page) {
-      loadingIndicator.style.display = "none";
-      return false;
-    };
+        loadingIndicator.style.display = "none";
+        return false;
+    }
 
     for (const user of page) {
         const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
@@ -41,7 +40,6 @@ async function loadUsers(pageCursor: number) {
             first.querySelector("h2")!.innerHTML = podiumHTML;
             first.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             first.querySelector("#xp")!.innerHTML = xpInfoHTML;
-            showToast(first.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -50,7 +48,6 @@ async function loadUsers(pageCursor: number) {
             second.querySelector("h2")!.innerHTML = podiumHTML;
             second.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             second.querySelector("#xp")!.innerHTML = xpInfoHTML;
-            showToast(second.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -59,7 +56,6 @@ async function loadUsers(pageCursor: number) {
             third.querySelector("h2")!.innerHTML = podiumHTML;
             third.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
             third.querySelector("#xp")!.innerHTML = xpInfoHTML;
-            showToast(third.querySelector(`span[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
             continue;
         }
 
@@ -78,13 +74,19 @@ async function loadUsers(pageCursor: number) {
       </label>
     </div>`
         );
-
-        showToast(document.querySelector(`.name[onclick="navigator.clipboard.writeText('${user.userid}')"]`)!)
     }
 
     loadingIndicator.style.display = "none";
     return true;
 }
+
+// set up toast
+document.addEventListener("click", function (event) {
+    //@ts-ignore It does exist, idiot
+    if (event.target?.closest(".name")) {
+        showToast();
+    }
+});
 
 let pageCursor = 0;
 
@@ -97,9 +99,9 @@ addEventListener("scroll", async () => {
     if (scrollY + innerHeight == document.body.clientHeight && done) {
         done = false;
         const success = await loadUsers(pageCursor).then((success) => {
-          done = true;
-          return success;
-        })
+            done = true;
+            return success;
+        });
         if (success) pageCursor++;
     }
 });

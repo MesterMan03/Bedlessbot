@@ -1,3 +1,4 @@
+import { fileURLToPath } from "bun";
 import { Database } from "bun:sqlite";
 import {
     ActivityType,
@@ -7,28 +8,29 @@ import {
     Message,
     REST,
     Routes,
-    SlashCommandBuilder,
-    type RESTPostAPIChatInputApplicationCommandsJSONBody,
+    type RESTPostAPIChatInputApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
 import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
-import { processInteraction } from "./commands/apply";
 import config from "./config";
 import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
-import { fileURLToPath } from "bun";
 import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
-
-const clientCommands = new Collection<string, { execute: Function }>();
 
 const token = process.env.TOKEN!;
 const clientID = process.env.CLIENT_ID!;
 const guildID = process.env.GUILD_ID!;
 
-const commands = new Array<RESTPostAPIChatInputApplicationCommandsJSONBody>();
+type ClientCommand = {
+    execute: Function;
+    data: RESTPostAPIChatInputApplicationCommandsJSONBody;
+    interactions?: string[];
+    processInteraction?: Function;
+};
+const clientCommands = new Collection<string, ClientCommand>();
 
 // Grab all the command folders from the commands directory you created earlier
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
@@ -62,11 +64,10 @@ const browser = await puppeteer
 
 for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
-    const command = (await import(filePath)) as { default: { data: SlashCommandBuilder; execute: Function } };
+    const command = (await import(filePath)) as { default: ClientCommand };
 
     if ("data" in command.default && "execute" in command.default) {
         clientCommands.set(command.default.data.name, command.default);
-        commands.push(command.default.data.toJSON());
     } else {
         console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
     }
@@ -77,13 +78,13 @@ const rest = new REST().setToken(token);
 
 // reload slash commands
 try {
+    const commands = clientCommands.map((command) => command.data);
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
     // The put method is used to fully refresh all commands in the guild with the current set
-    const data = await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
+    await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
 
-    //@ts-ignore
-    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+    console.log(`Successfully reloaded ${commands.length} application (/) commands.`);
 } catch (error) {
     // And of course, make sure you catch and log any errors!
     console.error(error);
@@ -103,15 +104,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
                 return;
             }
 
-            await command.execute(interaction);
+            return await command.execute(interaction);
         }
 
-        if (interaction.isButton() && ["accept", "deny", "infraction"].includes(interaction.customId)) {
-            await processInteraction(interaction);
-        }
+        if (interaction.isMessageComponent()) {
+            const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
 
-        if (interaction.isAutocomplete() && interaction.commandName === "apply") {
-            interaction.respond([{ name: "File proof (select this if you're uploading a file from your device)", value: "fileproof" }]);
+            if (!command?.processInteraction) {
+                await interaction.reply({ content: `No command matching ${interaction.customId} was found.`, ephemeral: true });
+                return;
+            }
+
+            return await command.processInteraction(interaction);
         }
     } catch (error) {
         console.error(error);

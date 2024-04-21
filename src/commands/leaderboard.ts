@@ -1,4 +1,12 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import {
+    SlashCommandBuilder,
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    type Interaction,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} from "discord.js";
 import client, { db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelmanager";
 
@@ -34,12 +42,83 @@ export default {
 
         const embed = await ReadLevels(levels, page, maxPage);
 
+        // create components
+        const components = [
+            new ActionRowBuilder<ButtonBuilder>().setComponents(
+                new ButtonBuilder().setCustomId("lb-first").setLabel("First page").setEmoji("⏮").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-back").setEmoji("◀").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-for").setEmoji("▶").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-last").setLabel("Last page").setEmoji("⏭").setStyle(ButtonStyle.Secondary)
+            ),
+            new ActionRowBuilder<ButtonBuilder>().setComponents(
+                new ButtonBuilder().setCustomId("lb-back50").setLabel("50").setEmoji("⏪").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-back15").setLabel("15").setEmoji("◀").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-for15").setLabel("15").setEmoji("▶").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("lb-for50").setLabel("50").setEmoji("⏩").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setURL("https://bedless.mester.info").setLabel("View in browser").setStyle(ButtonStyle.Link)
+            )
+        ];
+
         // show embed
         interaction.editReply({
-            embeds: [embed]
+            embeds: [embed],
+            components
         });
-    }
+    },
+
+    interactions: ["lb-for", "lb-back", "lb-first", "lb-last", "lb-for15", "lb-back15", "lb-for50", "lb-back50"],
+
+    processInteraction
 };
+
+async function processInteraction(interaction: Interaction) {
+    if (!interaction.isMessageComponent()) return;
+
+    const embed = interaction.message.embeds[0]!;
+
+    // check if the leaderboard isn't loading already
+    if (embed.footer) {
+        return await interaction.reply({ content: "The leaderboard is already loading.", ephemeral: true });
+    }
+
+    await interaction.deferUpdate();
+
+    // get current page from the embed title
+    let page = parseInt(embed.title!.split(" ")[3]);
+    const maxPage = GetMaxPage();
+
+    // add loading page text
+    const embedBuilder = EmbedBuilder.from(embed);
+    embedBuilder.setFooter({ text: "Loading page..." });
+
+    interaction.editReply({ embeds: [embedBuilder] });
+
+    // change page
+    if (interaction.customId === "lb-for") page = Math.min(page + 1, maxPage);
+    if (interaction.customId === "lb-back") page = Math.max(page - 1, 1);
+    if (interaction.customId === "lb-first") page = 1;
+    if (interaction.customId === "lb-last") page = maxPage;
+    if (interaction.customId === "lb-for15") page = Math.min(page + 15, maxPage);
+    if (interaction.customId === "lb-back15") page = Math.max(page - 15, 1);
+    if (interaction.customId === "lb-for50") page = Math.min(page + 50, maxPage);
+    if (interaction.customId === "lb-back50") page = Math.max(page - 50, 1);
+
+    // page must start from 0 indexing
+    page -= 1;
+
+    // redraw the embed
+    const levels = db
+        .query<{ userid: string; xp: number }, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${pageSize} OFFSET ${pageSize * page}`)
+        .all();
+
+    if (levels.length === 0) {
+        return void interaction.followUp({ content: "No levels found.", ephemeral: true });
+    }
+
+    const newEmbed = await ReadLevels(levels, page, maxPage);
+
+    interaction.editReply({ embeds: [newEmbed] });
+}
 
 /**
  * A function for reading an array of levels and turning it into a nice embed.

@@ -109,7 +109,7 @@ function shortRoleToRoleID(role: string) {
     }[role];
 }
 
-export async function processInteraction(interaction: ButtonInteraction) {
+async function processInteraction(interaction: ButtonInteraction) {
     const outcomeChannel = (await client.channels.fetch(process.env.OUTCOME_CHANNEL!)) as TextBasedChannel;
     if (!outcomeChannel) throw new Error("what the fuck");
 
@@ -129,7 +129,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         return;
     }
 
-    if (interaction.customId === "accept") {
+    if (interaction.customId === "ap-accept") {
         embed.setDescription(`Application accepted by <@${interaction.user.id}>`).setColor("Green");
         interaction.update({ embeds: [embed], components: [] });
 
@@ -141,7 +141,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         member.roles.add(roleToAdd);
     }
 
-    if (interaction.customId === "deny") {
+    if (interaction.customId === "ap-deny") {
         await interaction.deferUpdate();
 
         // ask for reason
@@ -179,7 +179,7 @@ export async function processInteraction(interaction: ButtonInteraction) {
         });
     }
 
-    if (interaction.customId === "infraction") {
+    if (interaction.customId === "ap-infraction") {
         embed.setDescription(`Infraction given by <@${interaction.user.id}>`).setColor("Red");
         interaction.update({ embeds: [embed], components: [] });
 
@@ -432,6 +432,10 @@ export default {
                 )
         ),
 
+    interactions: ["ap-accept", "ap-deny", "ap-infraction"],
+
+    processInteraction,
+
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             if (!interaction.inCachedGuild()) {
@@ -465,10 +469,10 @@ export default {
 
             const components = [
                 new ActionRowBuilder<ButtonBuilder>().setComponents(
-                    new ButtonBuilder().setCustomId("accept").setLabel("Accept").setStyle(ButtonStyle.Success),
-                    new ButtonBuilder().setCustomId("deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder().setCustomId("ap-accept").setLabel("Accept").setStyle(ButtonStyle.Success),
+                    new ButtonBuilder().setCustomId("ap-deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
                     new ButtonBuilder()
-                        .setCustomId("infraction")
+                        .setCustomId("ap-infraction")
                         .setEmoji("907725559352664154")
                         .setLabel("Infraction")
                         .setStyle(ButtonStyle.Secondary),

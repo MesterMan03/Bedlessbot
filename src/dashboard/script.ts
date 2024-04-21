@@ -12,9 +12,12 @@ async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
 async function loadUsers(pageCursor: number) {
     const loadingIndicator = document.querySelector<HTMLParagraphElement>("#loading-indicator")!;
 
-    const page = await FetchPage(pageCursor);
-    if (!page) return false;
     loadingIndicator.style.display = "initial";
+    const page = await FetchPage(pageCursor);
+    if (!page) {
+      loadingIndicator.style.display = "none";
+      return false;
+    };
 
     for (const user of page) {
         const podiumHTML = `<img src="${user.avatar}"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
@@ -70,9 +73,14 @@ let pageCursor = 0;
 await loadUsers(pageCursor);
 pageCursor++;
 
+let done = true;
 addEventListener("scroll", async () => {
-    if (scrollY + innerHeight == document.body.clientHeight) {
-        const success = await loadUsers(pageCursor);
+    if (scrollY + innerHeight == document.body.clientHeight && done) {
+        done = false;
+        const success = await loadUsers(pageCursor).then((success) => {
+          done = true;
+          return success;
+        })
         if (success) pageCursor++;
     }
 });

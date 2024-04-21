@@ -190,10 +190,9 @@ function EndVoiceChat(vs: VoiceState) {
     if (!storedVoiceState) return;
 
     const time = Date.now() - storedVoiceState;
-    //const talkingTime = talkingTimes.get(vs.member.id) ?? 0;
 
     // 1 xp for every 5 seconds + 1 xp for every second of talking
-    const xp = Math.floor(time / 1000 / 5); /*+ Math.floor(talkingTime / 1000)*/
+    const xp = Math.floor(time / 1000 / 5);
 
     console.log(
         `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`
@@ -217,5 +216,6 @@ export {
     EndVoiceChat,
     SetXPMultiplier,
     AddXPToUser,
+    ManageLevelRole,
     type LevelInfo
 };

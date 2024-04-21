@@ -1,4 +1,4 @@
-import { GuildMember, type GuildTextBasedChannel, type Message, type MessageReaction } from "discord.js";
+import { GuildMember, inlineCode, type GuildTextBasedChannel, type Message, type MessageReaction } from "discord.js";
 import sharp from "sharp";
 import svgCaptcha from "svg-captcha";
 import { AddXPToUser, GetLevelConfig } from "./levelmanager";
@@ -184,9 +184,9 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
     // send a message based on the type
     const message = await channel.send({
         content: `Quick time event! ${
-            type === QuickTimeType.RandomText ? "Type the text shown on the image" : "React with"
+            type === QuickTimeType.RandomText ? "Type the text shown on the image" : "React with "
             // a backslash is inserted before the emoji to turn it into the unicode representation, this makes it impossible to just view the name of the emoji
-        } ${typeof randomText === "string" ? "\\" + randomText : ""} to win! You have 30 seconds.`,
+        }${typeof randomText === "string" ? inlineCode(randomText) : ""} to win! You have 30 seconds.`,
         files:
             typeof randomText === "object"
                 ? [
@@ -229,7 +229,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
         collector.on("end", (collected) => {
             // do something when the time runs out
             if (collected.size === 0) {
-                message.reply("No one reacted in time!");
+                message.reply(`No one reacted in time! The emoji was ${randomText}`);
             }
         });
     }
@@ -244,4 +244,3 @@ function RewardUser(member: GuildMember, channel: GuildTextBasedChannel) {
 }
 
 export { StartQuickTime };
-

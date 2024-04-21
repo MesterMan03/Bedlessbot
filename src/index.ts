@@ -16,7 +16,15 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
 import config from "./config";
-import { EndVoiceChat, GetXPFromMessage, SetXPMultiplier, StartVoiceChat } from "./levelmanager";
+import {
+    EndVoiceChat,
+    GetLevelConfig,
+    GetXPFromMessage,
+    ManageLevelRole,
+    SetXPMultiplier,
+    StartVoiceChat,
+    XPToLevel
+} from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
 
@@ -44,16 +52,16 @@ db.run("PRAGMA journal_mode = wal;");
 
 const client = new Client({
     allowedMentions: {
-        parse: ["users"],
+        parse: ["users"]
     },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"],
+    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
 });
 
 const browser = await puppeteer
     .launch({
         headless: true,
         userDataDir: join(__dirname, "..", "chrome-data"),
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
     .then((browser) => {
         console.log("Puppeteer launched successfully");
@@ -143,6 +151,10 @@ client.on(Events.MessageCreate, async (message) => {
 
     if (message.author.bot) return;
 
+    if (message.channelId === process.env.APPLICATION_CHANNEL!) {
+        return void message.delete();
+    }
+
     // check if message starts with the bots mention and member has admin
     if (message.content.startsWith(`<@${clientID}>`)) {
         if (message.member?.permissions.has("Administrator")) {
@@ -175,26 +187,21 @@ client.on(Events.MessageCreate, async (message) => {
     GetXPFromMessage(message);
 });
 
-function ExecuteAdminCommand(message: Message) {
-    const command = message.content.split(" ")[1];
-    const args = message.content.split(" ").slice(2);
+client.on(Events.GuildMemberAdd, (member) => {
+    if (member.guild.id !== guildID) return;
 
-    if (command === "set-xpmul") {
-        SetXPMultiplier(parseInt(args[0], 10));
-        message.reply(`Set XP multiplier to ${args[0]}`);
+    // check for level roles
+    const level = XPToLevel(GetLevelConfig(member.id).xp);
+    ManageLevelRole(member, level);
 
-        return true;
+    // give back roles if they had them
+    const rolesToGive = db.query<{ userid: string; roleid: string }, []>(`SELECT * FROM roles_given WHERE userid = ${member.id}`).all();
+    if(rolesToGive.length !== 0) {
+        for(const roleToGive of rolesToGive) {
+            member.roles.add(roleToGive.roleid, "joined back");
+        }
     }
-
-    if (command === "wish-birthdays") {
-        WishBirthdays();
-        message.reply("Wished birthdays");
-
-        return true;
-    }
-
-    return false;
-}
+});
 
 client.on(Events.ClientReady, async () => {
     await GetGuild()
@@ -230,7 +237,34 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     }
 });
 
-client.login(token);
+function ExecuteAdminCommand(message: Message) {
+    const command = message.content.split(" ")[1];
+    const args = message.content.split(" ").slice(2);
+
+    if (command === "set-xpmul") {
+        SetXPMultiplier(parseInt(args[0], 10));
+        message.reply(`Set XP multiplier to ${args[0]}`);
+
+        return true;
+    }
+
+    if (command === "wish-birthdays") {
+        WishBirthdays();
+        message.reply("Wished birthdays");
+
+        return true;
+    }
+
+    return false;
+}
+
+function GetResFolder() {
+    return join(__dirname, "..", "res");
+}
+
+function GetGuild() {
+    return client.guilds.cache.get(guildID)!;
+}
 
 function shutdown(reason?: string) {
     if (reason) {
@@ -261,13 +295,8 @@ process.on("SIGTERM", () => {
     shutdown("SIGTERM");
 });
 
-function GetResFolder() {
-    return join(__dirname, "..", "res");
-}
-
-function GetGuild() {
-    return client.guilds.cache.get(guildID)!;
-}
+// start the bot
+client.login(token);
 
 export { GetGuild, GetResFolder, browser, db };
 

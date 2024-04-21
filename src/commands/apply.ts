@@ -138,6 +138,9 @@ async function processInteraction(interaction: ButtonInteraction) {
         const roleToAdd = shortRoleToRoleID(role);
         if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) return;
 
+        // save role in db
+        db.run(`INSERT OR IGNORE INTO roles_given (userid, roleid) VALUES ('${member.id}', '${roleToAdd}')`);
+
         member.roles.add(roleToAdd);
     }
 

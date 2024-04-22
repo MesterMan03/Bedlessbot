@@ -256,6 +256,20 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // validate link proof
     if (typeof proof === "string") {
+        proof = proof.trim();
+
+        // pre-validation 1 - check if link contains spaces
+        if (proof.includes(" ")) {
+            await interaction.editReply("Proof link cannot contain spaces.");
+            return null;
+        }
+
+        // pre-validation 2 - check if link contains periods
+        if (!proof.includes(".")) {
+            await interaction.editReply("Invalid proof link.");
+            return null;
+        }
+
         // check if proof is valid but is missing https
         let canParseProof = URL.canParse(proof);
         if (!canParseProof && URL.canParse("https://" + proof)) {
@@ -265,7 +279,7 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
         // verify the proof is a valid url
         if (!canParseProof) {
-            await interaction.editReply("Invalid proof URL.");
+            await interaction.editReply("Invalid proof link.");
             return null;
         }
 

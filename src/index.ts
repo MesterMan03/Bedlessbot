@@ -151,7 +151,7 @@ client.on(Events.MessageCreate, async (message) => {
 
     if (message.author.bot) return;
 
-    if (message.channelId === process.env.APPLICATION_CHANNEL!) {
+    if (message.channelId === process.env.APPLICATIONS_CHANNEL!) {
         return void message.delete();
     }
 

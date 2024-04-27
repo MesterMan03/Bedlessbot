@@ -243,11 +243,9 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
     }
 
     // check if user has at least 3 cheatpoints
-    const cheatpoint = (
-        db.query(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`).get() as {
-            cheatpoint: number;
-        } | null
-    )?.cheatpoint;
+    const cheatpoint = db
+        .query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`)
+        .get()?.cheatpoint;
 
     if (cheatpoint && cheatpoint >= 3) {
         await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");

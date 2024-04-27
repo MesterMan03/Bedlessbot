@@ -6,20 +6,21 @@ Bedlessbot uses Bun and is incompatible with Node. Therefore you first have to i
 
 Follow the instructions at https://bun.sh/docs/installation
 
-To clone the repository:
+1. **Clone the repository**:
 
+bash
 ```
 git clone https://github.com/MesterMan03/Bedlessbot.git
 cd Bedlessbot
 ```
 
-To install dependencies:
+2. **Install dependencies**:
 
 ```bash
 bun install
 ```
 
-First time setup:
+3. **Set up the database**:
 
 ```bash
 bun run tools/setup_db.ts
@@ -27,14 +28,22 @@ bun run tools/setup_db.ts
 
 This will create an empty `data.db` SQLite database file in the root directory with the correct tables set up.
 
-Then set up .env by following the instructions in `.env.example`.
+4. **Set up .env**:
 
-Finally, set up `src/config.ts`. It's already set up, so you should only change the values.
+Create a `.env` file by following `.env.example`.
+
+5. **Set up config**:
+ 
+Finally, set up `src/config.ts`. The file already exists, so you just need to fill in the values.
+
+6. **Set up secret**:
+
+If you want to use the [machine-learning API](https://github.com/MesterMan03/Bedlessbot-API), you must provide the secret you generated for the API. Create a `secret` file in the root directory and paste the secret in it (it should be a hexadecimal string).
+
+## Usage
 
 To run:
 
 ```bash
 bun run src/index.ts
 ```
-
-This project was created using `bun init` in bun v1.0.33. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.

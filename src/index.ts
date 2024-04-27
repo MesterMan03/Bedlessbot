@@ -27,6 +27,7 @@ import {
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
+import { SendRequest } from "./apimanager";
 
 console.log(`Started ${process.env.NODE_ENV} bot`);
 
@@ -181,6 +182,18 @@ client.on(Events.MessageCreate, async (message) => {
         StartQuickTime(message.channel);
     }
 
+    // use transformation model to find potential answers to a question
+    SendRequest({ text: message.cleanContent }).then((response) => {
+        if (response.status !== 200) return;
+
+        const answer = response.data.answer as string;
+
+        message.reply(answer).catch(() => {
+            // the message was probably deleted
+            return;
+        });
+    });
+
     // check for blocked channels and no-xp role
     if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) return;
 
@@ -196,8 +209,8 @@ client.on(Events.GuildMemberAdd, (member) => {
 
     // give back roles if they had them
     const rolesToGive = db.query<{ userid: string; roleid: string }, []>(`SELECT * FROM roles_given WHERE userid = ${member.id}`).all();
-    if(rolesToGive.length !== 0) {
-        for(const roleToGive of rolesToGive) {
+    if (rolesToGive.length !== 0) {
+        for (const roleToGive of rolesToGive) {
             member.roles.add(roleToGive.roleid, "joined back");
         }
     }

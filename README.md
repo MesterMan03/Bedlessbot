@@ -8,8 +8,7 @@ Follow the instructions at https://bun.sh/docs/installation
 
 1. **Clone the repository**:
 
-bash
-```
+```bash
 git clone https://github.com/MesterMan03/Bedlessbot.git
 cd Bedlessbot
 ```

@@ -9,6 +9,10 @@ const secret = await Bun.file(join(__dirname, "..", "secret"))
     .then((buffer) => {
         // convert to hex string
         return [...new Uint8Array(buffer)].map((x) => x.toString(16).padStart(2, "0")).join("");
+    })
+    .catch((err) => {
+        console.warn(err);
+        return null;
     });
 
 interface APIPayloadRequest {
@@ -16,6 +20,8 @@ interface APIPayloadRequest {
 }
 
 async function SendRequest(payload: APIPayloadRequest) {
+    if (!secret) return { status: 401, data: null };
+
     const response = await fetch(endpoint, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -24,6 +30,8 @@ async function SendRequest(payload: APIPayloadRequest) {
             Authorization: `${secret}`
         }
     });
+
+    if (!response.ok) return { status: response.status, data: null };
 
     return { status: response.status, data: await response.json() };
 }

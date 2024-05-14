@@ -42,6 +42,22 @@ const server = Bun.serve({
             requestCounts.set(ip.address, newCount);
         }, 30 * 1000); // Remove one after half a minute
 
+        const allowedPaths = [
+            "/",
+            "/script.js",
+            "/style.css",
+            "/favicon.ico",
+            "/icon.gif",
+            "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf",
+            "/page"
+        ];
+
+        if (!allowedPaths.includes(path)) {
+            return new Response("Not found", {
+                status: 404
+            });
+        }
+
         if (path === "/") return new Response(Bun.file(join(__dirname, indexLocation)));
 
         if (path === "/script.js") {

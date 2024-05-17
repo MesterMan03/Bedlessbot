@@ -29,7 +29,7 @@ import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
 import { SendRequest } from "./apimanager";
 
-console.log(`Started ${process.env.NODE_ENV} bot`);
+console.log(`Starting... ${process.env.NODE_ENV} bot`);
 
 const token = process.env.TOKEN!;
 const clientID = process.env.CLIENT_ID!;
@@ -172,10 +172,9 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // 0.5% chance to start a quick time event (in development mode 100%)
-    // make sure the channel has reaction and message send perms for all
+    // make sure the channel is allowed to have quick time events
     if (
-        (message.channel.permissionsFor(GetGuild().roles.everyone).has("SendMessages") &&
-            message.channel.permissionsFor(GetGuild().roles.everyone).has("AddReactions") &&
+        (config.QuickTimeChannels.includes(message.channelId) &&
             Math.random() < 0.005) ||
         process.env.NODE_ENV === "development"
     ) {
@@ -183,7 +182,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // use transformation model to find potential answers to a question
-    SendRequest({ text: message.cleanContent }).then((response) => {
+    SendRequest({ text: message.content }).then((response) => {
         if (response.status !== 200) return;
 
         const answer = response.data.answer as string;

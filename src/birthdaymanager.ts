@@ -1,6 +1,7 @@
 import moment from "moment-timezone";
 import cron from "node-cron";
 import client, { GetGuild, db } from ".";
+import config from "./config";
 
 /**
  * Converts a date into an orderable number
@@ -26,10 +27,10 @@ async function WishBirthdays() {
 
         // remove the birthday role from everyone
         const guild = GetGuild();
-        const birthdayRole = await guild.roles.fetch(process.env.BIRTHDAY_ROLE!);
+        const birthdayRole = await guild.roles.fetch(config.Roles.Birthday);
         if (!birthdayRole) throw new Error("Couldn't find birthday role");
 
-        for (const member of guild.members.cache.filter(m => m.roles.cache.has(birthdayRole.id)).values()) {
+        for (const member of guild.members.cache.filter((m) => m.roles.cache.has(birthdayRole.id)).values()) {
             await member.roles.remove(birthdayRole);
         }
 
@@ -46,7 +47,7 @@ async function WishBirthdays() {
             const age = year < 1800 ? -1 : moment().tz(timezone).year() - year;
             const ageString = age !== -1 ? ` (${age})` : "";
 
-            const generalChannel = await client.channels.fetch(process.env.BIRTHDAY_CHANNEL!);
+            const generalChannel = await client.channels.fetch(config.Channels.Birthday);
             if (!generalChannel?.isTextBased()) return;
 
             generalChannel.send(`It's the birthday of <@${birthday.userid}>${ageString}! 🎂`);

@@ -353,7 +353,7 @@ const commandRoleOption = new SlashCommandStringOption()
     .setName("role")
     .setDescription("The role you want to apply for.")
     .setRequired(true)
-    .setChoices(Object.entries(config.RoleToName).map(([key, value]) => ({ name: value, value: key })));
+    .setChoices(...Object.entries(config.RoleToName).map(([key, value]) => ({ name: value, value: key })));
 
 export default {
     data: new SlashCommandBuilder()

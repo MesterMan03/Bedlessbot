@@ -24,7 +24,7 @@ import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
 import { SendRequest } from "./apimanager";
 
-console.log(`Starting... ${process.env.NODE_ENV} bot`);
+console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
 const token = process.env.TOKEN as string;
 const clientID = process.env.CLIENT_ID as string;

@@ -17,7 +17,9 @@ function GenerateRandomName(): string {
 
 async function FetchPageTest(page: number) {
     // this is a test api, generate random data
-    if (page >= 10 || !Number.isInteger(page) || page < 0) return null;
+    if (page >= 10 || !Number.isInteger(page) || page < 0) {
+        return null;
+    }
 
     const levels = Array.from({ length: PageSize }, (_, i) => ({
         pos: i + page * PageSize + 1,
@@ -30,7 +32,7 @@ async function FetchPageTest(page: number) {
         progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
     }));
 
-    return new Promise<typeof levels>((res, rej) => {
+    return new Promise<typeof levels>((res) => {
         setTimeout(() => {
             res(levels);
         }, 1000); // add an artifical delay

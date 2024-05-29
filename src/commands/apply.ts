@@ -12,6 +12,7 @@ import {
 } from "discord.js";
 import { google } from "googleapis";
 import client, { GetGuild, db } from "..";
+import config, { isApplyRole, type ApplyRole } from "../config";
 
 /**
  * A map storing the last time a user used a command.
@@ -62,63 +63,44 @@ function increaseCheaterPoint(userID: string) {
     }
 }
 
-function shortRoleToName(role: string) {
-    return (
-        {
-            dragclick: "Drag clicker",
-            "16cps": "16+ CPS",
-            eagle: "Eagle Bridger",
-            witchly: "Witchly Bridger",
-            breezily: "Breezily Bridger",
-            goodpvp: "Good PvPer",
-            moonwalk: "Moonwalker",
-            god: "Godbridger",
-            diagod: "Diagonal Godbridger",
-            telly: "Telly Bridger"
-        }[role] ?? "unknown role"
-    );
+function shortRoleToName(role: ApplyRole) {
+    return config.RoleToName[role] ?? "unknown role";
 }
 
-function roleNameToShort(name: string) {
-    return {
-        "Drag clicker": "dragclick",
-        "16+ CPS": "16cps",
-        "Eagle Bridger": "eagle",
-        "Witchly Bridger": "witchly",
-        "Breezily Bridger": "breezily",
-        "Good PvPer": "goodpvp",
-        Moonwalker: "moonwalk",
-        Godbridger: "god",
-        "Diagonal Godbridger": "diagod",
-        "Telly Bridger": "telly"
-    }[name];
+function roleNameToShort(name?: string) {
+    if (!name) {
+        return null;
+    }
+
+    // reverse config.RoleToName by finding the value first and returning its key
+    Object.entries(config.RoleToName).forEach(([key, value]) => {
+        if (value === name) {
+            return key;
+        }
+    });
 }
 
-function shortRoleToRoleID(role: string) {
-    return {
-        dragclick: "1223797522523230290",
-        "16cps": "1223797518626984088",
-        eagle: "1223797538185019424",
-        witchly: "1223797534200434759",
-        breezily: "1223797530127499294",
-        goodpvp: "1223797526336110714",
-        moonwalk: "1223797542148640889",
-        god: "1223797549933133866",
-        diagod: "1223797545952874590",
-        telly: "1223797553703944282"
-    }[role];
+function shortRoleToRoleID(role: ApplyRole) {
+    return config.RoleToID[role];
 }
 
 async function processInteraction(interaction: ButtonInteraction) {
-    const outcomeChannel = (await client.channels.fetch(process.env.OUTCOME_CHANNEL!)) as TextBasedChannel;
-    if (!outcomeChannel) throw new Error("what the fuck");
+    const outcomeChannel = (await client.channels.fetch(process.env.OUTCOME_CHANNEL as string)) as TextBasedChannel;
+    if (!outcomeChannel) {
+        throw new Error("what the fuck");
+    }
 
     const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-    const userid = embed.data.footer!.text;
-    const role = roleNameToShort(embed.data.fields![1].value);
+    const userid = embed.data.footer?.text;
+    const role = roleNameToShort(embed.data.fields?.[1]?.value);
 
     if (!role) {
         interaction.reply("Unknown role. This is an error, contact Mester.");
+        return;
+    }
+
+    if (!userid) {
+        interaction.reply("No user ID found. This is an error, contact Mester.");
         return;
     }
 
@@ -136,7 +118,9 @@ async function processInteraction(interaction: ButtonInteraction) {
         outcomeChannel.send(`Congratulations <@${member.user.id}>! Your role application for ${shortRoleToName(role)} has been accepted!`);
 
         const roleToAdd = shortRoleToRoleID(role);
-        if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) return;
+        if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) {
+            return;
+        }
 
         // save role in db
         db.run(`INSERT OR IGNORE INTO roles_given (userid, roleid) VALUES ('${member.id}', '${roleToAdd}')`);
@@ -170,11 +154,7 @@ async function processInteraction(interaction: ButtonInteraction) {
             interaction.message.edit({ embeds: [embed], components: [] });
             reasonMessage.delete();
 
-            outcomeChannel.send(
-                `<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${
-                    reasonMessage.content
-                }`
-            );
+            outcomeChannel.send(`<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${reasonMessage.content}`);
         });
 
         reasonCollector.on("end", () => {
@@ -195,9 +175,7 @@ async function processInteraction(interaction: ButtonInteraction) {
         ).cheatpoint;
 
         outcomeChannel.send(
-            `<@${member.id}>, your role application for ${shortRoleToName(
-                role
-            )} has received an infraction. You now have ${cheatpoint}/3 infractions${
+            `<@${member.id}>, your role application for ${shortRoleToName(role)} has received an infraction. You now have ${cheatpoint}/3 infractions${
                 cheatpoint === 3 ? " and have been permanently banned from role applications 💀" : ""
             }. ${cheatpoint === 2 ? "One more and you're permanently banned from role applications." : ""}`
         );
@@ -210,20 +188,23 @@ const allowedWebsites = ["youtube.com", "youtu.be", "imgur.com", "medal.tv", "st
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("role", true);
-    let proof =
-        interaction.options.getSubcommand(true) === "link"
-            ? interaction.options.getString("proof", true)
-            : interaction.options.getAttachment("proof", true);
+    let proof = interaction.options.getSubcommand(true) === "link" ? interaction.options.getString("proof", true) : interaction.options.getAttachment("proof", true);
     let proofString = "";
     const isLink = interaction.options.getSubcommand(true) === "link";
 
+    if (!isApplyRole(role)) {
+        throw new Error("Applied role is not part of config, wtf???");
+    }
+
     // check if user has reacted to the guide message with a thumbsup
     const guideMessage = await GetGuild()
-        .channels.fetch(process.env.GUIDE_CHANNEL!)
+        .channels.fetch(process.env.GUIDE_CHANNEL as string)
         .then((channel) => {
-            if (!channel?.isTextBased()) return;
+            if (!channel?.isTextBased()) {
+                return;
+            }
 
-            return channel.messages.fetch(process.env.GUIDE_MESSAGE!);
+            return channel.messages.fetch(process.env.GUIDE_MESSAGE as string);
         });
 
     if (!guideMessage) {
@@ -232,20 +213,13 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
     }
 
     const guideReaction = guideMessage.reactions.cache.get("👍");
-    if (
-        !guideReaction ||
-        (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id
-    ) {
-        await interaction.editReply(
-            `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
-        );
+    if (!guideReaction || (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id) {
+        await interaction.editReply(`Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`);
         return null;
     }
 
     // check if user has at least 3 cheatpoints
-    const cheatpoint = db
-        .query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`)
-        .get()?.cheatpoint;
+    const cheatpoint = db.query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`).get()?.cheatpoint;
 
     if (cheatpoint && cheatpoint >= 3) {
         await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");
@@ -322,8 +296,8 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         proofString = proof;
     } else {
         // check if the file is a valid type
-        const fileType = proof.contentType?.split("/")[1];
-        if (proof.contentType && !allowedFileTypes.includes(fileType!)) {
+        const fileType = proof.contentType?.split("/")[1] ?? "null";
+        if (proof.contentType && !allowedFileTypes.includes(fileType)) {
             await interaction.editReply(`Invalid file type. Allowed file types: ${allowedFileTypesString}`);
             return null;
         }
@@ -360,11 +334,12 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // check if user is on cooldown
     if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
-        const time = cooldowns.get(interaction.user.id)!;
+        const time = cooldowns.get(interaction.user.id);
+        if (!time) {
+            return;
+        }
         if (Date.now() / 1000 < time + 60) {
-            await interaction.editReply(
-                `You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`
-            );
+            await interaction.editReply(`You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`);
             return null;
         }
     }
@@ -378,48 +353,7 @@ const commandRoleOption = new SlashCommandStringOption()
     .setName("role")
     .setDescription("The role you want to apply for.")
     .setRequired(true)
-    .setChoices(
-        {
-            name: "Drag clicker",
-            value: "dragclick"
-        },
-        {
-            name: "16+ CPS",
-            value: "16cps"
-        },
-        {
-            name: "Eagle Bridger",
-            value: "eagle"
-        },
-        {
-            name: "Witchly Bridger",
-            value: "witchly"
-        },
-        {
-            name: "Breezily Bridger",
-            value: "breezily"
-        },
-        {
-            name: "Good PvPer",
-            value: "goodpvp"
-        },
-        {
-            name: "Moonwalker",
-            value: "moonwalk"
-        },
-        {
-            name: "Godbridger",
-            value: "god"
-        },
-        {
-            name: "Diagonal Godbridger",
-            value: "diagod"
-        },
-        {
-            name: "Telly Bridger",
-            value: "telly"
-        }
-    );
+    .setChoices(Object.entries(config.RoleToName).map(([key, value]) => ({ name: value, value: key })));
 
 export default {
     data: new SlashCommandBuilder()
@@ -430,9 +364,7 @@ export default {
                 .setName("link")
                 .setDescription("Apply with a link.")
                 .addStringOption(commandRoleOption)
-                .addStringOption((option) =>
-                    option.setName("proof").setDescription("Accepts YouTube, Imgur, Medal and Streamable links.").setRequired(true)
-                )
+                .addStringOption((option) => option.setName("proof").setDescription("Accepts YouTube, Imgur, Medal and Streamable links.").setRequired(true))
         )
         .addSubcommand((subcommand) =>
             subcommand
@@ -440,10 +372,7 @@ export default {
                 .setDescription("Apply with a file.")
                 .addStringOption(commandRoleOption)
                 .addAttachmentOption((option) =>
-                    option
-                        .setName("proof")
-                        .setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.")
-                        .setRequired(true)
+                    option.setName("proof").setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.").setRequired(true)
                 )
         ),
 
@@ -460,7 +389,9 @@ export default {
             await interaction.deferReply({ ephemeral: false });
 
             const values = await validateCommand(interaction);
-            if (!values) return;
+            if (!values) {
+                return;
+            }
 
             const { role, proof, proofString, isLink } = values;
 
@@ -469,8 +400,10 @@ export default {
 
             interaction.editReply("Your application has been submitted for review.");
 
-            const reviewChannel = (await client.channels.fetch(process.env.TO_REVIEW_CHANNEL!)) as TextBasedChannel;
-            if (!reviewChannel) throw new Error("No review channel");
+            const reviewChannel = (await client.channels.fetch(process.env.TO_REVIEW_CHANNEL as string)) as TextBasedChannel;
+            if (!reviewChannel) {
+                throw new Error("No review channel");
+            }
 
             const embed = new EmbedBuilder()
                 .setTitle("Role Application")
@@ -486,11 +419,7 @@ export default {
                 new ActionRowBuilder<ButtonBuilder>().setComponents(
                     new ButtonBuilder().setCustomId("ap-accept").setLabel("Accept").setStyle(ButtonStyle.Success),
                     new ButtonBuilder().setCustomId("ap-deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
-                    new ButtonBuilder()
-                        .setCustomId("ap-infraction")
-                        .setEmoji("907725559352664154")
-                        .setLabel("Infraction")
-                        .setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder().setCustomId("ap-infraction").setEmoji("907725559352664154").setLabel("Infraction").setStyle(ButtonStyle.Secondary),
                     new ButtonBuilder().setURL(proofString).setLabel("View Proof").setStyle(ButtonStyle.Link)
                 )
             ];

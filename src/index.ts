@@ -2,10 +2,13 @@ import { fileURLToPath } from "bun";
 import { Database } from "bun:sqlite";
 import {
     ActivityType,
+    ChatInputCommandInteraction,
     Client,
     Collection,
     Events,
+    Guild,
     Message,
+    MessageComponentInteraction,
     REST,
     Routes,
     type RESTPostAPIChatInputApplicationCommandsJSONBody
@@ -16,30 +19,22 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
 import config from "./config";
-import {
-    EndVoiceChat,
-    GetLevelConfig,
-    GetXPFromMessage,
-    ManageLevelRole,
-    SetXPMultiplier,
-    StartVoiceChat,
-    XPToLevel
-} from "./levelmanager";
+import { EndVoiceChat, GetLevelConfig, GetXPFromMessage, ManageLevelRole, SetXPMultiplier, StartVoiceChat, XPToLevel } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 import "./dashboard/index"; // load the dashboard
 import { SendRequest } from "./apimanager";
 
 console.log(`Starting... ${process.env.NODE_ENV} bot`);
 
-const token = process.env.TOKEN!;
-const clientID = process.env.CLIENT_ID!;
-const guildID = process.env.GUILD_ID!;
+const token = process.env.TOKEN as string;
+const clientID = process.env.CLIENT_ID as string;
+const guildID = process.env.GUILD_ID as string;
 
 type ClientCommand = {
-    execute: Function;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
     data: RESTPostAPIChatInputApplicationCommandsJSONBody;
     interactions?: string[];
-    processInteraction?: Function;
+    processInteraction?: (interaction: MessageComponentInteraction) => Promise<void>;
 };
 const clientCommands = new Collection<string, ClientCommand>();
 
@@ -103,8 +98,12 @@ try {
 
 // set up client events and log in
 client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.inCachedGuild()) return;
-    if (interaction.guildId !== guildID) return;
+    if (!interaction.inCachedGuild()) {
+        return;
+    }
+    if (interaction.guildId !== guildID) {
+        return;
+    }
 
     try {
         if (interaction.isChatInputCommand()) {
@@ -130,7 +129,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     } catch (error) {
         console.error(error);
-        if (!interaction.isRepliable()) return;
+        if (!interaction.isRepliable()) {
+            return;
+        }
 
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp({ content: "There was an error while executing this command!", ephemeral: true });
@@ -141,7 +142,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-    if (!message.inGuild() || message.guildId !== guildID) return;
+    if (!message.inGuild() || message.guildId !== guildID) {
+        return;
+    }
 
     // this is sorta just a joke thing
     // if bedless sends a youtube notification, react with Hungarian flag
@@ -150,9 +153,11 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
-    if (message.author.bot) return;
+    if (message.author.bot) {
+        return;
+    }
 
-    if (message.channelId === process.env.APPLICATIONS_CHANNEL!) {
+    if (message.channelId === process.env.APPLICATIONS_CHANNEL) {
         return void message.delete();
     }
 
@@ -160,7 +165,9 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.content.startsWith(`<@${clientID}>`)) {
         if (message.member?.permissions.has("Administrator")) {
             // only stop if the command ran successfully
-            if (ExecuteAdminCommand(message)) return;
+            if (ExecuteAdminCommand(message)) {
+                return;
+            }
         }
 
         return;
@@ -168,22 +175,22 @@ client.on(Events.MessageCreate, async (message) => {
 
     if (message.content.toLowerCase().includes("oh my god")) {
         // 50% chance
-        if (Math.random() < 0.5) await message.reply("oh my god");
+        if (Math.random() < 0.5) {
+            await message.reply("oh my god");
+        }
     }
 
     // 0.5% chance to start a quick time event (in development mode 100%)
     // make sure the channel is allowed to have quick time events
-    if (
-        (config.QuickTimeChannels.includes(message.channelId) &&
-            Math.random() < 0.005) ||
-        process.env.NODE_ENV === "development"
-    ) {
+    if ((config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005) || process.env.NODE_ENV === "development") {
         StartQuickTime(message.channel);
     }
 
     // use transformation model to find potential answers to a question
     SendRequest({ text: message.content }).then((response) => {
-        if (response.status !== 200) return;
+        if (response.status !== 200) {
+            return;
+        }
 
         const answer = response.data.answer as string;
 
@@ -194,13 +201,17 @@ client.on(Events.MessageCreate, async (message) => {
     });
 
     // check for blocked channels and no-xp role
-    if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) return;
+    if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) {
+        return;
+    }
 
     GetXPFromMessage(message);
 });
 
 client.on(Events.GuildMemberAdd, (member) => {
-    if (member.guild.id !== guildID) return;
+    if (member.guild.id !== guildID) {
+        return;
+    }
 
     // check for level roles
     const level = XPToLevel(GetLevelConfig(member.id).xp);
@@ -228,14 +239,14 @@ client.on(Events.ClientReady, async () => {
 });
 
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
-    if (oldState.guild.id !== guildID) return;
+    if (oldState.guild.id !== guildID) {
+        return;
+    }
 
     // if previously there was no channel, but now there is, we joined
     // it also counts as joining if we go from muted or deafened to not muted or deafened or if we moved from afk channel
     if (
-        ((!oldState.channel || oldState.channelId === GetGuild().afkChannelId) &&
-            newState.channel &&
-            newState.channelId !== GetGuild().afkChannelId) ||
+        ((!oldState.channel || oldState.channelId === GetGuild().afkChannelId) && newState.channel && newState.channelId !== GetGuild().afkChannelId) ||
         (!(newState.mute || newState.deaf) && (oldState.mute || oldState.deaf))
     ) {
         StartVoiceChat(newState);
@@ -244,7 +255,9 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     // if previously there was a channel, but now there isn't, we left
     // we also leave when we go muted or deafened or we moved to afk channel
     if ((oldState.channel && (!newState.channel || newState.channelId === GetGuild().afkChannelId)) || newState.mute || newState.deaf) {
-        if (newState.member?.roles.cache.has(config.NoXPRole)) return;
+        if (newState.member?.roles.cache.has(config.NoXPRole)) {
+            return;
+        }
         EndVoiceChat(newState);
     }
 });
@@ -275,7 +288,7 @@ function GetResFolder() {
 }
 
 function GetGuild() {
-    return client.guilds.cache.get(guildID)!;
+    return client.guilds.cache.get(guildID) as Guild;
 }
 
 function shutdown(reason?: string) {

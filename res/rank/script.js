@@ -43,3 +43,14 @@ function setUserValues({ userImage, leaderboard, username, level, totalXP, curre
     XPProgressElem.max = maxXP;
     XPProgressElem.value = currentXP;
 }
+
+const search = new URLSearchParams(window.location.search);
+setUserValues({
+    userImage: search.get("avatar"),
+    leaderboard: parseInt(search.get("leaderboard")),
+    username: search.get("username"),
+    level: parseInt(search.get("level")),
+    totalXP: parseInt(search.get("total")),
+    currentXP: parseInt(search.get("current")),
+    maxXP: parseInt(search.get("max"))
+});

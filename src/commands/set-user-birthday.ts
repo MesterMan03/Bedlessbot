@@ -9,18 +9,14 @@ export default {
         .setDescription("Set a user's birthday")
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ModerateMembers)
         .addUserOption((option) => option.setName("member").setDescription("The member to set the birthday of.").setRequired(true))
-        .addStringOption((option) =>
-            option.setName("date").setDescription("The date of the birthday in the format DD/MM/YYYY or DD/MM.").setRequired(true)
-        ),
+        .addStringOption((option) => option.setName("date").setDescription("The date of the birthday in the format DD/MM/YYYY or DD/MM.").setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction) {
         const user = interaction.options.getUser("member", true);
         const dateRaw = interaction.options.getString("date", true);
 
         // check if the date is in the correct format
         if (!/^\d{2}\/\d{2}(\/\d{4})?$/.test(dateRaw)) {
-            const embed = new EmbedBuilder()
-                .setColor("Grey")
-                .setDescription("Please provide a valid date in the format DD/MM/YYYY or DD/MM.");
+            const embed = new EmbedBuilder().setColor("Grey").setDescription("Please provide a valid date in the format DD/MM/YYYY or DD/MM.");
             return void interaction.reply({ embeds: [embed] });
         }
 
@@ -36,7 +32,9 @@ export default {
         }
 
         // if year is not provided, set it to 0
-        if (date.year() === thisYear) date.set("year", 0);
+        if (date.year() === thisYear) {
+            date.set("year", 0);
+        }
 
         const dateStr = date.year() === 0 ? date.format("DD MMMM") : date.format("DD MMMM YYYY");
         const dateNum = DateToNumber(date.format("DD/MM"));

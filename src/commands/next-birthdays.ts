@@ -20,19 +20,12 @@ export default {
         const todayNum = DateToNumber(today);
 
         // now we just need to find the offset, so find every birthday that is today or later
-        const birthdays = db
-            .query<
-                Omit<Birthday, "datenum">,
-                []
-            >(`SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum ASC LIMIT 10`)
-            .all();
+        const birthdays = db.query<Omit<Birthday, "datenum">, []>(`SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum ASC LIMIT 10`).all();
 
         // problem: if we're at the end of the year, we need to wrap around to the start
         if (birthdays.length < 10) {
             const wraparound = db
-                .query<Omit<Birthday, "datenum">, []>(
-                    `SELECT userid, date FROM birthdays ORDER BY datenum ASC LIMIT ${10 - birthdays.length}`
-                )
+                .query<Omit<Birthday, "datenum">, []>(`SELECT userid, date FROM birthdays ORDER BY datenum ASC LIMIT ${10 - birthdays.length}`)
                 .all()
                 // deduplicate
                 .filter((birthday) => !birthdays.some((b) => b.userid === birthday.userid));
@@ -58,7 +51,6 @@ export default {
             const dateString = date.format("DD MMMM YYYY");
 
             // calculate age the user will be (-1 if year is 0)
-            const originalDate = moment(birthday.date, "DD/MM/YYYY");
             const age = year === 0 ? -1 : thisYear - year;
             const ageString = age === -1 ? "" : ` (${age})`;
 

@@ -1,3 +1,11 @@
+const ApplyRoles = <const>["dragclick", "16cps", "eagle", "witchly", "breezily", "goodpvp", "moonwalk", "god", "diagod", "telly", "0cpsgod"];
+
+type ApplyRole = (typeof ApplyRoles)[number];
+
+function isApplyRole(role: string): role is ApplyRole {
+    return ApplyRoles.includes(role as ApplyRole);
+}
+
 const prodConfig = {
     // production config
     LevelRoles: [
@@ -28,7 +36,33 @@ const prodConfig = {
     },
     Roles: {
         Birthday: "715495353159254018"
-    }
+    },
+    RoleToName: {
+        dragclick: "Drag clicker",
+        "16cps": "16+ CPS",
+        eagle: "Eagle Bridger",
+        witchly: "Witchly Bridger",
+        breezily: "Breezily Bridger",
+        goodpvp: "Good PvPer",
+        moonwalk: "Moonwalker",
+        god: "Godbridger",
+        diagod: "Diagonal Godbridger",
+        telly: "Telly Bridger",
+        "0cpsgod": "0 CPS Godbridger"
+    } as { [key in ApplyRole]: string },
+    RoleToID: {
+        dragclick: "1223797522523230290",
+        "16cps": "1223797518626984088",
+        eagle: "1223797538185019424",
+        witchly: "1223797534200434759",
+        breezily: "1223797530127499294",
+        goodpvp: "1223797526336110714",
+        moonwalk: "1223797542148640889",
+        god: "1223797549933133866",
+        diagod: "1223797545952874590",
+        telly: "1223797553703944282",
+        "0cpsgod": "1245099069064351827"
+    } as { [key in ApplyRole]: string }
 };
 
 // development config, useful for testing
@@ -54,7 +88,22 @@ const devConfig = {
     },
     Roles: {
         Birthday: "1074393964016324691"
-    }
+    },
+    RoleToID: {
+        dragclick: "1074393964016324691",
+        "16cps": "1074393964016324691",
+        eagle: "1074393964016324691",
+        witchly: "1074393964016324691",
+        breezily: "1074393964016324691",
+        goodpvp: "1074393964016324691",
+        moonwalk: "1074393964016324691",
+        god: "1074393964016324691",
+        diagod: "1074393964016324691",
+        telly: "1074393964016324691",
+        "0cpsgod": "1074393964016324691"
+    } as { [key in ApplyRole]: string }
 };
 
 export default process.env.NODE_ENV === "production" ? prodConfig : devConfig;
+
+export { type ApplyRole, isApplyRole };

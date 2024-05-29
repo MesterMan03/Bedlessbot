@@ -1,6 +1,5 @@
 import { join } from "path";
-import { FetchPage } from "./api"; //uncomment when ready for production
-//import { FetchPageTest as FetchPage } from "./api-test";
+import { FetchPage } from "./api";
 import { fileURLToPath } from "bun";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
@@ -23,13 +22,15 @@ const server = Bun.serve({
         const path = new URL(req.url).pathname;
         const ip = server.requestIP(req);
 
-        if (!ip) return new Response("Invalid IP", { status: 400 });
+        if (!ip) {
+            return new Response("Invalid IP", { status: 400 });
+        }
 
         if (!requestCounts.has(ip.address)) {
             requestCounts.set(ip.address, 0);
         }
 
-        const currentCount = requestCounts.get(ip.address)!;
+        const currentCount = requestCounts.get(ip.address) as number;
         if (currentCount > 30) {
             return new Response("Rate limit exceeded", {
                 status: 429
@@ -42,15 +43,7 @@ const server = Bun.serve({
             requestCounts.set(ip.address, newCount);
         }, 30 * 1000); // Remove one after half a minute
 
-        const allowedPaths = [
-            "/",
-            "/script.js",
-            "/style.css",
-            "/favicon.ico",
-            "/icon.gif",
-            "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf",
-            "/page"
-        ];
+        const allowedPaths = ["/", "/script.js", "/style.css", "/favicon.ico", "/icon.gif", "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf", "/page"];
 
         if (!allowedPaths.includes(path)) {
             return new Response("Not found", {
@@ -58,7 +51,9 @@ const server = Bun.serve({
             });
         }
 
-        if (path === "/") return new Response(Bun.file(join(__dirname, indexLocation)));
+        if (path === "/") {
+            return new Response(Bun.file(join(__dirname, indexLocation)));
+        }
 
         if (path === "/script.js") {
             return new Response(script, {
@@ -69,11 +64,13 @@ const server = Bun.serve({
         if (path === "/page") {
             // get the page number from the query string
             const urlObj = new URL(req.url);
-            const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page")!) : 1;
+            const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page") as string) : 1;
 
             // fetch the page
             const page = await FetchPage(pageNum);
-            if (!page) return new Response("Invalid page number", { status: 400 });
+            if (!page) {
+                return new Response("Invalid page number", { status: 400 });
+            }
 
             return new Response(JSON.stringify(page), {
                 headers: { "Content-Type": "application/json" }

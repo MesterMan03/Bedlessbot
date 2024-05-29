@@ -27,18 +27,4 @@
 	</div>
 </main>
 
-<script src="script.js"></script>
-<script>
-    const search = new URLSearchParams(window.location.search);
-	const userValues = {
-		userImage: search.get("avatar"),
-		leaderboard: parseInt(search.get("leaderboard")),
-		username: search.get("username"),
-		level: parseInt(search.get("level")),
-		totalXP: parseInt(search.get("total")),
-		currentXP: parseInt(search.get("current")),
-		maxXP: parseInt(search.get("max")),
-	};
-
-	setUserValues(userValues);
-</script>
+<script src="script.js" type="module"></script>

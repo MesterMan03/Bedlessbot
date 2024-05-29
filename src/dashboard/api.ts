@@ -5,7 +5,9 @@ import { XPToLevel, type LevelInfo, XPToLevelUp, LevelToXP } from "../levelmanag
 const PageSize = 20;
 
 async function FetchPage(page: number) {
-    if (page >= GetMaxPage() || !Number.isInteger(page) || page < 0) return null;
+    if (page >= GetMaxPage() || !Number.isInteger(page) || page < 0) {
+        return null;
+    }
 
     const levels = db.query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${PageSize} OFFSET ${page * PageSize}`).all();
     return Promise.all(
@@ -23,9 +25,7 @@ async function FetchPage(page: number) {
                 level,
                 xp: levelInfo.xp,
                 userid: levelInfo.userid,
-                avatar: user
-                    ? user.displayAvatarURL({ forceStatic: true, size: 64, extension: "webp" })
-                    : "https://cdn.discordapp.com/embed/avatars/0.png",
+                avatar: user ? user.displayAvatarURL({ forceStatic: false, size: 64 }) : "https://cdn.discordapp.com/embed/avatars/0.png",
                 username: user ? user.username : "unknown",
                 progress: [progress, progressPercent]
             };

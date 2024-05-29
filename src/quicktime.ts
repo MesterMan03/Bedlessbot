@@ -176,10 +176,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
     // generate a random type from QuickTimeType
     const type = Math.floor((Math.random() * Object.keys(QuickTimeType).length) / 2);
 
-    const randomText =
-        type === QuickTimeType.RandomText
-            ? svgCaptcha.create({ ignoreChars: "0o1i", color: true, size: 7, background: "FE0000" })
-            : getRandomEmoji();
+    const randomText = type === QuickTimeType.RandomText ? svgCaptcha.create({ ignoreChars: "0o1i", color: true, size: 7, background: "FE0000" }) : getRandomEmoji();
 
     // send a message based on the type
     const message = await channel.send({
@@ -206,7 +203,9 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
 
         collector.on("collect", async (m) => {
             // do something when the user types the correct text
-            if (!m.member) return;
+            if (!m.member) {
+                return;
+            }
             RewardUser(m.member, channel);
         });
 

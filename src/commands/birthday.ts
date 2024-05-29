@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { db } from "..";
-import { DateToNumber, timezone, type Birthday } from "../birthdaymanager";
+import { DateToNumber, type Birthday } from "../birthdaymanager";
 import moment from "moment-timezone";
 import ordinal from "ordinal";
 
@@ -47,9 +47,7 @@ export default {
         const days = nextBirthday.diff(moment(), "days");
         const daysString = dateNum === todayNum ? "**today**" : days <= 1 ? "**tomorrow**" : `in **${days}** days`;
 
-        const embed = new EmbedBuilder()
-            .setColor("Grey")
-            .setDescription(`<@${user.id}>'s ${ageString} birthday is ${daysString} on **${nextBirthday.format("DD MMMM YYYY")}** 🕯️`);
+        const embed = new EmbedBuilder().setColor("Grey").setDescription(`<@${user.id}>'s ${ageString} birthday is ${daysString} on **${nextBirthday.format("DD MMMM YYYY")}** 🕯️`);
 
         return void interaction.reply({ embeds: [embed] });
     }

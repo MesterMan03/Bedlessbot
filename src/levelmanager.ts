@@ -48,9 +48,7 @@ function XPToLevelUp(level: number) {
 }
 
 function GetLeaderboardPos(userid: string) {
-    const pos = db
-        .query<{ pos: number }, []>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = '${userid}')`)
-        .get()?.pos;
+    const pos = db.query<{ pos: number }, []>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = '${userid}')`).get()?.pos;
     return pos ? pos + 1 : 1;
 }
 
@@ -144,9 +142,13 @@ async function ManageLevelRole(member: GuildMember, memberLevel: number) {
  * @param userId The user id.
  * @returns The level info object of the user.
  */
-function GetLevelConfig(userId: string) {
-    db.run(`INSERT OR IGNORE INTO levels (userid, xp) VALUES ('${userId}', 0)`);
-    return db.query<LevelInfo, []>(`SELECT * FROM levels WHERE userid = '${userId}'`).get()!;
+function GetLevelConfig(userId: string): LevelInfo {
+    const levelInfo = db.query<LevelInfo, []>(`SELECT * FROM levels WHERE userid = '${userId}'`).get() as LevelInfo;
+    if (!levelInfo) {
+        db.run(`INSERT OR IGNORE INTO levels (userid, xp) VALUES ('${userId}', 0)`);
+        return { userid: userId, xp: 0 };
+    }
+    return levelInfo;
 }
 
 /**
@@ -168,8 +170,10 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
         content += `\nAs a reward of your hard work, you've been given the **${roleName}** role!`;
     }
 
-    const levelupChannel = await client.channels.fetch(process.env.LEVELUP_CHANNEL!);
-    if (!levelupChannel?.isTextBased()) return;
+    const levelupChannel = await client.channels.fetch(process.env.LEVELUP_CHANNEL as string);
+    if (!levelupChannel?.isTextBased()) {
+        return;
+    }
 
     levelupChannel.send(content);
 }
@@ -177,27 +181,31 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
 const voiceStates = new Collection<string, number>();
 
 function StartVoiceChat(vs: VoiceState) {
-    if (!vs.member) return;
+    if (!vs.member) {
+        return;
+    }
 
     // store timestamp
     voiceStates.set(vs.member.id, Date.now());
 }
 
 function EndVoiceChat(vs: VoiceState) {
-    if (!vs.member) return;
+    if (!vs.member) {
+        return;
+    }
 
     // end timestamp + calculate xp (1 xp per second)
     const storedVoiceState = voiceStates.get(vs.member.id);
-    if (!storedVoiceState) return;
+    if (!storedVoiceState) {
+        return;
+    }
 
     const time = Date.now() - storedVoiceState;
 
     // 1 xp for every 5 seconds + 1 xp for every second of talking
     const xp = Math.floor(time / 1000 / 5);
 
-    console.log(
-        `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`
-    );
+    console.log(`User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`);
 
     AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
 }

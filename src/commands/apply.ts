@@ -91,7 +91,7 @@ async function processInteraction(interaction: ButtonInteraction) {
     const role = roleNameToShort(embed.data.fields?.[1]?.value);
 
     if (!role) {
-        interaction.reply("Unknown role. This is an error, contact Mester.");
+        interaction.reply(`Unknown role for ${embed.data.fields?.[1]?.value}. This is an error, contact Mester.`);
         return;
     }
 

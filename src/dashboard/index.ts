@@ -3,8 +3,9 @@ import { fileURLToPath } from "bun";
 import Elysia, { t } from "elysia";
 import staticPlugin from "@elysiajs/static";
 import { rateLimit } from "elysia-rate-limit";
+import jwt from "@elysiajs/jwt";
 
-const DashboardAPI = process.env.NODE_ENV === "production" ? (await import("./api")).default : (await import("./api-test")).default;
+const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
@@ -23,21 +24,78 @@ const scriptMap = await Promise.all(
 );
 const builtScripts = new Map(scriptMap);
 
+// load EdDSA key from base64 secret
+const jwtSecret = Buffer.from(process.env.JWT_SECRET as string, "base64");
+
 const apiRoute = new Elysia()
     .group("/api", (app) =>
-        app.get(
-            "/lbpage",
-            async ({ query: { page: pageNum }, set, error }) => {
-                const page = await api.FetchLbPage(pageNum);
-                if (!page) {
-                    error(400, "Invalid page number");
-                }
+        app
+            .use(jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" }))
+            .get(
+                "/lbpage",
+                async ({ query: { page: pageNum }, set, error }) => {
+                    if (!Number.isInteger(pageNum)) {
+                        return error(400, "Page must be an integer");
+                    }
 
-                set.headers["Content-Type"] = "application/json";
-                return JSON.stringify(page);
-            },
-            { query: t.Object({ page: t.Integer({ default: 1 }) }) }
-        )
+                    const page = await api.FetchLbPage(pageNum);
+                    if (!page) {
+                        return error(400, "Invalid page number");
+                    }
+
+                    set.headers["Content-Type"] = "application/json";
+                    return JSON.stringify(page);
+                },
+                { query: t.Object({ page: t.Numeric({ default: 0, minimum: 0, description: "The page of leaderboard to query (starts at 0)" }) }) }
+            )
+            .get("/auth", ({ cookie: { oauthState }, redirect, set }) => {
+                // disable cache for this route
+                set.headers["Cache-Control"] = "no-store";
+
+                // generate a random state and save it in cookie
+                const state = Math.random().toString(36).substring(2);
+
+                oauthState.set({
+                    value: state,
+                    sameSite: "strict",
+                    secure: process.env.NODE_ENV === "production",
+                    httpOnly: true
+                });
+
+                const authURL = api.CreateOAuth2Url(state);
+                // redirect to the auth url
+                return redirect(authURL);
+            })
+            .get(
+                "/callback",
+                async ({ query: { code, state }, cookie: { oauthState, auth }, jwt, error, redirect }) => {
+                    // validate state
+                    if (state !== oauthState.value) {
+                        return error(401, "Invalid state");
+                    }
+
+                    oauthState.remove();
+
+                    // process the callback
+                    const result = await api.ProcessOAuth2Callback(code);
+                    if (!result) {
+                        return error(401, "Unauthorised");
+                    }
+
+                    // create a signed jwt token with userid
+                    const signedObj = await jwt.sign({ userid: result.id });
+
+                    auth.set({
+                        value: signedObj,
+                        sameSite: "strict",
+                        secure: process.env.NODE_ENV === "production",
+                        httpOnly: true
+                    });
+
+                    return redirect("/");
+                },
+                { query: t.Object({ code: t.String(), state: t.String() }) }
+            )
     )
     .listen(8147);
 
@@ -48,7 +106,7 @@ const app = new Elysia()
         ({ params: { scriptName }, set, error }) => {
             const script = builtScripts.get(scriptName.slice(0, scriptName.length - 3));
             if (!script) {
-                error(400, "Not found");
+                return error(400, "Not found");
             }
 
             set.headers["Content-Type"] = "application/javascript";

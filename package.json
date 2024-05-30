@@ -16,14 +16,17 @@
     "biome": "biome",
     "lint": "biome lint .",
     "format": "biome format .",
-    "check": "biome check ."
+    "check": "biome check .",
+    "devdash": "NODE_ENV=development DEV_DASH=yes bun run src/dashboard/index.ts"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/static": "^1.0.3",
     "bufferutil": "^4.0.8",
+    "discord-oauth2": "^2.12.1",
     "discord.js": "^14.14.1",
     "elysia": "^1.0.22",
     "elysia-rate-limit": "^4.1.0",

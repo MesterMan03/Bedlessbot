@@ -1,4 +1,6 @@
+import type { User } from "discord-oauth2";
 import type { DashboardAPIInterface, DashboardLbEntry } from "./api";
+import config from "../config";
 
 const PageSize = 20;
 
@@ -17,34 +19,51 @@ function GenerateRandomName(): string {
     return result;
 }
 
-async function FetchPageTest(page: number) {
-    // this is a test api, generate random data
-    if (page >= 10 || !Number.isInteger(page) || page < 0) {
-        return null;
+export default class DashboardAPITest implements DashboardAPIInterface {
+    async FetchLbPage(page: number) {
+        // this is a test api, generate random data
+        if (page >= 10 || !Number.isInteger(page) || page < 0) {
+            return null;
+        }
+
+        const levels = Array.from(
+            { length: PageSize },
+            (_, i) =>
+                ({
+                    pos: i + page * PageSize + 1,
+                    level: Math.floor(Math.random() * 100),
+                    xp: Math.floor(Math.random() * 1000),
+                    userid: Math.random().toString(10).substring(2),
+                    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+                    // username is a random string between 3 and 32 characters
+                    username: GenerateRandomName(),
+                    progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
+                }) satisfies DashboardLbEntry
+        );
+
+        return new Promise<typeof levels>((res) => {
+            setTimeout(() => {
+                res(levels);
+            }, 1000); // add an artifical delay
+        });
     }
 
-    const levels = Array.from(
-        { length: PageSize },
-        (_, i) =>
-            ({
-                pos: i + page * PageSize + 1,
-                level: Math.floor(Math.random() * 100),
-                xp: Math.floor(Math.random() * 1000),
-                userid: Math.random().toString(10).substring(2),
-                avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-                // username is a random string between 3 and 32 characters
-                username: GenerateRandomName(),
-                progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
-            }) satisfies DashboardLbEntry
-    );
+    CreateOAuth2Url(state: string) {
+        // return the callback url
+        const url = new URL(config.OAuthRedirect);
+        url.searchParams.set("code", "MadeByMester");
+        url.searchParams.set("state", state);
+        return url.toString();
+    }
 
-    return new Promise<typeof levels>((res) => {
-        setTimeout(() => {
-            res(levels);
-        }, 1000); // add an artifical delay
-    });
-}
-
-export default class DashboardAPITest implements DashboardAPIInterface {
-    FetchLbPage = FetchPageTest;
+    async ProcessOAuth2Callback(_: string) {
+        // return dummy user
+        return {
+            id: Math.random().toString(10).substring(2),
+            username: GenerateRandomName(),
+            global_name: "Dummy Person",
+            avatar: null,
+            discriminator: "0"
+        } as User;
+    }
 }

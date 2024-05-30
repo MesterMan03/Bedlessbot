@@ -68,7 +68,8 @@ const prodConfig = {
         diagod: "1223797545952874590",
         telly: "1223797553703944282",
         "0cpsgod": "1245099069064351827"
-    } as { [key in ApplyRole]: string }
+    } as { [key in ApplyRole]: string },
+    OAuthRedirect: "https://bedless.mester.info/api/callback"
 };
 
 // development config, useful for testing
@@ -113,7 +114,8 @@ const devConfig = {
         diagod: "1074393964016324691",
         telly: "1074393964016324691",
         "0cpsgod": "1074393964016324691"
-    } as { [key in ApplyRole]: string }
+    } as { [key in ApplyRole]: string },
+    OAuthRedirect: "http://localhost:8146/api/callback"
 };
 
 export default process.env.NODE_ENV === "production" ? prodConfig : devConfig;

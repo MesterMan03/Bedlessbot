@@ -157,7 +157,7 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
-    if (message.channelId === process.env.APPLICATIONS_CHANNEL) {
+    if (message.channelId === config.Channels.Applications) {
         return void message.delete();
     }
 

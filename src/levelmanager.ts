@@ -170,7 +170,7 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
         content += `\nAs a reward of your hard work, you've been given the **${roleName}** role!`;
     }
 
-    const levelupChannel = await client.channels.fetch(process.env.LEVELUP_CHANNEL as string);
+    const levelupChannel = await client.channels.fetch(config.Channels.Levelup);
     if (!levelupChannel?.isTextBased()) {
         return;
     }

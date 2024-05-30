@@ -32,7 +32,13 @@ const prodConfig = {
         "692077134780432384" // English chat
     ],
     Channels: {
-        Birthday: "692077134780432384"
+        Birthday: "692077134780432384",
+        Levelup: "709235446298968114",
+        Applications: "1223818111996661770",
+        Guide: "692074640486563871",
+        GuideMessage: "1223815275099717766",
+        Outcome: "692075719726989312",
+        Toreview: "771791897806766112"
     },
     Roles: {
         Birthday: "715495353159254018"
@@ -84,7 +90,13 @@ const devConfig = {
         "1095817061697081454" // German
     ],
     Channels: {
-        Birthday: "1074393964788060178"
+        Birthday: "1074393964788060178",
+        Levelup: "1074393964788060178",
+        Applications: "1224111389321203834",
+        Guide: "1224111389321203834",
+        GuideMessage: "1225827434679504896",
+        Outcome: "1074393964788060178",
+        Toreview: "1074393964788060178"
     },
     Roles: {
         Birthday: "1074393964016324691"

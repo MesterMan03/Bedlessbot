@@ -85,7 +85,7 @@ function shortRoleToRoleID(role: ApplyRole) {
 }
 
 async function processInteraction(interaction: ButtonInteraction) {
-    const outcomeChannel = (await client.channels.fetch(process.env.OUTCOME_CHANNEL as string)) as TextBasedChannel;
+    const outcomeChannel = (await client.channels.fetch(config.Channels.Outcome)) as TextBasedChannel;
     if (!outcomeChannel) {
         throw new Error("what the fuck");
     }
@@ -198,13 +198,13 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // check if user has reacted to the guide message with a thumbsup
     const guideMessage = await GetGuild()
-        .channels.fetch(process.env.GUIDE_CHANNEL as string)
+        .channels.fetch(config.Channels.Guide)
         .then((channel) => {
             if (!channel?.isTextBased()) {
                 return;
             }
 
-            return channel.messages.fetch(process.env.GUIDE_MESSAGE as string);
+            return channel.messages.fetch(config.Channels.GuideMessage);
         });
 
     if (!guideMessage) {
@@ -400,7 +400,7 @@ export default {
 
             interaction.editReply("Your application has been submitted for review.");
 
-            const reviewChannel = (await client.channels.fetch(process.env.TO_REVIEW_CHANNEL as string)) as TextBasedChannel;
+            const reviewChannel = (await client.channels.fetch(config.Channels.Toreview)) as TextBasedChannel;
             if (!reviewChannel) {
                 throw new Error("No review channel");
             }

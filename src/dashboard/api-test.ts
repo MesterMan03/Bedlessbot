@@ -1,3 +1,5 @@
+import type { DashboardAPIInterface, DashboardLbEntry } from "./api";
+
 const PageSize = 20;
 
 function GenerateRandomName(): string {
@@ -21,16 +23,20 @@ async function FetchPageTest(page: number) {
         return null;
     }
 
-    const levels = Array.from({ length: PageSize }, (_, i) => ({
-        pos: i + page * PageSize + 1,
-        level: Math.floor(Math.random() * 100),
-        xp: Math.floor(Math.random() * 1000),
-        userid: Math.random().toString(10).substring(2),
-        avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-        // username is a random string between 3 and 32 characters
-        username: GenerateRandomName(),
-        progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
-    }));
+    const levels = Array.from(
+        { length: PageSize },
+        (_, i) =>
+            ({
+                pos: i + page * PageSize + 1,
+                level: Math.floor(Math.random() * 100),
+                xp: Math.floor(Math.random() * 1000),
+                userid: Math.random().toString(10).substring(2),
+                avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+                // username is a random string between 3 and 32 characters
+                username: GenerateRandomName(),
+                progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
+            }) satisfies DashboardLbEntry
+    );
 
     return new Promise<typeof levels>((res) => {
         setTimeout(() => {
@@ -39,4 +45,6 @@ async function FetchPageTest(page: number) {
     });
 }
 
-export { FetchPageTest };
+export default class DashboardAPITest implements DashboardAPIInterface {
+    FetchLbPage = FetchPageTest;
+}

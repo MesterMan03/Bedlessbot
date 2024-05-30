@@ -2,6 +2,21 @@ import client, { db } from "..";
 import { GetMaxPage } from "../commands/leaderboard";
 import { XPToLevel, type LevelInfo, XPToLevelUp, LevelToXP } from "../levelmanager";
 
+interface DashboardAPIInterface {
+    FetchLbPage: (page: number) => Promise<DashboardLbEntry[] | null>;
+}
+
+interface DashboardLbEntry {
+    pos: number;
+    level: number;
+    xp: number;
+    userid: string;
+    avatar: string;
+    username: string;
+    progress: [number, number];
+
+}
+
 const PageSize = 20;
 
 async function FetchPage(page: number) {
@@ -28,9 +43,13 @@ async function FetchPage(page: number) {
                 avatar: user ? user.displayAvatarURL({ forceStatic: false, size: 64 }) : "https://cdn.discordapp.com/embed/avatars/0.png",
                 username: user ? user.username : "unknown",
                 progress: [progress, progressPercent]
-            };
+            } satisfies DashboardLbEntry;
         })
     );
 }
 
-export { FetchPage };
+export default class DashboardAPI implements DashboardAPIInterface {
+    FetchLbPage = FetchPage;
+}
+
+export { type DashboardAPIInterface, type DashboardLbEntry };

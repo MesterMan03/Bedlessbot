@@ -1,19 +1,32 @@
 /// <reference lib="dom" />
 
-import { type FetchPage as IFetchPage } from "./api";
+import type { DashboardAPIInterface } from "../api";
 
-async function FetchPage(page: number): ReturnType<typeof IFetchPage> {
+async function FetchPage(page: number): Promise<{ data: Awaited<ReturnType<DashboardAPIInterface["FetchLbPage"]>>; code: PageLoadSuccessCode }> {
     const res = await fetch(`/page?page=${page}`);
+
+    if (res.status === 429) {
+        return { data: null, code: PageLoadSuccessCode.RateLimit };
+    }
+    if (res.status === 400) {
+        console.warn("Got HTTP 400, we reached the end. Stop loading.");
+        return { data: null, code: PageLoadSuccessCode.InvalidPage };
+    }
     if (!res.ok) {
-        return null;
+        return { data: null, code: PageLoadSuccessCode.Unknown };
     }
 
-    return res.json();
+    return { data: await res.json(), code: PageLoadSuccessCode.Success };
 }
 
-// the timeout for the toast
-let toastTimeout: globalThis.Timer | undefined = undefined;
+enum PageLoadSuccessCode {
+    Success,
+    InvalidPage,
+    RateLimit,
+    Unknown
+}
 
+let toastTimeout: globalThis.Timer | undefined = undefined;
 function showToast() {
     const toast = document.getElementById("toast");
     if (!toast) {
@@ -23,7 +36,7 @@ function showToast() {
     toast.style.opacity = "1";
     toast.style.visibility = "visible";
 
-    // we need to clear the timeout, in case the toast is shown while it's already visible, which results in the toast hiding too early
+    // we need to clear the timeout in case the toast is shown while it's already visible, which results in the toast hiding too early
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => {
         toast.style.opacity = "0";
@@ -39,12 +52,12 @@ async function loadUsers(pageCursor: number) {
 
     loadingIndicator.style.display = "initial";
     const page = await FetchPage(pageCursor);
-    if (!page) {
+    if (!page.data) {
         loadingIndicator.style.display = "none";
-        return false;
+        return page.code;
     }
 
-    for (const user of page) {
+    for (const user of page.data) {
         const podiumHTML = `<img src="${user.avatar}" loading="lazy"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
         const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
 
@@ -95,7 +108,7 @@ async function loadUsers(pageCursor: number) {
     }
 
     loadingIndicator.style.display = "none";
-    return true;
+    return page.code;
 }
 
 // set up toast
@@ -113,14 +126,18 @@ await loadUsers(pageCursor);
 pageCursor++;
 
 let doneLoading = true;
-addEventListener("scroll", async () => {
+addEventListener("scroll", async function listener() {
     if (scrollY + innerHeight == document.body.clientHeight && doneLoading) {
         doneLoading = false;
-        const success = await loadUsers(pageCursor).then((success) => {
+        const successCode = await loadUsers(pageCursor).then((successCode) => {
             doneLoading = true;
-            return success;
+            return successCode;
         });
-        if (success) {
+        if (successCode === PageLoadSuccessCode.InvalidPage) {
+            // we've reached the end, stop loading
+            removeEventListener("scroll", listener);
+        }
+        if (successCode === PageLoadSuccessCode.Success) {
             pageCursor++;
         }
     }

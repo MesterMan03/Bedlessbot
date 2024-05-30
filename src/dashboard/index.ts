@@ -1,21 +1,30 @@
 import { join } from "path";
-import { FetchPage } from "./api";
 import { fileURLToPath } from "bun";
+const DashboardAPI = process.env.NODE_ENV === "production" ? (await import("./api")).default : (await import("./api-test")).default;
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 
 const indexLocation = "index.html";
-const scriptLocation = "script.ts";
+const scriptsLocation = "scripts";
+/**
+ * Allowed paths under the public folder (special is /, /page and /scripts)
+ */
+const allowedPublicPaths = ["/leaderboard.html", "/style.css", "/favicon.ico", "/icon.gif", "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf"];
 
-// build script
-const script = await (
-    await Bun.build({
-        entrypoints: [join(__dirname, scriptLocation)],
-        minify: true
-    })
-).outputs[0].text();
+// build scripts
+const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(__dirname, scriptsLocation) }));
+console.log("Building scripts for dashboard:", scriptFiles);
+const scriptMap = await Promise.all(
+    scriptFiles.map(
+        async (file) =>
+            [file.slice(0, file.length - 3), await (await Bun.build({ entrypoints: [join(__dirname, scriptsLocation, file)], minify: true })).outputs[0].text()] as [string, string]
+    )
+);
+const builtScripts = new Map(scriptMap);
 
 const requestCounts = new Map<string, number>();
+
+const api = new DashboardAPI();
 
 const server = Bun.serve({
     async fetch(req) {
@@ -43,19 +52,21 @@ const server = Bun.serve({
             requestCounts.set(ip.address, newCount);
         }, 30 * 1000); // Remove one after half a minute
 
-        const allowedPaths = ["/", "/script.js", "/style.css", "/favicon.ico", "/icon.gif", "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf", "/page"];
-
-        if (!allowedPaths.includes(path)) {
-            return new Response("Not found", {
-                status: 404
-            });
-        }
-
         if (path === "/") {
-            return new Response(Bun.file(join(__dirname, indexLocation)));
+            return new Response(Bun.file(join(__dirname, "public", indexLocation)));
         }
 
-        if (path === "/script.js") {
+        if (path.startsWith("/scripts/")) {
+            const rawScriptName = path.slice(9);
+            const scriptName = rawScriptName.slice(0, rawScriptName.length - 3);
+
+            const script = builtScripts.get(scriptName);
+            if (!script) {
+                return new Response("Not found", {
+                    status: 404
+                });
+            }
+
             return new Response(script, {
                 headers: { "Content-Type": "application/javascript" }
             });
@@ -67,7 +78,7 @@ const server = Bun.serve({
             const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page") as string) : 1;
 
             // fetch the page
-            const page = await FetchPage(pageNum);
+            const page = await api.FetchLbPage(pageNum);
             if (!page) {
                 return new Response("Invalid page number", { status: 400 });
             }
@@ -77,7 +88,21 @@ const server = Bun.serve({
             });
         }
 
-        return new Response(Bun.file(join(__dirname, path)));
+        if (!allowedPublicPaths.includes(path)) {
+            return new Response("Not found", {
+                status: 404
+            });
+        }
+
+        const file = Bun.file(join(__dirname, "public", path));
+        if (!(await file.exists())) {
+            console.error("File not found", path);
+            return new Response("Not found", {
+                status: 404
+            });
+        }
+
+        return new Response(file);
     },
 
     port: 8146

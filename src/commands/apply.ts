@@ -67,17 +67,13 @@ function shortRoleToName(role: ApplyRole) {
     return config.RoleToName[role] ?? "unknown role";
 }
 
-function roleNameToShort(name?: string) {
+function roleNameToShort(name?: string): ApplyRole | null {
     if (!name) {
         return null;
     }
 
     // reverse config.RoleToName by finding the value first and returning its key
-    Object.entries(config.RoleToName).forEach(([key, value]) => {
-        if (value === name) {
-            return key;
-        }
-    });
+    return Object.entries(config.RoleToName).find(([key, value]) => value === key)?.[0] ?? null;
 }
 
 function shortRoleToRoleID(role: ApplyRole) {

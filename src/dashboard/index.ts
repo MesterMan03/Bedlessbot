@@ -1,15 +1,16 @@
 import { join } from "path";
 import { fileURLToPath } from "bun";
+import Elysia, { t } from "elysia";
+import staticPlugin from "@elysiajs/static";
+import { rateLimit } from "elysia-rate-limit";
+
 const DashboardAPI = process.env.NODE_ENV === "production" ? (await import("./api")).default : (await import("./api-test")).default;
+const api = new DashboardAPI();
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 
-const indexLocation = "index.html";
 const scriptsLocation = "scripts";
-/**
- * Allowed paths under the public folder (special is /, /page and /scripts)
- */
-const allowedPublicPaths = ["/leaderboard.html", "/style.css", "/favicon.ico", "/icon.gif", "/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf"];
+const port = 8146;
 
 // build scripts
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(__dirname, scriptsLocation) }));
@@ -22,90 +23,51 @@ const scriptMap = await Promise.all(
 );
 const builtScripts = new Map(scriptMap);
 
-const requestCounts = new Map<string, number>();
+const apiRoute = new Elysia()
+    .group("/api", (app) =>
+        app.get(
+            "/lbpage",
+            async ({ query: { page: pageNum }, set, error }) => {
+                const page = await api.FetchLbPage(pageNum);
+                if (!page) {
+                    error(400, "Invalid page number");
+                }
 
-const api = new DashboardAPI();
+                set.headers["Content-Type"] = "application/json";
+                return JSON.stringify(page);
+            },
+            { query: t.Object({ page: t.Integer({ default: 1 }) }) }
+        )
+    )
+    .listen(8147);
 
-const server = Bun.serve({
-    async fetch(req) {
-        const path = new URL(req.url).pathname;
-        const ip = server.requestIP(req);
-
-        if (!ip) {
-            return new Response("Invalid IP", { status: 400 });
-        }
-
-        if (!requestCounts.has(ip.address)) {
-            requestCounts.set(ip.address, 0);
-        }
-
-        const currentCount = requestCounts.get(ip.address) as number;
-        if (currentCount > 30) {
-            return new Response("Rate limit exceeded", {
-                status: 429
-            });
-        }
-
-        requestCounts.set(ip.address, currentCount + 1);
-        setTimeout(() => {
-            const newCount = (requestCounts.get(ip.address) ?? 1) - 1;
-            requestCounts.set(ip.address, newCount);
-        }, 30 * 1000); // Remove one after half a minute
-
-        if (path === "/") {
-            return new Response(Bun.file(join(__dirname, "public", indexLocation)));
-        }
-
-        if (path.startsWith("/scripts/")) {
-            const rawScriptName = path.slice(9);
-            const scriptName = rawScriptName.slice(0, rawScriptName.length - 3);
-
-            const script = builtScripts.get(scriptName);
+const app = new Elysia()
+    .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/" }))
+    .get(
+        "/scripts/:scriptName",
+        ({ params: { scriptName }, set, error }) => {
+            const script = builtScripts.get(scriptName.slice(0, scriptName.length - 3));
             if (!script) {
-                return new Response("Not found", {
-                    status: 404
-                });
+                error(400, "Not found");
             }
 
-            return new Response(script, {
-                headers: { "Content-Type": "application/javascript" }
-            });
-        }
+            set.headers["Content-Type"] = "application/javascript";
+            return script;
+        },
+        { params: t.Object({ scriptName: t.String() }) }
+    )
+    .use(apiRoute)
+    .use(
+        rateLimit({
+            max: 30,
+            duration: 30 * 1000,
+            generator: (req, server) =>
+                // get real ip via nginx proxy, if that fails, use the remote address
+                req.headers.get("X-Real-IP") ?? server?.requestIP(req)?.address ?? "unknown"
+        })
+    )
+    .listen(port);
 
-        if (path === "/page") {
-            // get the page number from the query string
-            const urlObj = new URL(req.url);
-            const pageNum = urlObj.searchParams.has("page") ? parseInt(urlObj.searchParams.get("page") as string) : 1;
+console.log(`Server started at http://localhost:${port}`);
 
-            // fetch the page
-            const page = await api.FetchLbPage(pageNum);
-            if (!page) {
-                return new Response("Invalid page number", { status: 400 });
-            }
-
-            return new Response(JSON.stringify(page), {
-                headers: { "Content-Type": "application/json" }
-            });
-        }
-
-        if (!allowedPublicPaths.includes(path)) {
-            return new Response("Not found", {
-                status: 404
-            });
-        }
-
-        const file = Bun.file(join(__dirname, "public", path));
-        if (!(await file.exists())) {
-            console.error("File not found", path);
-            return new Response("Not found", {
-                status: 404
-            });
-        }
-
-        return new Response(file);
-    },
-
-    port: 8146
-});
-
-console.log(`Server started at ${server.url}`);
+export default app;

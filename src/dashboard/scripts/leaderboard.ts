@@ -3,7 +3,7 @@
 import type { DashboardAPIInterface } from "../api";
 
 async function FetchPage(page: number): Promise<{ data: Awaited<ReturnType<DashboardAPIInterface["FetchLbPage"]>>; code: PageLoadSuccessCode }> {
-    const res = await fetch(`/page?page=${page}`);
+    const res = await fetch(`/api/lbpage?page=${page}`);
 
     if (res.status === 429) {
         return { data: null, code: PageLoadSuccessCode.RateLimit };

@@ -73,7 +73,7 @@ function roleNameToShort(name?: string): ApplyRole | null {
     }
 
     // reverse config.RoleToName by finding the value first and returning its key
-    return Object.entries(config.RoleToName).find(([key, value]) => value === name)?.[0] ?? null;
+    return (Object.entries(config.RoleToName).find(([, value]) => value === name)?.[0] as ApplyRole) ?? null;
 }
 
 function shortRoleToRoleID(role: ApplyRole) {

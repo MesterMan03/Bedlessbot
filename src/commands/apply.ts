@@ -67,17 +67,13 @@ function shortRoleToName(role: ApplyRole) {
     return config.RoleToName[role] ?? "unknown role";
 }
 
-function roleNameToShort(name?: string) {
+function roleNameToShort(name?: string): ApplyRole | null {
     if (!name) {
         return null;
     }
 
     // reverse config.RoleToName by finding the value first and returning its key
-    Object.entries(config.RoleToName).forEach(([key, value]) => {
-        if (value === name) {
-            return key;
-        }
-    });
+    return Object.entries(config.RoleToName).find(([key, value]) => value === name)?.[0] ?? null;
 }
 
 function shortRoleToRoleID(role: ApplyRole) {
@@ -95,7 +91,7 @@ async function processInteraction(interaction: ButtonInteraction) {
     const role = roleNameToShort(embed.data.fields?.[1]?.value);
 
     if (!role) {
-        interaction.reply("Unknown role. This is an error, contact Mester.");
+        interaction.reply(`Unknown role for ${embed.data.fields?.[1]?.value}. This is an error, contact Mester.`);
         return;
     }
 

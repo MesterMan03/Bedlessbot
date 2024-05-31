@@ -23,8 +23,10 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@elysiajs/eden": "^1.0.14",
     "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/static": "^1.0.3",
+    "@elysiajs/swagger": "^1.0.5",
     "bufferutil": "^4.0.8",
     "discord-oauth2": "^2.12.1",
     "discord.js": "^14.14.1",

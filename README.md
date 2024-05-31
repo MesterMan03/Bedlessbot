@@ -41,8 +41,12 @@ If you want to use the [machine-learning API](https://github.com/MesterMan03/Bed
 
 ## Usage
 
-To run:
+### Package scripts
 
-```bash
-bun run src/index.ts
-```
+1. `bun start` - Start the bot in production mode.
+2. `bun dev` - Start the bot in development mode.
+3. `bun biome` - Run biome (equivalent to `biome`).
+4. `bun lint` - Run biome linter (equivalent to `biome lint .`).
+5. `bun format` - Run biome formatter (equivalent to `biome format .`).
+6. `bun check` - Run full biome check (linter + formatter), (equivalent to `biome check .`).
+7. `bun devdash` - Run the dashboard in dev API mode (no connection to Discord bot, can be ran without Discord secrets).

@@ -1,6 +1,14 @@
 import type { User } from "discord-oauth2";
-import type { DashboardAPIInterface, DashboardLbEntry } from "./api";
+import type { DashboardAPIInterface, DashboardLbEntry, DashboardPackComment } from "./api";
+import { Database } from "bun:sqlite";
 import config from "../config";
+
+// set up test database
+const db = new Database(":memory:");
+db.run("PRAGMA journal_mode = wal;");
+db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
+db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
+db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 
 const PageSize = 20;
 
@@ -65,5 +73,28 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             avatar: null,
             discriminator: "0"
         } as User;
+    }
+
+    async SubmitPackComment(userid: string, packid: string, comment: string) {
+        // create the comment with dummy data
+        const commentObj = {
+            id: Math.random().toString(10).substring(2),
+            packid: packid,
+            userid: userid,
+            comment,
+            date: Date.now(),
+            pending: true
+        } as DashboardPackComment<true>;
+
+        // write to the database
+        db.run("INSERT INTO pending_pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?);", [
+            commentObj.id,
+            commentObj.packid,
+            commentObj.userid,
+            commentObj.comment,
+            commentObj.date
+        ]);
+
+        return commentObj;
     }
 }

@@ -9,6 +9,7 @@ interface DashboardAPIInterface {
     FetchLbPage: (page: number) => Promise<DashboardLbEntry[] | null>;
     CreateOAuth2Url: (state: string) => string;
     ProcessOAuth2Callback: (code: string) => Promise<User | null>;
+    SubmitPackComment: (userid: string, packid: string, comment: string) => Promise<DashboardPackComment<true> | null>;
 }
 
 interface DashboardLbEntry {
@@ -19,6 +20,20 @@ interface DashboardLbEntry {
     avatar: string;
     username: string;
     progress: [number, number];
+}
+
+interface DashboardPackComment<T extends boolean> {
+    id: string;
+    packid: string;
+    userid: string;
+    comment: string;
+    date: number;
+    pending: T;
+}
+
+interface DashboardFinalPackComment extends DashboardPackComment<false> {
+    username: string;
+    avatar: string;
 }
 
 const PageSize = 20;
@@ -74,6 +89,10 @@ export default class DashboardAPI implements DashboardAPIInterface {
 
         return oauth2Client.getUser(token.access_token);
     }
+
+    async SubmitPackComment(userId: string, packId: string, comment: string) {
+        return null;
+    }
 }
 
-export { type DashboardAPIInterface, type DashboardLbEntry };
+export { type DashboardAPIInterface, type DashboardLbEntry, type DashboardPackComment };

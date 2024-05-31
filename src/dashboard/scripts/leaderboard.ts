@@ -1,28 +1,14 @@
 /// <reference lib="dom" />
 
-import type { DashboardAPIInterface } from "../api";
+import { treaty } from "@elysiajs/eden";
+import type { DashboardApp } from "..";
 
-async function FetchPage(page: number): Promise<{ data: Awaited<ReturnType<DashboardAPIInterface["FetchLbPage"]>>; code: PageLoadSuccessCode }> {
-    const res = await fetch(`/api/lbpage?page=${page}`);
-
-    if (res.status === 429) {
-        return { data: null, code: PageLoadSuccessCode.RateLimit };
-    }
-    if (res.status === 400) {
-        console.warn("Got HTTP 400, we reached the end. Stop loading.");
-        return { data: null, code: PageLoadSuccessCode.InvalidPage };
-    }
-    if (!res.ok) {
-        return { data: null, code: PageLoadSuccessCode.Unknown };
-    }
-
-    return { data: await res.json(), code: PageLoadSuccessCode.Success };
-}
+const app = treaty<DashboardApp>(location.origin);
 
 enum PageLoadSuccessCode {
-    Success,
-    InvalidPage,
-    RateLimit,
+    Success = 200,
+    InvalidPage = 400,
+    RateLimit = 429,
     Unknown
 }
 
@@ -51,13 +37,16 @@ async function loadUsers(pageCursor: number) {
     }
 
     loadingIndicator.style.display = "initial";
-    const page = await FetchPage(pageCursor);
-    if (!page.data) {
+    const request = await app.api.lbpage.get({ query: { page: pageCursor } });
+    
+    if (request.error) {
         loadingIndicator.style.display = "none";
-        return page.code;
+        return request.error.status as number;
     }
 
-    for (const user of page.data) {
+    const page = request.data;
+
+    for (const user of page) {
         const podiumHTML = `<img src="${user.avatar}" loading="lazy"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
         const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
 
@@ -108,7 +97,7 @@ async function loadUsers(pageCursor: number) {
     }
 
     loadingIndicator.style.display = "none";
-    return page.code;
+    return PageLoadSuccessCode.Success;
 }
 
 // set up toast

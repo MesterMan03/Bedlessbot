@@ -1,41 +1,10 @@
-import DiscordOauth2, { type User } from "discord-oauth2";
+import DiscordOauth2 from "discord-oauth2";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, OAuth2Scopes } from "discord.js";
 import client, { db } from "..";
 import config from "../config";
 import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
 import data from "./data.json";
-
-interface DashboardAPIInterface {
-    FetchLbPage: (page: number) => Promise<DashboardLbEntry[] | null>;
-    CreateOAuth2Url: (state: string) => string;
-    ProcessOAuth2Callback: (code: string) => Promise<User | null>;
-    SubmitPackComment: (userid: string, packid: string, comment: string) => Promise<DashboardPackComment | null>;
-    ManagePackComment: (commentid: string, action: "approve" | "deny" | "spam") => Promise<boolean>;
-    FetchPackComments: (packid: string, page: number) => Promise<DashboardFinalPackComment[] | null>;
-}
-
-interface DashboardLbEntry {
-    pos: number;
-    level: number;
-    xp: number;
-    userid: string;
-    avatar: string;
-    username: string;
-    progress: [number, number];
-}
-
-interface DashboardPackComment {
-    id: string;
-    packid: string;
-    userid: string;
-    comment: string;
-    date: number;
-}
-
-interface DashboardFinalPackComment extends DashboardPackComment {
-    username: string;
-    avatar: string;
-}
 
 const LbPageSize = 20;
 const CommentsPageSize = 10;
@@ -109,7 +78,18 @@ export default class DashboardAPI implements DashboardAPIInterface {
             grantType: "authorization_code"
         });
 
-        return oauth2Client.getUser(token.access_token);
+        // write user to database
+        const user = await oauth2Client.getUser(token.access_token);
+        const discordUser = await client.users.fetch(user.id);
+        db.run("INSERT OR REPLACE INTO dash_users (userid, username, avatar, access_token, refresh_token) VALUES (?, ?, ?, ?, ?)", [
+            user.id,
+            user.username,
+            discordUser.displayAvatarURL({ forceStatic: false, size: 64 }),
+            token.access_token,
+            token.refresh_token
+        ]);
+
+        return user;
     }
 
     async SubmitPackComment(userid: string, packid: string, comment: string) {
@@ -117,13 +97,13 @@ export default class DashboardAPI implements DashboardAPIInterface {
             throw new Error("Invalid pack ID");
         }
 
-        const commentObj: DashboardPackComment = {
+        const commentObj = {
             id: Math.random().toString(10).substring(2),
             packid,
             userid,
             comment,
             date: Date.now()
-        };
+        } satisfies DashboardPackComment;
 
         // insert the comment into the database
         db.run("INSERT INTO pending_pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?)", [
@@ -220,6 +200,15 @@ export default class DashboardAPI implements DashboardAPIInterface {
             })
         );
     }
-}
 
-export { type DashboardAPIInterface, type DashboardLbEntry, type DashboardPackComment, type DashboardFinalPackComment };
+    async GetUser(userid: string) {
+        // grab from database
+        const user = db.query<DashboardUser, [string]>("SELECT * FROM dash_users WHERE userid = ?").get(userid);
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        return { username: user.username, avatar: user.avatar } satisfies DashboardUser;
+    }
+}

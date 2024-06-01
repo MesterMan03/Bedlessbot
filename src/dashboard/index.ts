@@ -5,7 +5,13 @@ import { fileURLToPath } from "bun";
 import Elysia, { t } from "elysia";
 import { rmSync } from "node:fs";
 import { join } from "path";
-import type { DashboardLbEntry } from "./api";
+import {
+    DashboardFinalPackCommentSchema,
+    DashboardLbEntrySchema,
+    DashboardPackCommentSchema,
+    DashboardUserSchema,
+    type DashboardLbEntry
+} from "./api-types";
 import packData from "./data.json";
 
 const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
@@ -57,7 +63,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
             detail: {
                 tags: ["App"],
                 description: "Fetch a page of the level leaderboard"
-            }
+            },
+            response: { 200: t.Array(DashboardLbEntrySchema), 400: t.String() }
         }
     )
     .get(
@@ -105,7 +112,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
 
             const redirectUrl = redirectCookie.value ?? "/";
             oauthState.remove();
-            redirectUrl.remove();
+            redirectCookie.remove();
 
             // process the callback
             const result = await api.ProcessOAuth2Callback(code);
@@ -164,8 +171,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 .post(
                     "/comments",
                     async ({ body: { packid, comment }, store: { userid } }) => {
-                        const commentObj = await api.SubmitPackComment(userid, packid, comment);
-                        return JSON.stringify(commentObj);
+                        return api.SubmitPackComment(userid, packid, comment);
                     },
                     {
                         body: t.Object({
@@ -179,7 +185,21 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         detail: {
                             description: "Submit a comment on a pack",
                             tags: ["App", "Pack", "Protected"]
-                        }
+                        },
+                        response: DashboardPackCommentSchema
+                    }
+                )
+                .get(
+                    "/user",
+                    async ({ store: { userid } }) => {
+                        return api.GetUser(userid);
+                    },
+                    {
+                        detail: {
+                            tags: ["App", "Protected"],
+                            description: "Fetch the username and avatar of the currently logged in user"
+                        },
+                        response: DashboardUserSchema
                     }
                 )
     )
@@ -199,16 +219,65 @@ const apiRoute = new Elysia({ prefix: "/api" })
         },
         {
             query: t.Object({
-                page: t.Numeric({ default: 0, minimum: 0, description: "The page of the comments to query (starts at 0)" }),
+                page: t.Numeric({
+                    default: 0,
+                    minimum: 0,
+                    description: "The page of the comments to query (starts at 0)",
+                    error: "Page cannot be negative"
+                }),
                 packid: t.String({ description: "The ID of the pack" })
             }),
-            detail: { tags: ["App", "Pack"], description: "Fetch a page of comments for a pack" }
+            detail: { tags: ["App", "Pack"], description: "Fetch a page of comments for a pack" },
+            response: { 200: t.Array(DashboardFinalPackCommentSchema), 400: t.String() }
         }
     )
     .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" } });
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
+    // add Matomo tracker script to every html response
+    .onAfterHandle({ as: "global" }, async ({ response }) => {
+        if (process.env.NODE_ENV === "development") {
+            return;
+        }
+        if (!(response instanceof Response)) {
+            return;
+        }
+
+        if (response.headers.get("content-type")?.includes("text/html")) {
+            const rewriter = new HTMLRewriter().on("head", {
+                element(el) {
+                    el.append(
+                        `<!-- Matomo -->
+                    <script>
+                      var _paq = window._paq = window._paq || [];
+                      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+                      _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+                      _paq.push(["setCookieDomain", "*.mester.info"]);
+                      _paq.push(["setDomains", ["*.mester.info"]]);
+                      _paq.push(["setDoNotTrack", true]);
+                      _paq.push(['trackPageView']);
+                      _paq.push(['enableLinkTracking']);
+                      (function() {
+                        var u="//matomo.gedankenversichert.com/";
+                        _paq.push(['setTrackerUrl', u+'matomo.php']);
+                        _paq.push(['setSiteId', '1']);
+                        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+                      })();
+                    </script>
+                    <!-- End Matomo Code -->
+                    `,
+                        { html: true }
+                    );
+                }
+            });
+
+            const text = await response.text();
+
+            return new Response(rewriter.transform(text), { headers: response.headers });
+        }
+    })
     .use(apiRoute)
     .use(
         swagger({
@@ -224,6 +293,9 @@ const app = new Elysia()
             }
         })
     )
+    .get("/", ({ redirect }) => {
+        return redirect("/leaderboard.html", 302);
+    })
     .listen(port);
 
 console.log(`Dashboard started on http://localhost:${port}`);

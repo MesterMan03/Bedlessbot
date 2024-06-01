@@ -1,5 +1,5 @@
 import type { User } from "discord-oauth2";
-import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment } from "./api";
+import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
 import { Database } from "bun:sqlite";
 import config from "../config";
 
@@ -66,24 +66,34 @@ export default class DashboardAPITest implements DashboardAPIInterface {
 
     async ProcessOAuth2Callback(_: string) {
         // return dummy user
-        return {
+        const user = {
             id: Math.random().toString(10).substring(2),
             username: GenerateRandomName(),
             global_name: "Dummy Person",
-            avatar: null,
+            avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
             discriminator: "0"
-        } as User;
+        } satisfies User;
+
+        db.run("INSERT INTO dash_users (userid, username, avatar, access_token, refresh_token) VALUES (?, ?, ?, ?, ?);", [
+            user.id,
+            user.username,
+            user.avatar,
+            "dummy_access_token",
+            "dummy_refresh_token"
+        ]);
+
+        return user;
     }
 
     async SubmitPackComment(userid: string, packid: string, comment: string) {
         // create the comment with dummy data
-        const commentObj: DashboardPackComment = {
+        const commentObj = {
             id: Math.random().toString(10).substring(2),
             packid,
             userid,
             comment,
             date: Date.now()
-        };
+        } satisfies DashboardPackComment;
 
         // write to the database
         db.run("INSERT INTO pending_pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?);", [
@@ -142,5 +152,18 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                     }) satisfies DashboardFinalPackComment
             )
         );
+    }
+
+    async GetUser(userid: string) {
+        const user = db.query<DashboardUser, [string]>("SELECT * FROM dash_users WHERE userid = ?").get(userid);
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        return {
+            username: user.username,
+            avatar: user.avatar
+        } satisfies DashboardUser;
     }
 }

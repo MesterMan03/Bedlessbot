@@ -114,6 +114,6 @@
             "quoteStyle": "double",
             "attributePosition": "auto"
         },
-        "globals": ["const", "Bun"]
+        "globals": ["const", "Bun", "HTMLRewriter"]
     }
 }

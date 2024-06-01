@@ -21,4 +21,7 @@ db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEX
 db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
 db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 
+// Dashboard users
+db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
+
 db.close();

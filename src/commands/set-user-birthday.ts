@@ -9,14 +9,18 @@ export default {
         .setDescription("Set a user's birthday")
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ModerateMembers)
         .addUserOption((option) => option.setName("member").setDescription("The member to set the birthday of.").setRequired(true))
-        .addStringOption((option) => option.setName("date").setDescription("The date of the birthday in the format DD/MM/YYYY or DD/MM.").setRequired(true)),
+        .addStringOption((option) =>
+            option.setName("date").setDescription("The date of the birthday in the format DD/MM/YYYY or DD/MM.").setRequired(true)
+        ),
     async execute(interaction: ChatInputCommandInteraction) {
         const user = interaction.options.getUser("member", true);
         const dateRaw = interaction.options.getString("date", true);
 
         // check if the date is in the correct format
         if (!/^\d{2}\/\d{2}(\/\d{4})?$/.test(dateRaw)) {
-            const embed = new EmbedBuilder().setColor("Grey").setDescription("Please provide a valid date in the format DD/MM/YYYY or DD/MM.");
+            const embed = new EmbedBuilder()
+                .setColor("Grey")
+                .setDescription("Please provide a valid date in the format DD/MM/YYYY or DD/MM.");
             return void interaction.reply({ embeds: [embed] });
         }
 

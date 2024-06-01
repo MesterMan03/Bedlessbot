@@ -1,5 +1,5 @@
 import type { User } from "discord-oauth2";
-import type { DashboardAPIInterface, DashboardLbEntry, DashboardPackComment } from "./api";
+import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment } from "./api";
 import { Database } from "bun:sqlite";
 import config from "../config";
 
@@ -10,7 +10,8 @@ db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEX
 db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
 db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 
-const PageSize = 20;
+const LbPageSize = 20;
+const CommentsPageSize = 10;
 
 function GenerateRandomName(): string {
     const minLength = 3;
@@ -29,16 +30,15 @@ function GenerateRandomName(): string {
 
 export default class DashboardAPITest implements DashboardAPIInterface {
     async FetchLbPage(page: number) {
-        // this is a test api, generate random data
-        if (page >= 10 || !Number.isInteger(page) || page < 0) {
+        if (page >= 10) {
             return null;
         }
 
         const levels = Array.from(
-            { length: PageSize },
+            { length: LbPageSize },
             (_, i) =>
                 ({
-                    pos: i + page * PageSize + 1,
+                    pos: i + page * LbPageSize + 1,
                     level: Math.floor(Math.random() * 100),
                     xp: Math.floor(Math.random() * 1000),
                     userid: Math.random().toString(10).substring(2),
@@ -77,14 +77,13 @@ export default class DashboardAPITest implements DashboardAPIInterface {
 
     async SubmitPackComment(userid: string, packid: string, comment: string) {
         // create the comment with dummy data
-        const commentObj = {
+        const commentObj: DashboardPackComment = {
             id: Math.random().toString(10).substring(2),
-            packid: packid,
-            userid: userid,
+            packid,
+            userid,
             comment,
-            date: Date.now(),
-            pending: true
-        } as DashboardPackComment<true>;
+            date: Date.now()
+        };
 
         // write to the database
         db.run("INSERT INTO pending_pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?);", [
@@ -96,5 +95,52 @@ export default class DashboardAPITest implements DashboardAPIInterface {
         ]);
 
         return commentObj;
+    }
+
+    async ManagePackComment(commentid: string, action: "approve" | "deny" | "spam") {
+        const comment = db.query<DashboardPackComment, [string]>("SELECT * FROM pending_pack_comments WHERE id = ?").get(commentid);
+
+        if (!comment) {
+            throw new Error("Comment not found");
+        }
+
+        if (action === "approve") {
+            db.run("INSERT INTO pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?)", [
+                comment.id,
+                comment.packid,
+                comment.userid,
+                comment.comment,
+                comment.date
+            ]);
+        }
+
+        db.run("DELETE FROM pending_pack_comments WHERE id = ?", [commentid]);
+
+        return true;
+    }
+
+    async FetchPackComments(packid: string, page: number) {
+        if (page >= 10) {
+            return null;
+        }
+
+        const comments = db
+            .query<DashboardPackComment, [string]>(
+                `SELECT * FROM pack_comments WHERE packid = ? ORDER BY date DESC LIMIT ${CommentsPageSize} OFFSET ${
+                    page * CommentsPageSize
+                }`
+            )
+            .all(packid);
+
+        return Promise.all(
+            comments.map(
+                async (comment) =>
+                    ({
+                        ...comment,
+                        username: GenerateRandomName(),
+                        avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
+                    }) satisfies DashboardFinalPackComment
+            )
+        );
     }
 }

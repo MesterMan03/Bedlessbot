@@ -1,0 +1,19 @@
+{
+    "packs": [
+        {
+            "id": "15k",
+            "short_name": "15k pack",
+            "friendly_name": "15k pack"
+        },
+        {
+            "id": "60k",
+            "short_name": "60k pack",
+            "friendly_name": "60k pack"
+        },
+        {
+            "id": "60k-overlay",
+            "short_name": "60k overlay",
+            "friendly_name": "60k Bed Sword Overlay"
+        }
+    ]
+}

@@ -5,11 +5,10 @@ import type { DashboardApp } from "..";
 
 const app = treaty<DashboardApp>(location.origin);
 
-enum PageLoadSuccessCode {
+enum PageLoadCode {
     Success = 200,
     InvalidPage = 400,
-    RateLimit = 429,
-    Unknown
+    RateLimit = 429
 }
 
 let toastTimeout: globalThis.Timer | undefined = undefined;
@@ -38,7 +37,7 @@ async function loadUsers(pageCursor: number) {
 
     loadingIndicator.style.display = "initial";
     const request = await app.api.lbpage.get({ query: { page: pageCursor } });
-    
+
     if (request.error) {
         loadingIndicator.style.display = "none";
         return request.error.status as number;
@@ -86,10 +85,14 @@ async function loadUsers(pageCursor: number) {
             "beforeend",
             `<div class="user">
       <p class="pos">${user.pos}</p>
-      <p class="name" onclick="navigator.clipboard.writeText('${user.userid}')"><img src="${user.avatar}" loading="lazy"><span>${user.username}</span></p>
+      <p class="name" onclick="navigator.clipboard.writeText('${user.userid}')"><img src="${user.avatar}" loading="lazy"><span>${
+          user.username
+      }</span></p>
       <label>
         <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
-        <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor((user.progress[0] * 100) / user.progress[1])}</progress>
+        <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(
+            (user.progress[0] * 100) / user.progress[1]
+        )}</progress>
         ${xpInfoHTML}
       </label>
     </div>`
@@ -97,7 +100,7 @@ async function loadUsers(pageCursor: number) {
     }
 
     loadingIndicator.style.display = "none";
-    return PageLoadSuccessCode.Success;
+    return PageLoadCode.Success;
 }
 
 // set up toast
@@ -122,11 +125,11 @@ addEventListener("scroll", async function listener() {
             doneLoading = true;
             return successCode;
         });
-        if (successCode === PageLoadSuccessCode.InvalidPage) {
+        if (successCode === PageLoadCode.InvalidPage) {
             // we've reached the end, stop loading
             removeEventListener("scroll", listener);
         }
-        if (successCode === PageLoadSuccessCode.Success) {
+        if (successCode === PageLoadCode.Success) {
             pageCursor++;
         }
     }

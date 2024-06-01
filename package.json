@@ -31,7 +31,6 @@
     "discord-oauth2": "^2.12.1",
     "discord.js": "^14.14.1",
     "elysia": "^1.0.22",
-    "elysia-rate-limit": "^4.1.0",
     "googleapis": "^134.0.0",
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.3",

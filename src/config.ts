@@ -1,4 +1,16 @@
-const ApplyRoles = <const>["dragclick", "16cps", "eagle", "witchly", "breezily", "goodpvp", "moonwalk", "god", "diagod", "telly", "0cpsgod"];
+const ApplyRoles = <const>[
+    "dragclick",
+    "16cps",
+    "eagle",
+    "witchly",
+    "breezily",
+    "goodpvp",
+    "moonwalk",
+    "god",
+    "diagod",
+    "telly",
+    "0cpsgod"
+];
 
 type ApplyRole = (typeof ApplyRoles)[number];
 
@@ -38,7 +50,8 @@ const prodConfig = {
         Guide: "692074640486563871",
         GuideMessage: "1223815275099717766",
         Outcome: "692075719726989312",
-        Toreview: "771791897806766112"
+        ToReview: "771791897806766112",
+        PackComments: "1246489783530684589"
     },
     Roles: {
         Birthday: "715495353159254018"
@@ -97,7 +110,8 @@ const devConfig = {
         Guide: "1224111389321203834",
         GuideMessage: "1225827434679504896",
         Outcome: "1074393964788060178",
-        Toreview: "1074393964788060178"
+        ToReview: "1074393964788060178",
+        PackComments: "1246489938510352395"
     },
     Roles: {
         Birthday: "1074393964016324691"

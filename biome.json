@@ -12,7 +12,7 @@
         "indentStyle": "space",
         "indentWidth": 4,
         "lineEnding": "lf",
-        "lineWidth": 180,
+        "lineWidth": 140,
         "attributePosition": "auto",
         "ignore": ["**/package.json"],
         "include": ["src/**/*.ts", "res/rank/script.js"]

@@ -9,6 +9,7 @@ db.run("PRAGMA journal_mode = wal;");
 db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
 db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
+db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
 
 const LbPageSize = 20;
 const CommentsPageSize = 10;
@@ -103,6 +104,16 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             commentObj.comment,
             commentObj.date
         ]);
+
+        // have a 70% chance of approving the comment
+        if (Math.random() < 0.7) {
+            this.ManagePackComment(commentObj.id, "approve");
+            // have a 50% chance of marking as spam
+        } else if (Math.random() < 0.5) {
+            this.ManagePackComment(commentObj.id, "spam");
+        } else {
+            this.ManagePackComment(commentObj.id, "deny");
+        }
 
         return commentObj;
     }

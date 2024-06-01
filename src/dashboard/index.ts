@@ -293,6 +293,7 @@ const app = new Elysia()
             }
         })
     )
+    // TODO: delete this once index.html is set up correctly
     .get("/", ({ redirect }) => {
         return redirect("/leaderboard.html", 302);
     })

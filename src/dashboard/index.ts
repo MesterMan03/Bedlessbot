@@ -41,6 +41,30 @@ await Bun.build({
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env.JWT_SECRET as string, "base64");
 
+const matomoTrackingCode = `<!-- Matomo -->
+<script>
+var _paq = window._paq = window._paq || [];
+/* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+_paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+_paq.push(["setCookieDomain", "*.bedless.mester.info"]);
+_paq.push(["setDomains", ["*.bedless.mester.info"]]);
+_paq.push(["setDoNotTrack", true]);
+_paq.push(['trackPageView']);
+_paq.push(['enableLinkTracking']);
+(function() {
+var u="//matomo.gedankenversichert.com/";
+_paq.push(['setTrackerUrl', u+'matomo.php']);
+_paq.push(['setSiteId', '1']);
+var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+})();
+</script>
+<!-- Matomo Image Tracker-->
+<noscript>
+<img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
+</noscript>
+<!-- End Matomo Code -->`;
+
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")
     .use(jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" }))
@@ -251,29 +275,7 @@ const app = new Elysia()
         if (response.headers.get("content-type")?.includes("text/html")) {
             const rewriter = new HTMLRewriter().on("head", {
                 element(el) {
-                    el.append(
-                        `<!-- Matomo -->
-                    <script>
-                      var _paq = window._paq = window._paq || [];
-                      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-                      _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
-                      _paq.push(["setCookieDomain", "*.mester.info"]);
-                      _paq.push(["setDomains", ["*.mester.info"]]);
-                      _paq.push(["setDoNotTrack", true]);
-                      _paq.push(['trackPageView']);
-                      _paq.push(['enableLinkTracking']);
-                      (function() {
-                        var u="//matomo.gedankenversichert.com/";
-                        _paq.push(['setTrackerUrl', u+'matomo.php']);
-                        _paq.push(['setSiteId', '1']);
-                        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-                        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-                      })();
-                    </script>
-                    <!-- End Matomo Code -->
-                    `,
-                        { html: true }
-                    );
+                    el.append(matomoTrackingCode, { html: true });
                 }
             });
 

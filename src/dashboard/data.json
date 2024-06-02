@@ -56,6 +56,66 @@
                 "1.8.9": "§4Bedless §b200k [128x].zip",
                 "1.20.5": "§4Bedless §b200k [128x] 1.20.5.zip"
             }
+        },
+        {
+            "id": "200k-gura",
+            "icon": "200k.png",
+            "variant": "200k",
+            "short_name": "200k gura",
+            "friendly_name": "200k Gura Bed Overlay",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §b200k Gura Bed Overlay.zip",
+                "1.20.5": "§4Bedless §b200k Gura Bed Overlay 1.20.5.zip"
+            }
+        },
+        {
+            "id": "200k-retrowave",
+            "icon": "200k-retrowave.png",
+            "variant": "200k",
+            "short_name": "200k retrowave",
+            "friendly_name": "200k Retrowave Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§6Bedless §5200k [128x] Retrowave.zip",
+                "1.20.5": "§6Bedless §5200k [128x] Retrowave 1.20.5.zip"
+            }
+        },
+        {
+            "id": "200k-blackred",
+            "icon": "200k-blackred.png",
+            "variant": "200k",
+            "short_name": "200k blackred",
+            "friendly_name": "200k BlackRed Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§8Bedless §b200k [128x] Black&Red.zip",
+                "1.20.5": "§8Bedless §b200k [128x] Black&Red 1.20.5.zip"
+            }
+        },
+        {
+            "id": "200k-green",
+            "icon": "200k-green.png",
+            "variant": "200k",
+            "short_name": "200k green",
+            "friendly_name": "200k Green Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§aBedless §b200k [128x] Green.zip",
+                "1.20.5": "§aBedless §b200k [128x] Green 1.20.5.zip"
+            }
+        },
+        {
+            "id": "200k-default",
+            "icon": "200k-default.png",
+            "variant": "200k",
+            "short_name": "200k default",
+            "friendly_name": "200k Default Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §b200k [128x] Default.zip",
+                "1.20.5": "§bBedless §b200k [128x] Default 1.20.5.zip"
+            }
         }
     ]
 }

@@ -15,7 +15,7 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 console.log((await app.api.comments.get({ query: { page: 0, packid: "15k" } })).data);
 
-const packData = (await app.api.packdata.get()).data satisfies PackData | null;
+const packData = (await app.api.packdata.get()).data as PackData;
 
 // Code snippet for using the moment library
 // Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
@@ -57,10 +57,6 @@ document.body.appendChild(document.createElement("div")).innerHTML = markdownOut
 // You can leave them as-is or rework them if the code structure requires it
 
 function downloadPack(packid: string, version: "1.8.9" | "1.20.5") {
-    if (!packData) {
-        throw new Error("Pack data is null");
-    }
-
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
         throw new Error("Pack not found");
@@ -81,10 +77,6 @@ function downloadPack(packid: string, version: "1.8.9" | "1.20.5") {
 }
 
 function getPackIcon(packid: string) {
-    if (!packData) {
-        throw new Error("Pack data is null");
-    }
-
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
         throw new Error("Pack not found");

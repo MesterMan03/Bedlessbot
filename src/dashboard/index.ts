@@ -63,7 +63,7 @@ g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
 <noscript>
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript></div>
-<script src="https://matomo.gedankenversichert.com/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=auto&backgroundColor=480f0f&fontColor=ffffff&fontSize=14px&fontFamily=Arial&showIntro=1"></script>
+<!--script src="https://matomo.gedankenversichert.com/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=auto&backgroundColor=480f0f&fontColor=ffffff&fontSize=14px&fontFamily=Arial&showIntro=1"></script-->
 <!-- End Matomo Code -->
 <!-- Start cookieyes banner --> <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js"></script> <!-- End cookieyes banner -->
 <script>

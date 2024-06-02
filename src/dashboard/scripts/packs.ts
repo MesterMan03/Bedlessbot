@@ -53,6 +53,9 @@ Masked link: [click me](https://google.com)
 const markdownOutput = DOMPurify.sanitize(marked.parse(markdownInput, { async: false }) as string);
 document.body.appendChild(document.createElement("div")).innerHTML = markdownOutput;
 
+// The following functions are meant as a very basic, stripped-down code snippets
+// You can leave them as-is or rework them if the code structure requires it
+
 function downloadPack(packid: string, version: "1.8.9" | "1.20.5") {
     if (!packData) {
         throw new Error("Pack data is null");

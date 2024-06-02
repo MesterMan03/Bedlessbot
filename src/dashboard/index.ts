@@ -348,6 +348,18 @@ const app = new Elysia()
     .get("/", ({ redirect }) => {
         return redirect("/leaderboard.html", 302);
     })
+    .onAfterHandle({ as: "global" }, async ({ set, request }) => {
+        if (!(request instanceof Request)) {
+            return;
+        }
+
+        try {
+            const url = new URL(request.url);
+            if (url.pathname === "/scripts/service-worker.js") {
+                set.headers["Service-Worker-Allowed"] = "/";
+            }
+        } catch {}
+    })
     .listen(port);
 
 console.log(`Dashboard started on http://localhost:${port}`);

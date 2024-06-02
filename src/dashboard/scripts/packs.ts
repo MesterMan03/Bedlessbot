@@ -119,3 +119,33 @@ if ("serviceWorker" in navigator) {
             console.log("Service Worker registration failed:", error);
         });
 }
+
+const commentForm = document.getElementById("commentForm") as HTMLFormElement;
+commentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(commentForm);
+    const packid = "15k";
+    const comment = formData.get("comment") as string;
+    const response = await app.api.comments.post({ packid, comment });
+    if (response.status === 401) {
+        // redirect to login
+        location.href = "/api/auth?redirect=/packs.html";
+    }
+    if (response.status === 200) {
+        // refresh page
+        location.reload();
+    }
+});
+const commentsDiv = document.getElementById("comments") as HTMLDivElement;
+const comments = (await app.api.comments.get({ query: { packid: "15k", page: 0 } })).data;
+if (comments) {
+    for (const comment of comments) {
+        const commentElement = document.createElement("div");
+        commentElement.innerHTML = `
+            <img src="${comment.avatar}" alt="${comment.username}">
+            <h3>${comment.username}</h3>
+            <p>${comment.comment}</p>
+        `;
+        commentsDiv.appendChild(commentElement);
+    }
+}

@@ -105,15 +105,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             commentObj.date
         ]);
 
-        // have a 70% chance of approving the comment
-        if (Math.random() < 0.7) {
-            this.ManagePackComment(commentObj.id, "approve");
-            // have a 50% chance of marking as spam
-        } else if (Math.random() < 0.5) {
-            this.ManagePackComment(commentObj.id, "spam");
-        } else {
-            this.ManagePackComment(commentObj.id, "deny");
-        }
+        this.ManagePackComment(commentObj.id, "approve");
 
         return commentObj;
     }
@@ -154,14 +146,21 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             .all(packid);
 
         return Promise.all(
-            comments.map(
-                async (comment) =>
-                    ({
-                        ...comment,
-                        username: GenerateRandomName(),
-                        avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
-                    }) satisfies DashboardFinalPackComment
-            )
+            comments.map(async (comment) => {
+                const user = await this.GetUser(comment.userid).catch(
+                    () =>
+                        ({
+                            username: GenerateRandomName(),
+                            avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
+                        }) satisfies DashboardUser
+                );
+
+                return {
+                    ...comment,
+                    username: user.username,
+                    avatar: user.avatar
+                } satisfies DashboardFinalPackComment;
+            })
         );
     }
 

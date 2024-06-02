@@ -45,10 +45,10 @@ const matomoTrackingCode = `<!-- Matomo -->
 <script>
 var _paq = window._paq = window._paq || [];
 /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+_paq.push(['requireCookieConsent']);
 _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
 _paq.push(["setCookieDomain", "*.bedless.mester.info"]);
 _paq.push(["setDomains", ["*.bedless.mester.info"]]);
-_paq.push(["setDoNotTrack", true]);
 _paq.push(['trackPageView']);
 _paq.push(['enableLinkTracking']);
 (function() {
@@ -62,8 +62,37 @@ g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
 <!-- Matomo Image Tracker-->
 <noscript>
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
-</noscript>
-<!-- End Matomo Code -->`;
+</noscript></div>
+<script src="https://matomo.gedankenversichert.com/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=auto&backgroundColor=480f0f&fontColor=ffffff&fontSize=14px&fontFamily=Arial&showIntro=1"></script>
+<!-- End Matomo Code -->
+<!-- Start cookieyes banner --> <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js"></script> <!-- End cookieyes banner -->
+<script>
+var waitForTrackerCount = 0;
+function matomoWaitForTracker() {
+  if (typeof _paq === 'undefined') {
+    if (waitForTrackerCount < 40) {
+      setTimeout(matomoWaitForTracker, 250);
+      waitForTrackerCount++;
+      return;
+    }
+  } else {
+    document.addEventListener("cookieyes_consent_update", function (eventData) {
+        const data = eventData.detail;
+        consentSet(data);
+    });   
+  }
+}
+function consentSet(data) {
+   if (data.accepted.includes("analytics")) {
+       _paq.push(['setCookieConsentGiven']);
+       _paq.push(['setConsentGiven']);
+   } else {
+       _paq.push(['forgetCookieConsentGiven']);
+       _paq.push(['forgetConsentGiven']);
+   }
+}
+document.addEventListener('DOMContentLoaded', matomoWaitForTracker());
+</script>`;
 
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")
@@ -266,7 +295,7 @@ const app = new Elysia()
     // add Matomo tracker script to every html response
     .onAfterHandle({ as: "global" }, async ({ response }) => {
         if (process.env.NODE_ENV === "development") {
-            return;
+            //return;
         }
         if (!(response instanceof Response)) {
             return;

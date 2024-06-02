@@ -5,6 +5,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
     "@types/bun": "^1.0.12",
+    "@types/dompurify": "^3.0.5",
     "@types/node-cron": "^3.0.11",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
@@ -30,8 +31,10 @@
     "bufferutil": "^4.0.8",
     "discord-oauth2": "^2.12.1",
     "discord.js": "^14.14.1",
+    "dompurify": "^3.1.5",
     "elysia": "^1.0.22",
     "googleapis": "^134.0.0",
+    "marked": "^12.0.2",
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.3",
     "openai": "^4.32.1",

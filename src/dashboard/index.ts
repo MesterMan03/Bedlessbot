@@ -282,15 +282,40 @@ const app = new Elysia()
     .use(
         swagger({
             scalarConfig: { theme: "moon", layout: "modern" },
+            provider: "swagger-ui",
             documentation: {
-                info: { title: "Bedlessbot Dashboard API Documentation", version: "1.0.0" },
+                info: {
+                    title: "Bedlessbot Dashboard API Documentation",
+                    version: "1.0.0",
+                    license: {
+                        name: "Apache 2.0",
+                        url: "https://raw.githubusercontent.com/MesterMan03/Bedlessbot/main/LICENSE"
+                    },
+                    description: "API endpoints for the Bedlessbot dashboard",
+                    contact: {
+                        name: "Mester",
+                        url: "https://discord.gg/bedless-nation-691898152277508146"
+                    }
+                },
                 tags: [
                     { name: "App", description: "General API endpoints" },
                     { name: "Auth", description: "Discord OAuth2 endpoints" },
                     { name: "Pack", description: "Pack related endpoints" },
                     { name: "Protected", description: "Protected endpoints - requires to be logged in" }
-                ]
-            }
+                ],
+                openapi: "3.1.0",
+                components: {
+                    securitySchemes: {
+                        jwt: {
+                            type: "http",
+                            scheme: "scheme",
+                            bearerFormat: "JWT",
+                            description: "JWT token for authentication"
+                        }
+                    }
+                }
+            },
+            path: "/docs"
         })
     )
     // TODO: delete this once index.html is set up correctly

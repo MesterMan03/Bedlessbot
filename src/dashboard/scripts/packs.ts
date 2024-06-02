@@ -1,12 +1,48 @@
 import { treaty } from "@elysiajs/eden";
 import { type DashboardApp } from "..";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
 // note that because we don't import anything, this script can only be run in browsers, where the moment library is already loaded
-declare const moment: typeof import("moment");
+declare const moment: typeof import("moment-timezone");
+
+// This is basically how we're gonna grab pack comments
 
 const app = treaty<DashboardApp>(location.origin);
+console.log((await app.api.comments.get({ query: { page: 0, packid: "15k" } })).data);
+
+// Code snippet for using the moment library
+// Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
+// somehow to a human-readable format. I guess you could use the built-in Date object, but that's
+// a bit of a hassle. Meanwhile, moment can handle timezones and custom formats with the downside of
+// bloat - it is slightly mitigated by the script file being cached -, and we're also using like a single
+// feature of it, so decide if writing your own function is worth it (personally I'd say it's not) - Mester
 
 const tz = moment.tz.guess();
 console.log(moment(new Date()).tz(tz).format("HH:mm DD/MM/YYYY"));
-console.log((await app.api.comments.get({ query: { page: 0, packid: "15k" } })).data);
+
+// I'm not sure if using Markdown will be a good idea in the long rung
+// It'd be nice if comments could be formatted, but adding an entire Markdown parser to the script
+// makes it a tiny bit bloated + there are features that we'd like to disable (masked links, for example)
+// For now, here's a snippet that shows how to use the marked library to parse Markdown, but it might get removed
+// in the future - Mester
+
+const markdownInput = `
+# Hello, world!
+
+This is a test of the markdown parser. Here's a list:
+- Item 1
+- Item 2
+- Item 3
+
+Now a codeblock:
+\`\`\`js
+console.log("Hello, world!");
+\`\`\`
+
+Masked link: [click me](https://google.com)
+`;
+
+const markdownOutput = DOMPurify.sanitize(marked.parse(markdownInput, { async: false }) as string);
+document.body.appendChild(document.createElement("div")).innerHTML = markdownOutput;

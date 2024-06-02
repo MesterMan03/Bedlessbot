@@ -4,22 +4,24 @@
             "id": "15k",
             "icon": "15k.png",
             "short_name": "15k pack",
-            "friendly_name": "15k pack",
+            "friendly_name": "15k Pack",
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§cBedless §l15k Jupiner edit.zip",
-                "1.20.5": "§cBedless §l15k Jupiner edit 1.20.5.zip"
+                "1.20.5": "§cBedless §l15k Jupiner edit 1.20.5.zip",
+                "bedrock": "§cBedless §l15k Jupiner edit Bedrock.mcpack"
             }
         },
         {
             "id": "60k",
             "icon": "60k.png",
             "short_name": "60k pack",
-            "friendly_name": "60k pack",
+            "friendly_name": "60k Pack",
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§4Bedless §c60k.zip",
-                "1.20.5": "§4Bedless §c60k 1.20.5.zip"
+                "1.20.5": "§4Bedless §c60k 1.20.5.zip",
+                "bedrock": "§4Bedless §c60k Bedrock.mcpack"
             }
         },
         {
@@ -31,30 +33,33 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§4Bedless §c60k - Bed Sword Overlay.zip",
-                "1.20.5": "§4Bedless §c60k - Bed Sword Overlay 1.20.5.zip"
+                "1.20.5": "§4Bedless §c60k - Bed Sword Overlay 1.20.5.zip",
+                "bedrock": "§4Bedless §c60k - Bed Sword Overlay Bedrock.mcpack"
             }
         },
         {
             "id": "60k-halloween",
-            "icon": "60-halloween.png",
+            "icon": "60k-halloween.png",
             "variant": "60k",
             "short_name": "60k halloween",
             "friendly_name": "60k Halloween",
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§7Bedless §c60k §6Halloween.zip",
-                "1.20.5": "§7Bedless §c60k §6Halloween 1.20.5.zip"
+                "1.20.5": "§7Bedless §c60k §6Halloween 1.20.5.zip",
+                "bedrock": "§7Bedless §c60k §6Halloween Bedrock.mcpack"
             }
         },
         {
             "id": "200k",
             "icon": "200k.png",
             "short_name": "200k pack",
-            "friendly_name": "200k pack",
+            "friendly_name": "200k Pack",
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§4Bedless §b200k [128x].zip",
-                "1.20.5": "§4Bedless §b200k [128x] 1.20.5.zip"
+                "1.20.5": "§4Bedless §b200k [128x] 1.20.5.zip",
+                "bedrock": "§4Bedless §b200k [128x] Bedrock.mcpack"
             }
         },
         {
@@ -66,7 +71,8 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§4Bedless §b200k Gura Bed Overlay.zip",
-                "1.20.5": "§4Bedless §b200k Gura Bed Overlay 1.20.5.zip"
+                "1.20.5": "§4Bedless §b200k Gura Bed Overlay 1.20.5.zip",
+                "bedrock": "§4Bedless §b200k Gura Bed Overlay Bedrock.mcpack"
             }
         },
         {
@@ -78,7 +84,8 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§6Bedless §5200k [128x] Retrowave.zip",
-                "1.20.5": "§6Bedless §5200k [128x] Retrowave 1.20.5.zip"
+                "1.20.5": "§6Bedless §5200k [128x] Retrowave 1.20.5.zip",
+                "bedrock": "§6Bedless §5200k [128x] Retrowave Bedrock.mcpack"
             }
         },
         {
@@ -90,7 +97,8 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§8Bedless §b200k [128x] Black&Red.zip",
-                "1.20.5": "§8Bedless §b200k [128x] Black&Red 1.20.5.zip"
+                "1.20.5": "§8Bedless §b200k [128x] Black&Red 1.20.5.zip",
+                "bedrock": "§8Bedless §b200k [128x] Black&Red Bedrock.mcpack"
             }
         },
         {
@@ -102,7 +110,8 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§aBedless §b200k [128x] Green.zip",
-                "1.20.5": "§aBedless §b200k [128x] Green 1.20.5.zip"
+                "1.20.5": "§aBedless §b200k [128x] Green 1.20.5.zip",
+                "bedrock": "§aBedless §b200k [128x] Green Bedrock.mcpack"
             }
         },
         {
@@ -114,7 +123,150 @@
             "description": "# Description",
             "downloads": {
                 "1.8.9": "§bBedless §b200k [128x] Default.zip",
-                "1.20.5": "§bBedless §b200k [128x] Default 1.20.5.zip"
+                "1.20.5": "§bBedless §b200k [128x] Default 1.20.5.zip",
+                "bedrock": "§bBedless §b200k [128x] Default Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k",
+            "icon": "300k.png",
+            "short_name": "300k pack",
+            "friendly_name": "300k Pack",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §6300k.zip",
+                "1.20.5": "§4Bedless §6300k 1.20.5.zip",
+                "bedrock": "§4Bedless §6300k Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-nobonk",
+            "icon": "300k.png",
+            "variant": "300k",
+            "short_name": "300k nobonk",
+            "friendly_name": "300k No Bonk Sound Effect",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§dBedless §b300k [64x] (no bonk sound eff).zip",
+                "1.20.5": "§dBedless §b300k [64x] (no bonk sound eff) 1.20.5.zip",
+                "bedrock": "§dBedless §b300k [64x] (no bonk sound eff) Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-purple",
+            "icon": "300k-purple.png",
+            "variant": "300k",
+            "short_name": "300k purple",
+            "friendly_name": "300k Purple Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§dBedless §d300k [64x] Purple.zip",
+                "1.20.5": "§dBedless §d300k [64x] Purple 1.20.5.zip",
+                "bedrock": "§dBedless §d300k [64x] Purple Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-synthwave",
+            "icon": "300k-synthwave.png",
+            "variant": "300k",
+            "short_name": "300k synthwave",
+            "friendly_name": "300k Synthwave Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§6Bedless §5300k [64x] Synthwave.zip",
+                "1.20.5": "§6Bedless §5300k [64x] Synthwave 1.20.5.zip",
+                "bedrock": "§6Bedless §5300k [64x] Synthwave Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-red",
+            "icon": "300k-red.png",
+            "variant": "300k",
+            "short_name": "300k red",
+            "friendly_name": "300k Red Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §4300k [64x] Red.zip",
+                "1.20.5": "§4Bedless §4300k [64x] Red 1.20.5.zip",
+                "bedrock": "§4Bedless §4300k [64x] Red Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-default",
+            "icon": "300k-default.png",
+            "variant": "300k",
+            "short_name": "300k default",
+            "friendly_name": "300k Default Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §b300k [64x] Default.zip",
+                "1.20.5": "§bBedless §b300k [64x] Default 1.20.5.zip",
+                "bedrock": "§bBedless §b300k [64x] Default Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-blue",
+            "icon": "300k-blue.png",
+            "variant": "300k",
+            "short_name": "300k blue",
+            "friendly_name": "300k Blue Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §b300k [64x] Blue.zip",
+                "1.20.5": "§bBedless §b300k [64x] Blue 1.20.5.zip",
+                "bedrock": "§bBedless §b300k [64x] Blue Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-periwinkle",
+            "icon": "300k-periwinkle.png",
+            "variant": "300k",
+            "short_name": "300k periwinkle",
+            "friendly_name": "300k Periwinkle Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5300k [64x] Periwinkle.zip",
+                "1.20.5": "§bBedless §5300k [64x] Periwinkle 1.20.5.zip",
+                "bedrock": "§bBedless §5300k [64x] Periwinkle Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-green",
+            "icon": "300k-green.png",
+            "variant": "300k",
+            "short_name": "300k green",
+            "friendly_name": "300k Green Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§aBedless §a300k [64x] Green.zip",
+                "1.20.5": "§aBedless §a300k [64x] Green 1.20.5.zip",
+                "bedrock": "§aBedless §a300k [64x] Green Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-watermelon",
+            "icon": "300k-watermelon.png",
+            "variant": "300k",
+            "short_name": "300k watermelon",
+            "friendly_name": "300k Watermelon Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§aBedless §c300k [64x] Watermelon.zip",
+                "1.20.5": "§aBedless §c300k [64x] Watermelon 1.20.5.zip",
+                "bedrock": "§aBedless §c300k [64x] Watermelon Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "300k-black",
+            "icon": "300k-black.png",
+            "variant": "300k",
+            "short_name": "300k black",
+            "friendly_name": "300k Black Recolor",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§0Bedless §0300k [64x] Black.zip",
+                "1.20.5": "§0Bedless §0300k [64x] Black 1.20.5.zip",
+                "bedrock": "§0Bedless §0300k [64x] Black Bedrock.mcpack"
             }
         }
     ]

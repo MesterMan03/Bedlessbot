@@ -56,7 +56,7 @@ document.body.appendChild(document.createElement("div")).innerHTML = markdownOut
 // The following functions are meant as a very basic, stripped-down code snippets
 // You can leave them as-is or rework them if the code structure requires it
 
-function downloadPack(packid: string, version: "1.8.9" | "1.20.5") {
+function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
         throw new Error("Pack not found");
@@ -85,5 +85,26 @@ function getPackIcon(packid: string) {
     return `${cdn}/icons/${pack.icon}`;
 }
 
-document.body.appendChild(document.createElement("img")).src = getPackIcon("200k");
-document.getElementById("lol")?.addEventListener("click", () => downloadPack("15k", "1.20.5"));
+// render all packs
+for (const pack of packData.packs) {
+    const icon = getPackIcon(pack.id);
+    const packElement = document.createElement("div");
+    const description = marked.parse(pack.description, { async: false }) as string;
+    packElement.innerHTML = `
+        <img src="${icon}" alt="${pack.friendly_name}">
+        <h2>${pack.friendly_name}</h2>
+        <div>${description}</div>
+    `;
+    // dinamically load the download buttons
+    for (const version of <const>["1.8.9", "1.20.5", "bedrock"]) {
+        if (!pack.downloads[version]) {
+            continue;
+        }
+
+        const downloadButton = document.createElement("button");
+        downloadButton.textContent = `Download for ${version === "bedrock" ? "Bedrock" : version}`;
+        downloadButton.addEventListener("click", () => downloadPack(pack.id, version));
+        packElement.appendChild(downloadButton);
+    }
+    document.body.appendChild(packElement);
+}

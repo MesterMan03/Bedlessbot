@@ -50,6 +50,7 @@ interface PackData {
         downloads: {
             "1.8.9": string;
             "1.20.5"?: string;
+            bedrock?: string;
         };
     }[];
 }
@@ -104,7 +105,8 @@ const PackDataSchema = t.Object({
             downloads: t.Object(
                 {
                     "1.8.9": t.String({ description: "Download link for the 1.8.9 version" }),
-                    "1.20.5": t.Optional(t.String({ description: "Download link for the 1.20.5 version - optional" }))
+                    "1.20.5": t.Optional(t.String({ description: "Download link for the 1.20.5 version - optional" })),
+                    bedrock: t.Optional(t.String({ description: "Download link for Bedrock - optional" }))
                 },
                 { description: "Download links for the pack" }
             )

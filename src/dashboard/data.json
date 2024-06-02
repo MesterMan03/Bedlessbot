@@ -268,6 +268,95 @@
                 "1.20.5": "§0Bedless §0300k [64x] Black 1.20.5.zip",
                 "bedrock": "§0Bedless §0300k [64x] Black Bedrock.mcpack"
             }
+        },
+        {
+            "id": "450k",
+            "icon": "450k.png",
+            "short_name": "450k galaxy",
+            "friendly_name": "450k Galaxy Pack",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4§lBedless §5450k [128x].zip",
+                "1.20.5": "§4§lBedless §5450k [128x] 1.20.5.zip",
+                "bedrock": "§4§lBedless §5450k [128x] Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k",
+            "icon": "550k.png",
+            "short_name": "550k fault",
+            "friendly_name": "550k BedlessFault",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x].zip",
+                "1.20.5": "§bBedless §5550k [16x] 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x] Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k-tokyo",
+            "icon": "550k.png",
+            "variant": "550k",
+            "short_name": "550k tokyo",
+            "friendly_name": "550k BedlessFault - tokyo edit",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x]§r - tokyo edit.zip",
+                "1.20.5": "§bBedless §5550k [16x]§r - tokyo edit 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x]§r - tokyo edit Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k-buddha",
+            "icon": "550k-buddha.png",
+            "variant": "550k",
+            "short_name": "550k budda",
+            "friendly_name": "550k BedlessFault - BuddaTortoise edit",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x]§r - BuddhaTortoise edit.zip",
+                "1.20.5": "§bBedless §5550k [16x]§r - BuddhaTortoise edit 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x]§r - BuddhaTortoise edit Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k-sid",
+            "icon": "550k-sid.png",
+            "variant": "550k",
+            "short_name": "550k sid",
+            "friendly_name": "550k BedlessFault - SidNotAvenged edit",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x]§r - SidNotAvenged edit.zip",
+                "1.20.5": "§bBedless §5550k [16x]§r - SidNotAvenged edit 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x]§r - SidNotAvenged edit Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k-pvrple",
+            "icon": "550k-pvrple.png",
+            "variant": "550k",
+            "short_name": "550k pvrple",
+            "friendly_name": "550k BedlessFault - Pvrpleflare edit",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x]§r - Pvrpleflare edit",
+                "1.20.5": "§bBedless §5550k [16x]§r - Pvrpleflare edit 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x]§r - Pvrpleflare edit Bedrock.mcpack"
+            }
+        },
+        {
+            "id": "550k-durian",
+            "icon": "550k-durian.png",
+            "variant": "550k",
+            "short_name": "550k durian",
+            "friendly_name": "550k BedlessFault - daDurian edit",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§bBedless §5550k [16x]§r - daDurian edit",
+                "1.20.5": "§bBedless §5550k [16x]§r - daDurian edit 1.20.5.zip",
+                "bedrock": "§bBedless §5550k [16x]§r - daDurian edit Bedrock.mcpack"
+            }
         }
     ]
 }

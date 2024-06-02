@@ -295,7 +295,7 @@ const app = new Elysia()
     // add Matomo tracker script to every html response
     .onAfterHandle({ as: "global" }, async ({ response }) => {
         if (process.env.NODE_ENV === "development") {
-            //return;
+            return;
         }
         if (!(response instanceof Response)) {
             return;

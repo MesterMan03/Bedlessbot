@@ -2,15 +2,20 @@ import { treaty } from "@elysiajs/eden";
 import { type DashboardApp } from "..";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import type { PackData } from "../api-types";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
 // note that because we don't import anything, this script can only be run in browsers, where the moment library is already loaded
 declare const moment: typeof import("moment-timezone");
 
+const cdn = "https://bedless-cdn.mester.info";
+
 // This is basically how we're gonna grab pack comments
 
 const app = treaty<DashboardApp>(location.origin);
 console.log((await app.api.comments.get({ query: { page: 0, packid: "15k" } })).data);
+
+const packData = (await app.api.packdata.get()).data satisfies PackData | null;
 
 // Code snippet for using the moment library
 // Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
@@ -27,6 +32,7 @@ console.log(moment(new Date()).tz(tz).format("HH:mm DD/MM/YYYY"));
 // makes it a tiny bit bloated + there are features that we'd like to disable (masked links, for example)
 // For now, here's a snippet that shows how to use the marked library to parse Markdown, but it might get removed
 // in the future - Mester
+// P.S. even if we drop Markdown for comments, we might want to use them for pack descriptions
 
 const markdownInput = `
 # Hello, world!
@@ -46,3 +52,43 @@ Masked link: [click me](https://google.com)
 
 const markdownOutput = DOMPurify.sanitize(marked.parse(markdownInput, { async: false }) as string);
 document.body.appendChild(document.createElement("div")).innerHTML = markdownOutput;
+
+function downloadPack(packid: string, version: "1.8.9" | "1.20.5") {
+    if (!packData) {
+        throw new Error("Pack data is null");
+    }
+
+    const pack = packData.packs.find((pack) => pack.id === packid);
+    if (!pack) {
+        throw new Error("Pack not found");
+    }
+
+    const fileName = pack.downloads[version];
+    if (!fileName) {
+        throw new Error("Version not found");
+    }
+
+    const downloadLink = `${cdn}/${fileName}`;
+
+    // download the file without the use of redirecting
+    const a = document.createElement("a");
+    a.href = downloadLink;
+    a.download = pack.friendly_name;
+    a.click();
+}
+
+function getPackIcon(packid: string) {
+    if (!packData) {
+        throw new Error("Pack data is null");
+    }
+
+    const pack = packData.packs.find((pack) => pack.id === packid);
+    if (!pack) {
+        throw new Error("Pack not found");
+    }
+
+    return `${cdn}/icons/${pack.icon}`;
+}
+
+document.body.appendChild(document.createElement("img")).src = getPackIcon("200k");
+document.getElementById("lol")?.addEventListener("click", () => downloadPack("15k", "1.20.5"));

@@ -10,9 +10,11 @@ import {
     DashboardLbEntrySchema,
     DashboardPackCommentSchema,
     DashboardUserSchema,
+    PackDataSchema,
     type DashboardLbEntry
 } from "./api-types";
 import packData from "./data.json";
+import { rateLimit } from "elysia-rate-limit";
 
 const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
@@ -168,26 +170,28 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     },
                     { detail: { tags: ["Auth", "Protected"], description: "Clear auth token cookie" } }
                 )
-                .post(
-                    "/comments",
-                    async ({ body: { packid, comment }, store: { userid } }) => {
-                        return api.SubmitPackComment(userid, packid, comment);
-                    },
-                    {
-                        body: t.Object({
-                            comment: t.String({
-                                minLength: 32,
-                                maxLength: 1024,
-                                description: "The comment body (Markdown formatted text)"
-                            }),
-                            packid: t.String({ description: "The ID of the pack" })
-                        }),
-                        detail: {
-                            description: "Submit a comment on a pack",
-                            tags: ["App", "Pack", "Protected"]
+                .guard((app) =>
+                    app.use(rateLimit({ max: 3, duration: 120 })).post(
+                        "/comments",
+                        async ({ body: { packid, comment }, store: { userid } }) => {
+                            return api.SubmitPackComment(userid, packid, comment);
                         },
-                        response: DashboardPackCommentSchema
-                    }
+                        {
+                            body: t.Object({
+                                comment: t.String({
+                                    minLength: 32,
+                                    maxLength: 1024,
+                                    description: "The comment body (Markdown formatted text)"
+                                }),
+                                packid: t.String({ description: "The ID of the pack" })
+                            }),
+                            detail: {
+                                description: "Submit a comment on a pack",
+                                tags: ["App", "Pack", "Protected"]
+                            },
+                            response: DashboardPackCommentSchema
+                        }
+                    )
                 )
                 .get(
                     "/user",
@@ -231,7 +235,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
             response: { 200: t.Array(DashboardFinalPackCommentSchema), 400: t.String() }
         }
     )
-    .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" } });
+    .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema });
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
@@ -282,7 +286,7 @@ const app = new Elysia()
     .use(
         swagger({
             scalarConfig: { theme: "moon", layout: "modern" },
-            provider: "swagger-ui",
+            provider: "scalar",
             documentation: {
                 info: {
                     title: "Bedlessbot Dashboard API Documentation",
@@ -303,19 +307,10 @@ const app = new Elysia()
                     { name: "Pack", description: "Pack related endpoints" },
                     { name: "Protected", description: "Protected endpoints - requires to be logged in" }
                 ],
-                openapi: "3.1.0",
-                components: {
-                    securitySchemes: {
-                        jwt: {
-                            type: "http",
-                            scheme: "scheme",
-                            bearerFormat: "JWT",
-                            description: "JWT token for authentication"
-                        }
-                    }
-                }
+                openapi: "3.1.0"
             },
-            path: "/docs"
+            path: "/docs",
+            exclude: /docs.*/
         })
     )
     // TODO: delete this once index.html is set up correctly

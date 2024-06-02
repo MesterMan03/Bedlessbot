@@ -39,6 +39,21 @@ interface DashboardUser {
     avatar: string;
 }
 
+interface PackData {
+    packs: {
+        id: string;
+        icon: string;
+        variant?: string;
+        short_name: string;
+        friendly_name: string;
+        description: string;
+        downloads: {
+            "1.8.9": string;
+            "1.20.5"?: string;
+        };
+    }[];
+}
+
 const DashboardLbEntrySchema = t.Object({
     pos: t.Numeric({ description: "The position of the user in the leaderboard" }),
     level: t.Numeric({ description: "The level of the user" }),
@@ -77,5 +92,32 @@ const DashboardUserSchema = t.Object(
     { description: "The user object" }
 );
 
-export { type DashboardAPIInterface, type DashboardLbEntry, type DashboardPackComment, type DashboardFinalPackComment, type DashboardUser };
-export { DashboardUserSchema, DashboardPackCommentSchema, DashboardFinalPackCommentSchema, DashboardLbEntrySchema };
+const PackDataSchema = t.Object({
+    packs: t.Array(
+        t.Object({
+            id: t.String({ description: "ID of the pack" }),
+            icon: t.String({ description: "Name of the icon. The full path is CDN/icons/icon" }),
+            variant: t.Optional(t.String({ description: "The pack ID this pack is a variant of - optional" })),
+            short_name: t.String({ description: "Short name of the pack" }),
+            friendly_name: t.String({ description: "Friendly name of the pack" }),
+            description: t.String({ description: "Description of the pack in Markdown format" }),
+            downloads: t.Object(
+                {
+                    "1.8.9": t.String({ description: "Download link for the 1.8.9 version" }),
+                    "1.20.5": t.Optional(t.String({ description: "Download link for the 1.20.5 version - optional" }))
+                },
+                { description: "Download links for the pack" }
+            )
+        })
+    )
+});
+
+export {
+    type DashboardAPIInterface,
+    type DashboardLbEntry,
+    type DashboardPackComment,
+    type DashboardFinalPackComment,
+    type DashboardUser,
+    type PackData
+};
+export { DashboardUserSchema, DashboardPackCommentSchema, DashboardFinalPackCommentSchema, DashboardLbEntrySchema, PackDataSchema };

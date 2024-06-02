@@ -2,18 +2,60 @@
     "packs": [
         {
             "id": "15k",
+            "icon": "15k.png",
             "short_name": "15k pack",
-            "friendly_name": "15k pack"
+            "friendly_name": "15k pack",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§cBedless §l15k Jupiner edit.zip",
+                "1.20.5": "§cBedless §l15k Jupiner edit 1.20.5.zip"
+            }
         },
         {
             "id": "60k",
+            "icon": "60k.png",
             "short_name": "60k pack",
-            "friendly_name": "60k pack"
+            "friendly_name": "60k pack",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §c60k.zip",
+                "1.20.5": "§4Bedless §c60k 1.20.5.zip"
+            }
         },
         {
             "id": "60k-overlay",
+            "icon": "60k.png",
+            "variant": "60k",
             "short_name": "60k overlay",
-            "friendly_name": "60k Bed Sword Overlay"
+            "friendly_name": "60k Bed Sword Overlay",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §c60k - Bed Sword Overlay.zip",
+                "1.20.5": "§4Bedless §c60k - Bed Sword Overlay 1.20.5.zip"
+            }
+        },
+        {
+            "id": "60k-halloween",
+            "icon": "60-halloween.png",
+            "variant": "60k",
+            "short_name": "60k halloween",
+            "friendly_name": "60k Halloween",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§7Bedless §c60k §6Halloween.zip",
+                "1.20.5": "§7Bedless §c60k §6Halloween 1.20.5.zip"
+            }
+        },
+        {
+            "id": "200k",
+            "icon": "200k.png",
+            "short_name": "200k pack",
+            "friendly_name": "200k pack",
+            "description": "# Description",
+            "downloads": {
+                "1.8.9": "§4Bedless §b200k [128x].zip",
+                "1.20.5": "§4Bedless §b200k [128x] 1.20.5.zip"
+            }
         }
     ]
 }

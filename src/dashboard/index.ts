@@ -224,27 +224,42 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     { detail: { tags: ["Auth", "Protected"], description: "Clear auth token cookie" } }
                 )
                 .guard((app) =>
-                    app.use(rateLimit({ max: 3, duration: 120 })).post(
-                        "/comments",
-                        async ({ body: { packid, comment }, store: { userid } }) => {
-                            return api.SubmitPackComment(userid, packid, comment);
-                        },
-                        {
-                            body: t.Object({
-                                comment: t.String({
-                                    minLength: 32,
-                                    maxLength: 1024,
-                                    description: "The comment body (Markdown formatted text)"
-                                }),
-                                packid: t.String({ description: "The ID of the pack" })
-                            }),
-                            detail: {
-                                description: "Submit a comment on a pack",
-                                tags: ["App", "Pack", "Protected"]
+                    app
+                        .use(
+                            rateLimit({
+                                max: 3,
+                                duration: 120,
+                                generator: (req, server) =>
+                                    // get client ip via cloudflare header first
+                                    req.headers.get("CF-Connecting-IP") ??
+                                    // now nginx
+                                    req.headers.get("X-Real-IP") ??
+                                    // if not found, fallback to default generator
+                                    server?.requestIP(req)?.address ??
+                                    "unknown"
+                            })
+                        )
+                        .post(
+                            "/comments",
+                            async ({ body: { packid, comment }, store: { userid } }) => {
+                                return api.SubmitPackComment(userid, packid, comment);
                             },
-                            response: DashboardPackCommentSchema
-                        }
-                    )
+                            {
+                                body: t.Object({
+                                    comment: t.String({
+                                        minLength: 32,
+                                        maxLength: 1024,
+                                        description: "The comment body (Markdown formatted text)"
+                                    }),
+                                    packid: t.String({ description: "The ID of the pack" })
+                                }),
+                                detail: {
+                                    description: "Submit a comment on a pack",
+                                    tags: ["App", "Pack", "Protected"]
+                                },
+                                response: DashboardPackCommentSchema
+                            }
+                        )
                 )
                 .get(
                     "/user",

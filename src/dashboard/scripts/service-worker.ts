@@ -31,7 +31,8 @@ self.addEventListener("fetch", (event: FetchEvent) => {
                 return networkResponse;
             })
         );
-    } else {
+        // else check for .html files
+    } else if (url.pathname.endsWith(".html")) {
         event.respondWith(
             fetch(event.request).catch(() => {
                 return caches.match(OfflineUrl) as Promise<Response>;

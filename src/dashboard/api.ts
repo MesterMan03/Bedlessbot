@@ -46,7 +46,6 @@ function UpdateLbCache() {
 
 export default class DashboardAPI implements DashboardAPIInterface {
     async FetchLbPage(pageOrId: number | string) {
-        console.log(pageOrId);
         if (typeof pageOrId === "number" && pageOrId >= GetMaxLbPage()) {
             return null;
         }

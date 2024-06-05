@@ -30,7 +30,10 @@ function GenerateRandomName(): string {
 }
 
 export default class DashboardAPITest implements DashboardAPIInterface {
-    async FetchLbPage(page: number) {
+    async FetchLbPage(pageOrId: number | string) {
+        // when an ID is supplied, always return the eight page
+        const page = typeof pageOrId === "number" ? pageOrId : 8;
+
         if (page >= 10) {
             return null;
         }

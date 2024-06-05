@@ -33,10 +33,35 @@ function GetMaxCommentsPage(packid: string) {
     return Math.ceil(Math.max(commentCount, 1) / CommentsPageSize);
 }
 
+let LbCache = new Array<LevelInfo>();
+let lastLbCacheRefresh = 0
+
+function UpdateLbCache() {
+    if(Date.now() - lastLbCacheRefresh < 30 * 1000) {
+        return;
+    }
+    LbCache = db.query<LevelInfo, []>("SELECT * FROM levels ORDER BY xp DESC").all();
+    lastLbCacheRefresh = Date.now();
+}
+
 export default class DashboardAPI implements DashboardAPIInterface {
-    async FetchLbPage(page: number) {
-        if (page >= GetMaxLbPage()) {
+    async FetchLbPage(pageOrId: number | string) {
+        console.log(pageOrId);
+        if (typeof pageOrId === "number" && pageOrId >= GetMaxLbPage()) {
             return null;
+        }
+
+        let page = typeof pageOrId === "number" ? pageOrId : -1;
+        if (typeof pageOrId === "string") {
+            // check if the user id is found in the leaderboard
+            const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(pageOrId);
+            if (!levelInfo) {
+                return null;
+            }
+
+            // update cache and find position
+            UpdateLbCache();
+            page = Math.floor(LbCache.findIndex((entry) => entry.userid === pageOrId) / LbPageSize);
         }
 
         const levels = db

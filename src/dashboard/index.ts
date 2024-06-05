@@ -3,6 +3,7 @@ import staticPlugin from "@elysiajs/static";
 import swagger from "@elysiajs/swagger";
 import { fileURLToPath } from "bun";
 import Elysia, { t } from "elysia";
+import { rateLimit } from "elysia-rate-limit";
 import { rmSync } from "node:fs";
 import { join } from "path";
 import {
@@ -10,11 +11,9 @@ import {
     DashboardLbEntrySchema,
     DashboardPackCommentSchema,
     DashboardUserSchema,
-    PackDataSchema,
-    type DashboardLbEntry
+    PackDataSchema
 } from "./api-types";
 import packData from "./data.json";
-import { rateLimit } from "elysia-rate-limit";
 
 const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
@@ -40,6 +39,11 @@ await Bun.build({
 
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env.JWT_SECRET as string, "base64");
+
+// generate a random password for the production /packs.html (temporary)
+// TODO: remove this
+const packsPassword = Math.random().toString(36).substring(2);
+console.log("Password for packs:", packsPassword);
 
 const matomoTrackingCode = `<!-- Matomo -->
 <script>
@@ -99,21 +103,33 @@ const apiRoute = new Elysia({ prefix: "/api" })
     .use(jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" }))
     .get(
         "/lbpage",
-        async ({ query: { page: pageNum }, error }) => {
-            if (!Number.isInteger(pageNum)) {
+        async ({ query: { page: pageOrId }, error }) => {
+            if (typeof pageOrId === "number" && !Number.isInteger(pageOrId)) {
                 return error(400, "Page must be an integer");
             }
 
-            const page = await api.FetchLbPage(pageNum);
-            if (!page) {
-                return error(400, "Invalid page number");
+            if (typeof pageOrId === "string") {
+                pageOrId = pageOrId.slice(1);
             }
 
-            return page as DashboardLbEntry[];
+            const page = await api.FetchLbPage(pageOrId);
+            if (!page) {
+                if (typeof pageOrId === "number") {
+                    return error(400, "Invalid page number");
+                }
+                return error(400, "User ID doesn't exist in the leaderboard");
+            }
+
+            return page;
         },
         {
             query: t.Object({
-                page: t.Numeric({ default: 0, minimum: 0, description: "The page of the leaderboard to query (starts at 0)" })
+                page: t.Union([
+                    t.Numeric({ default: 0, minimum: 0, description: "The page of the leaderboard to query (starts at 0)" }),
+                    t.String({
+                        description: "The user ID to fetch the leaderboard for (returns a 400 error if the user is not in the leaderboard)"
+                    })
+                ])
             }),
             detail: {
                 tags: ["App"],
@@ -326,6 +342,32 @@ const app = new Elysia()
             const text = await response.text();
 
             return new Response(rewriter.transform(text), { headers: response.headers });
+        }
+    })
+    .onBeforeHandle(async ({ request }) => {
+        // check if request is /packs.html
+        const url = new URL(request.url);
+
+        if (url.pathname === "/packs.html" && process.env.NODE_ENV === "production") {
+            // check for Authorization header
+            const authHeader = request.headers.get("Authorization");
+            console.log(authHeader);
+
+            if (!authHeader) {
+                // return 401 reponse with WWW-Authenticate header
+                return new Response(null, {
+                    status: 401,
+                    headers: {
+                        "WWW-Authenticate": `Basic realm="Bedlessbot Packs", charset="UTF-8"`
+                    }
+                });
+            }
+
+            // get username and password from header
+            const [username, password] = atob(authHeader.split(" ")[1]).split(":");
+            if (username !== "mester" || password !== packsPassword) {
+                return new Response("Unauthorized", { status: 401 });
+            }
         }
     })
     .use(apiRoute)

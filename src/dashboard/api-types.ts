@@ -2,7 +2,7 @@ import type { User } from "discord-oauth2";
 import { t } from "elysia";
 
 interface DashboardAPIInterface {
-    FetchLbPage: (page: number) => Promise<DashboardLbEntry[] | null>;
+    FetchLbPage: (pageOrId: number | string) => Promise<DashboardLbEntry[] | null>;
     CreateOAuth2Url: (state: string) => string;
     ProcessOAuth2Callback: (code: string) => Promise<User | null>;
     SubmitPackComment: (userid: string, packid: string, comment: string) => Promise<DashboardPackComment | null>;

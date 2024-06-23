@@ -365,7 +365,7 @@ const app = new Elysia()
 
             response.headers.set(
                 "Content-Security-Policy",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
             );
 
             const rewriter = new HTMLRewriter();

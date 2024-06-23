@@ -31,5 +31,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/ubuntu/Bedlessbot
-            bun install
-            pm2 restart 7
+            /home/ubuntu/.bun/bin/bun install
+            /home/ubuntu/.local/share/pnpm/pm2 restart 7

@@ -354,6 +354,72 @@ const apiRoute = new Elysia({ prefix: "/api" })
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
+    .onBeforeHandle(async ({ request }) => {
+        const url = new URL(request.url);
+
+        // TODO: delete this once index.html is set up correctly
+        if (url.pathname === "/" && process.env.NODE_ENV === "production") {
+            return new Response(null, {
+                status: 301,
+                headers: {
+                    Location: "/leaderboard"
+                }
+            });
+        }
+
+        // check if url ends with .html, then redirect without the extension
+        if (url.pathname.endsWith(".html")) {
+            return new Response(null, {
+                status: 301,
+                headers: {
+                    Location: url.pathname.slice(0, -5) + url.search
+                }
+            });
+        }
+
+        // check if request is /packs
+        if (url.pathname === "/packs" && process.env.NODE_ENV === "production") {
+            // check for Authorization header
+            const authHeader = request.headers.get("Authorization");
+
+            if (!authHeader) {
+                // return 401 reponse with WWW-Authenticate header
+                return new Response(null, {
+                    status: 401,
+                    headers: {
+                        "WWW-Authenticate": `Basic realm="Bedlessbot Packs", charset="UTF-8"`
+                    }
+                });
+            }
+
+            // get username and password from header
+            const [username, password] = atob(authHeader.split(" ")[1]).split(":");
+            if (username !== "mester" || password !== packsPassword) {
+                return new Response("Unauthorized", { status: 401 });
+            }
+        }
+
+        // if path is empty (or ends with /), look for index.html
+        if (url.pathname.endsWith("/") || url.pathname === "") {
+            const file = Bun.file(join(__dirname, "public", url.pathname, "index.html"));
+
+            if (!(await file.exists())) {
+                return new Response("Not found", { status: 404 });
+            }
+            return new Response(file);
+        }
+
+        // check if there is no file extension and we are NOT in /api, then send the equivalent .html file
+        if (!url.pathname.includes(".") && !url.pathname.startsWith("/api")) {
+            const file = Bun.file(join(__dirname, "public", url.pathname + ".html"));
+
+            if (!(await file.exists())) {
+                return new Response("Not found", { status: 404 });
+            }
+            return new Response(file);
+        }
+    })
+
     .onAfterHandle({ as: "global" }, async ({ response }) => {
         if (!(response instanceof Response)) {
             return;
@@ -389,71 +455,6 @@ const app = new Elysia()
             // rewrite the response
             const text = await response.text();
             return new Response(rewriter.transform(text), { headers: response.headers });
-        }
-    })
-    .onBeforeHandle(async ({ request }) => {
-        const url = new URL(request.url);
-
-        // TODO: delete this once index.html is set up correctly
-        if (url.pathname === "/" && process.env.NODE_ENV === "production") {
-            return new Response(null, {
-                status: 301,
-                headers: {
-                    Location: "/leaderboard"
-                }
-            });
-        }
-
-        // check if url ends with .html, then redirect without the extension
-        if (url.pathname.endsWith(".html")) {
-            return new Response(null, {
-                status: 301,
-                headers: {
-                    Location: url.pathname.slice(0, -5) + url.search
-                }
-            });
-        }
-
-        // if path is empty (or ends with /), look for index.html
-        if (url.pathname.endsWith("/") || url.pathname === "") {
-            const file = Bun.file(join(__dirname, "public", url.pathname, "index.html"));
-
-            if (!(await file.exists())) {
-                return new Response("Not found", { status: 404 });
-            }
-            return new Response(file);
-        }
-
-        // check if there is no file extension and we are NOT in /api, then send the equivalent .html file
-        if (!url.pathname.includes(".") && !url.pathname.startsWith("/api")) {
-            const file = Bun.file(join(__dirname, "public", url.pathname + ".html"));
-
-            if (!(await file.exists())) {
-                return new Response("Not found", { status: 404 });
-            }
-            return new Response(file);
-        }
-
-        // check if request is /packs
-        if (url.pathname === "/packs" && process.env.NODE_ENV === "production") {
-            // check for Authorization header
-            const authHeader = request.headers.get("Authorization");
-
-            if (!authHeader) {
-                // return 401 reponse with WWW-Authenticate header
-                return new Response(null, {
-                    status: 401,
-                    headers: {
-                        "WWW-Authenticate": `Basic realm="Bedlessbot Packs", charset="UTF-8"`
-                    }
-                });
-            }
-
-            // get username and password from header
-            const [username, password] = atob(authHeader.split(" ")[1]).split(":");
-            if (username !== "mester" || password !== packsPassword) {
-                return new Response("Unauthorized", { status: 401 });
-            }
         }
     })
     .use(apiRoute)

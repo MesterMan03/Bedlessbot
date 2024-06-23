@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/home/mester/Bedlessbot"
+          target: "/home/ubuntu/Bedlessbot"
 
       - name: Run deployment script
         uses: appleboy/ssh-action@v0.1.1
@@ -30,6 +30,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/mester/Bedlessbot
+            cd /home/ubuntu/Bedlessbot
             bun install
             pm2 restart 7

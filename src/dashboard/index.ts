@@ -361,7 +361,7 @@ const app = new Elysia()
 
         if (response.headers.get("content-type")?.includes("text/html")) {
             // generate random nonce
-            const nonce = randomBytes(30).toString("base64");
+            const nonce = randomBytes(32).toString("base64");
 
             response.headers.set(
                 "Content-Security-Policy",
@@ -393,6 +393,16 @@ const app = new Elysia()
     })
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
+
+        // TODO: delete this once index.html is set up correctly
+        if (url.pathname === "/" && process.env.NODE_ENV === "production") {
+            return new Response(null, {
+                status: 301,
+                headers: {
+                    Location: "/leaderboard"
+                }
+            });
+        }
 
         // check if url ends with .html, then redirect without the extension
         if (url.pathname.endsWith(".html")) {
@@ -477,10 +487,6 @@ const app = new Elysia()
             exclude: /docs.*/
         })
     )
-    // TODO: delete this once index.html is set up correctly
-    .get("/", ({ redirect }) => {
-        return redirect("/leaderboard.html", 302);
-    })
     .onAfterHandle({ as: "global" }, async ({ set, request }) => {
         if (!(request instanceof Request)) {
             return;

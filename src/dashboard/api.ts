@@ -93,12 +93,15 @@ export default class DashboardAPI implements DashboardAPIInterface {
         );
     }
 
-    CreateOAuth2Url(state: string) {
+    CreateOAuth2Url(state: string, _: string) {
+        const redirectUri = new URL(config.OAuthRedirect, config.DashOrigin);
+        redirectUri.protocol = config.DashOrigin.startsWith("https") ? "https" : "http";
+
         return oauth2Client.generateAuthUrl({
             scope: scopes,
             state,
             prompt: "none",
-            redirectUri: new URL(config.OAuthRedirect, config.DashOrigin).toString()
+            redirectUri: redirectUri.toString()
         });
     }
 

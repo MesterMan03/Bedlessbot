@@ -1,6 +1,6 @@
 @font-face {
     font-family: "Noto Sans Caucasian Albanian";
-    src: url("./Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf")
+    src: url("/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf")
         format("truetype");
     font-display: swap;
 }

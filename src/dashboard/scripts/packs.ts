@@ -3,6 +3,7 @@ import { type DashboardApp } from "..";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import type { PackData } from "../api-types";
+import "./loadworker";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
 // note that because we don't import anything, this script can only be run in browsers, where the moment library is already loaded
@@ -103,19 +104,6 @@ for (const pack of packData.packs) {
         packElement.appendChild(downloadButton);
     }
     document.body.appendChild(packElement);
-}
-
-// start up service worker
-// TODO: add to all pages
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-        .register("/scripts/service-worker.js", { scope: "/", type: "module" })
-        .then((registration) => {
-            console.log("Service Worker registered with scope:", registration.scope);
-        })
-        .catch((error) => {
-            console.log("Service Worker registration failed:", error);
-        });
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;

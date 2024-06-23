@@ -2,6 +2,7 @@
 
 import { treaty } from "@elysiajs/eden";
 import type { DashboardApp } from "..";
+import "./loadworker";
 
 const app = treaty<DashboardApp>(location.origin);
 
@@ -36,8 +37,10 @@ async function loadUsers(pageCursor: number) {
     }
 
     loadingIndicator.style.display = "initial";
-    const request = await app.api.lbpage.get({ query: { page: pageCursor } });
+    // jump to bottom of page
+    scrollTo(0, document.body.scrollHeight);
 
+    const request = await app.api.lbpage.get({ query: { page: pageCursor } });
     if (request.error) {
         loadingIndicator.style.display = "none";
         return request.error.status as number;

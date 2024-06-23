@@ -8,6 +8,7 @@ import { rmSync } from "node:fs";
 import { join } from "path";
 import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
+import { randomBytes } from "crypto";
 
 const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
@@ -39,7 +40,7 @@ const jwtSecret = Buffer.from(process.env.JWT_SECRET as string, "base64");
 const packsPassword = Math.random().toString(36).substring(2);
 console.log("Password for packs:", packsPassword);
 
-const matomoTrackingCode = `<!-- Matomo -->
+const trackingCode = `<!-- Matomo -->
 <script>
 var _paq = window._paq = window._paq || [];
 /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
@@ -61,7 +62,6 @@ g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
 <noscript>
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript></div>
-<!--script src="https://matomo.gedankenversichert.com/index.php?module=CoreAdminHome&action=optOutJS&divId=matomo-opt-out&language=auto&backgroundColor=480f0f&fontColor=ffffff&fontSize=14px&fontFamily=Arial&showIntro=1"></script-->
 <!-- End Matomo Code -->
 <!-- Start cookieyes banner --> <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js"></script> <!-- End cookieyes banner -->
 <script>
@@ -134,7 +134,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/auth",
-        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery } }) => {
+        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery }, request }) => {
             set.headers["Cache-Control"] = "no-store";
 
             redirectCookie.remove();
@@ -155,7 +155,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 httpOnly: true
             });
 
-            const authURL = api.CreateOAuth2Url(state);
+            const authURL = api.CreateOAuth2Url(state, new URL(request.url).origin);
 
             // redirect to the auth url
             return redirect(authURL);
@@ -263,7 +263,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                                         description: "The comment body (Markdown formatted text)"
                                     }),
                                     packid: t.String({ description: "The ID of the pack" }),
-                                    "g-captcha-response": t.String({ description: "hCaptcha response token" }),
+                                    "g-recaptcha-response": t.String({ description: "Google reCAPTCHA response token" }),
                                     "h-captcha-response": t.String({ description: "hCaptcha response token" })
                                 }),
                                 detail: {
@@ -354,32 +354,78 @@ const apiRoute = new Elysia({ prefix: "/api" })
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
-    // add Matomo tracker script to every html response
     .onAfterHandle({ as: "global" }, async ({ response }) => {
-        if (process.env.NODE_ENV === "development") {
-            return;
-        }
         if (!(response instanceof Response)) {
             return;
         }
 
         if (response.headers.get("content-type")?.includes("text/html")) {
-            const rewriter = new HTMLRewriter().on("head", {
+            // generate random nonce
+            const nonce = randomBytes(30).toString("base64");
+
+            response.headers.set(
+                "Content-Security-Policy",
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
+            );
+
+            const rewriter = new HTMLRewriter();
+
+            // rewrite every script tag
+            rewriter.on("script", {
                 element(el) {
-                    el.append(matomoTrackingCode, { html: true });
+                    el.setAttribute("nonce", nonce);
                 }
             });
 
-            const text = await response.text();
+            // add Matomo tracker script to every html response
+            if (process.env.NODE_ENV === "production") {
+                rewriter.on("head", {
+                    element(el) {
+                        el.append(trackingCode, { html: true });
+                    }
+                });
+            }
 
+            // rewrite the response
+            const text = await response.text();
             return new Response(rewriter.transform(text), { headers: response.headers });
         }
     })
     .onBeforeHandle(async ({ request }) => {
-        // check if request is /packs.html
         const url = new URL(request.url);
 
-        if (url.pathname === "/packs.html" && process.env.NODE_ENV === "production") {
+        // check if url ends with .html, then redirect without the extension
+        if (url.pathname.endsWith(".html")) {
+            return new Response(null, {
+                status: 301,
+                headers: {
+                    Location: url.pathname.slice(0, -5) + url.search
+                }
+            });
+        }
+
+        // if path is empty (or ends with /), look for index.html
+        if (url.pathname.endsWith("/") || url.pathname === "") {
+            const file = Bun.file(join(__dirname, "public", url.pathname, "index.html"));
+
+            if (!(await file.exists())) {
+                return new Response("Not found", { status: 404 });
+            }
+            return new Response(file);
+        }
+
+        // check if there is no file extension and we are NOT in /api, then send the equivalent .html file
+        if (!url.pathname.includes(".") && !url.pathname.startsWith("/api")) {
+            const file = Bun.file(join(__dirname, "public", url.pathname + ".html"));
+
+            if (!(await file.exists())) {
+                return new Response("Not found", { status: 404 });
+            }
+            return new Response(file);
+        }
+
+        // check if request is /packs
+        if (url.pathname === "/packs" && process.env.NODE_ENV === "production") {
             // check for Authorization header
             const authHeader = request.headers.get("Authorization");
 

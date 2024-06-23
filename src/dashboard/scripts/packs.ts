@@ -65,7 +65,7 @@ function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
         throw new Error("Version not found");
     }
 
-    const downloadLink = new URL(`/api/packdownload`, location.origin);
+    const downloadLink = new URL(`/api/downloadpack`, location.origin);
     downloadLink.searchParams.append("packid", packid);
     downloadLink.searchParams.append("version", version);
 

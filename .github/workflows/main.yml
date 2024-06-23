@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  upload:
+    name: Upload to server
+    runs-on: ubuntu-latest
+    steps:  
+      - name: SFTP uploader
+        # You may pin to the exact commit or the version.
+        # uses: wangyucode/sftp-upload-action@0ce8147ad8637906ceb7ebb272640ca45e4b2b31
+        uses: wangyucode/sftp-upload-action@v2.0.2
+        with:
+          # 
+          host: 51.222.155.37
+          # 
+          port: 22 # optional, default is 22
+          # 
+          username: mester # optional, default is root
+          # 
+          remoteDir: /home/mester/Bedlessbot
+          # 
+          privateKey: ${{ secrets.SFTP_KEY }}
+          

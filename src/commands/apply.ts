@@ -100,7 +100,12 @@ async function processInteraction(interaction: ButtonInteraction) {
         return;
     }
 
-    const member = await GetGuild().members.fetch(userid);
+    const member = await GetGuild()
+        .members.fetch(userid)
+        .catch(() => {
+            // user was likely banned or left
+            return null;
+        });
     if (!member) {
         embed.setDescription(`The member has left the server`).setColor("Red");
         interaction.update({ embeds: [embed], components: [] });

@@ -1,27 +1,35 @@
+name: Deploy to Server
+
 on:
   push:
     branches:
-      - main
+      - main  # Trigger deployment on push to the main branch
   workflow_dispatch:
 
 jobs:
-  upload:
-    name: Upload to server
+  deploy:
     runs-on: ubuntu-latest
-    steps:  
-      - name: SFTP uploader
-        # You may pin to the exact commit or the version.
-        # uses: wangyucode/sftp-upload-action@0ce8147ad8637906ceb7ebb272640ca45e4b2b31
-        uses: wangyucode/sftp-upload-action@v2.0.2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.7
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.1
         with:
-          # 
-          host: 51.222.155.37
-          # 
-          port: 22 # optional, default is 22
-          # 
-          username: mester # optional, default is root
-          # 
-          remoteDir: /home/mester/Bedlessbot
-          # 
-          privateKey: ${{ secrets.SFTP_KEY }}
-          
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "/home/mester/Bedlessbot
+
+      - name: Run deployment script
+        uses: appleboy/ssh-action@v0.1.1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/mester/Bedlessbot
+            bun install
+            pm2 restart 7

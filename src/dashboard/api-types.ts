@@ -3,7 +3,7 @@ import { t } from "elysia";
 
 interface DashboardAPIInterface {
     FetchLbPage: (pageOrId: number | string) => Promise<DashboardLbEntry[] | null>;
-    CreateOAuth2Url: (origin: string, state: string) => string;
+    CreateOAuth2Url: (state: string) => string;
     ProcessOAuth2Callback: (code: string) => Promise<User | null>;
     SubmitPackComment: (userid: string, packid: string, comment: string, captcha: string) => Promise<DashboardPackComment | null>;
     ManagePackComment: (commentid: string, action: "approve" | "deny" | "spam") => Promise<boolean>;

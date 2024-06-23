@@ -6,12 +6,7 @@ import Elysia, { t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import { rmSync } from "node:fs";
 import { join } from "path";
-import {
-    DashboardFinalPackCommentSchema,
-    DashboardLbEntrySchema,
-    DashboardUserSchema,
-    PackDataSchema
-} from "./api-types";
+import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
 
 const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
@@ -139,7 +134,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/auth",
-        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery }, request }) => {
+        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery } }) => {
             set.headers["Cache-Control"] = "no-store";
 
             redirectCookie.remove();
@@ -160,7 +155,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 httpOnly: true
             });
 
-            const authURL = api.CreateOAuth2Url(new URL(request.url).origin, state);
+            const authURL = api.CreateOAuth2Url(state);
 
             // redirect to the auth url
             return redirect(authURL);
@@ -387,7 +382,6 @@ const app = new Elysia()
         if (url.pathname === "/packs.html" && process.env.NODE_ENV === "production") {
             // check for Authorization header
             const authHeader = request.headers.get("Authorization");
-            console.log(authHeader);
 
             if (!authHeader) {
                 // return 401 reponse with WWW-Authenticate header

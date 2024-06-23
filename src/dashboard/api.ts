@@ -15,7 +15,7 @@ const allPackIDs = data.packs.map((pack) => pack.id);
 const oauth2Client = new DiscordOauth2({
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    redirectUri: config.OAuthRedirect
+    redirectUri: new URL(config.OAuthRedirect, config.DashOrigin).toString()
 });
 
 const scopes = [OAuth2Scopes.Identify, OAuth2Scopes.RoleConnectionsWrite];
@@ -93,9 +93,13 @@ export default class DashboardAPI implements DashboardAPIInterface {
         );
     }
 
-    CreateOAuth2Url(origin: string, state: string) {
-        const url = new URL(config.OAuthRedirect, origin);
-        return oauth2Client.generateAuthUrl({ scope: scopes, state, prompt: "none", redirectUri: url.toString() });
+    CreateOAuth2Url(state: string) {
+        return oauth2Client.generateAuthUrl({
+            scope: scopes,
+            state,
+            prompt: "none",
+            redirectUri: new URL(config.OAuthRedirect, config.DashOrigin).toString()
+        });
     }
 
     async ProcessOAuth2Callback(code: string) {

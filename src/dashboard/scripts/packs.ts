@@ -149,7 +149,7 @@ select.addEventListener("change", updateComments);
 async function updateComments() {
     commentsDiv.innerHTML = "";
     const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;
-    if (comments) {
+    if (comments && comments?.length !== 0) {
         for (const comment of comments) {
             const commentElement = document.createElement("div");
             commentElement.innerHTML = `
@@ -159,6 +159,10 @@ async function updateComments() {
             `;
             commentsDiv.appendChild(commentElement);
         }
+    } else {
+        const noComments = document.createElement("p");
+        noComments.innerText = "No comments yet!";
+        commentsDiv.appendChild(noComments);
     }
 }
 updateComments();

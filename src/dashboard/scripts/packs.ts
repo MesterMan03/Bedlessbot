@@ -10,11 +10,8 @@ declare const moment: typeof import("moment-timezone");
 
 const cdn = "https://bedless-cdn.mester.info";
 
-// This is basically how we're gonna grab pack comments
-
+// init the app and pack data
 const app = treaty<DashboardApp>(location.origin);
-console.log((await app.api.comments.get({ query: { page: 0, packid: "15k" } })).data);
-
 const packData = (await app.api.packdata.get()).data as PackData;
 
 // Code snippet for using the moment library
@@ -93,6 +90,7 @@ for (const pack of packData.packs) {
         <h2>${pack.friendly_name}</h2>
         <div>${description}</div>
     `;
+
     // dinamically load the download buttons
     for (const version of <const>["1.8.9", "1.20.5", "bedrock"]) {
         if (!pack.downloads[version]) {
@@ -107,6 +105,8 @@ for (const pack of packData.packs) {
     document.body.appendChild(packElement);
 }
 
+// start up service worker
+// TODO: add to all pages
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker
         .register("/scripts/service-worker.js", { scope: "/", type: "module" })
@@ -135,7 +135,7 @@ app.api.user.get().then((response) => {
 // add select menu for all packs
 const select = document.createElement("select");
 select.name = "packid";
-for(const pack of packData.packs) {
+for (const pack of packData.packs) {
     const option = document.createElement("option");
     option.value = pack.id;
     option.innerText = pack.friendly_name;
@@ -146,6 +146,7 @@ commentForm.prepend(select);
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
 select.addEventListener("change", updateComments);
 
+// function to update comments with packid from the select menu
 async function updateComments() {
     commentsDiv.innerHTML = "";
     const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;

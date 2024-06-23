@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "."
-          target: "/home/mester/Bedlessbot
+          target: "/home/mester/Bedlessbot"
 
       - name: Run deployment script
         uses: appleboy/ssh-action@v0.1.1

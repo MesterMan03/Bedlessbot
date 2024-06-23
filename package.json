@@ -35,6 +35,7 @@
     "elysia": "^1.0.22",
     "elysia-rate-limit": "^4.1.0",
     "googleapis": "^134.0.0",
+    "hcaptcha": "^0.1.1",
     "marked": "^12.0.2",
     "moment-timezone": "^0.5.45",
     "node-cron": "^3.0.3",

@@ -60,9 +60,9 @@ export default class DashboardAPITest implements DashboardAPIInterface {
         });
     }
 
-    CreateOAuth2Url(state: string) {
+    CreateOAuth2Url(origin: string, state: string) {
         // return the callback url
-        const url = new URL(config.OAuthRedirect);
+        const url = new URL(config.OAuthRedirect, origin);
         url.searchParams.set("code", "MadeByMester");
         url.searchParams.set("state", state);
         return url.toString();

@@ -67,13 +67,11 @@ function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
         throw new Error("Version not found");
     }
 
-    const downloadLink = `${cdn}/${fileName}`;
+    const downloadLink = new URL(`/api/packdownload`, location.origin);
+    downloadLink.searchParams.append("packid", packid);
+    downloadLink.searchParams.append("version", version);
 
-    // download the file without the use of redirecting
-    const a = document.createElement("a");
-    a.href = downloadLink;
-    a.download = pack.friendly_name;
-    a.click();
+    location.replace(downloadLink.toString());
 }
 
 function getPackIcon(packid: string) {
@@ -121,31 +119,46 @@ if ("serviceWorker" in navigator) {
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
-commentForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const formData = new FormData(commentForm);
-    const packid = "15k";
-    const comment = formData.get("comment") as string;
-    const response = await app.api.comments.post({ packid, comment });
-    if (response.status === 401) {
-        // redirect to login
-        location.href = "/api/auth?redirect=/packs.html";
-    }
-    if (response.status === 200) {
-        // refresh page
-        location.reload();
+// add "log in to comment" warning
+app.api.user.get().then((response) => {
+    if (response.status !== 200) {
+        // remove the submit button
+        commentForm.querySelector("button")?.remove();
+
+        const warning = document.createElement("a");
+        warning.innerText = "You must be logged in to comment!";
+        warning.href = "/api/auth?redirect=/packs.html";
+        commentForm.append(warning);
     }
 });
+
+// add select menu for all packs
+const select = document.createElement("select");
+select.name = "packid";
+for(const pack of packData.packs) {
+    const option = document.createElement("option");
+    option.value = pack.id;
+    option.innerText = pack.friendly_name;
+    select.appendChild(option);
+}
+commentForm.prepend(select);
+
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-const comments = (await app.api.comments.get({ query: { packid: "15k", page: 0 } })).data;
-if (comments) {
-    for (const comment of comments) {
-        const commentElement = document.createElement("div");
-        commentElement.innerHTML = `
-            <img src="${comment.avatar}" alt="${comment.username}">
-            <h3>${comment.username}</h3>
-            <p>${comment.comment}</p>
-        `;
-        commentsDiv.appendChild(commentElement);
+select.addEventListener("change", updateComments);
+
+async function updateComments() {
+    commentsDiv.innerHTML = "";
+    const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;
+    if (comments) {
+        for (const comment of comments) {
+            const commentElement = document.createElement("div");
+            commentElement.innerHTML = `
+                <img src="${comment.avatar}" alt="${comment.username}">
+                <h3>${comment.username}</h3>
+                <p>${comment.comment}</p>
+            `;
+            commentsDiv.appendChild(commentElement);
+        }
     }
 }
+updateComments();

@@ -5,6 +5,7 @@ import config from "../config";
 import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
 import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
 import data from "./data.json";
+import { verify } from "hcaptcha";
 
 const LbPageSize = 20;
 const CommentsPageSize = 10;
@@ -34,10 +35,10 @@ function GetMaxCommentsPage(packid: string) {
 }
 
 let LbCache = new Array<LevelInfo>();
-let lastLbCacheRefresh = 0
+let lastLbCacheRefresh = 0;
 
 function UpdateLbCache() {
-    if(Date.now() - lastLbCacheRefresh < 30 * 1000) {
+    if (Date.now() - lastLbCacheRefresh < 30 * 1000) {
         return;
     }
     LbCache = db.query<LevelInfo, []>("SELECT * FROM levels ORDER BY xp DESC").all();
@@ -66,6 +67,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
         const levels = db
             .query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${LbPageSize} OFFSET ${page * LbPageSize}`)
             .all();
+
         return Promise.all(
             levels.map(async (levelInfo) => {
                 const user = await client.users.fetch(levelInfo.userid);
@@ -91,8 +93,9 @@ export default class DashboardAPI implements DashboardAPIInterface {
         );
     }
 
-    CreateOAuth2Url(state: string) {
-        return oauth2Client.generateAuthUrl({ scope: scopes, state, prompt: "none" });
+    CreateOAuth2Url(origin: string, state: string) {
+        const url = new URL(config.OAuthRedirect, origin);
+        return oauth2Client.generateAuthUrl({ scope: scopes, state, prompt: "none", redirectUri: url.toString() });
     }
 
     async ProcessOAuth2Callback(code: string) {
@@ -116,10 +119,21 @@ export default class DashboardAPI implements DashboardAPIInterface {
         return user;
     }
 
-    async SubmitPackComment(userid: string, packid: string, comment: string) {
+    async SubmitPackComment(userid: string, packid: string, comment: string, captcha: string) {
         if (!allPackIDs.includes(packid)) {
             throw new Error("Invalid pack ID");
         }
+
+        // validate captcha response
+        await verify(process.env.HCAPTCHA_SECRET as string, captcha)
+            .then((data) => {
+                if (!data.success) {
+                    throw new Error("Invalid captcha");
+                }
+            })
+            .catch((err) => {
+                throw err;
+            });
 
         const commentObj = {
             id: Math.random().toString(10).substring(2),

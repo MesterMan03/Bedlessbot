@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,17 +9,21 @@
     <script src="https://momentjs.com/downloads/moment-with-locales.min.js"></script>
     <script src="https://momentjs.com/downloads/moment-timezone-with-data.min.js"></script>
     <script src="/scripts/packs.js" type="module"></script>
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
+
 <body>
     <h1>UNDER CONSTRUCTION</h1>
 
-    <form id="commentForm" method="">
+    <form id="commentForm" action="/api/comments" method="POST">
         <label for="comment">Comment:</label>
         <textarea id="comment" name="comment" minlength="32" maxlength="1024" rows="10" cols="60">
-        </textarea>
+            </textarea>
+        <div class="h-captcha" data-sitekey="7c279daa-4c7e-4c0a-8814-fca3646e78cc"></div>
         <button type="submit">Submit</button>
     </form>
+
     <div id="comments"></div>
-    <!--div id="matomo-opt-out"></div-->
 </body>
+
 </html>

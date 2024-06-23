@@ -9,7 +9,6 @@ import { join } from "path";
 import {
     DashboardFinalPackCommentSchema,
     DashboardLbEntrySchema,
-    DashboardPackCommentSchema,
     DashboardUserSchema,
     PackDataSchema
 } from "./api-types";
@@ -140,7 +139,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/auth",
-        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery } }) => {
+        ({ cookie: { oauthState, redirect: redirectCookie }, redirect, set, query: { redirect: redirectQuery }, request }) => {
             set.headers["Cache-Control"] = "no-store";
 
             redirectCookie.remove();
@@ -161,7 +160,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 httpOnly: true
             });
 
-            const authURL = api.CreateOAuth2Url(state);
+            const authURL = api.CreateOAuth2Url(new URL(request.url).origin, state);
 
             // redirect to the auth url
             return redirect(authURL);
@@ -257,8 +256,9 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         )
                         .post(
                             "/comments",
-                            async ({ body: { packid, comment }, store: { userid } }) => {
-                                return api.SubmitPackComment(userid, packid, comment);
+                            async ({ body, store: { userid }, redirect }) => {
+                                api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
+                                return redirect(`/packs.html`);
                             },
                             {
                                 body: t.Object({
@@ -267,13 +267,14 @@ const apiRoute = new Elysia({ prefix: "/api" })
                                         maxLength: 1024,
                                         description: "The comment body (Markdown formatted text)"
                                     }),
-                                    packid: t.String({ description: "The ID of the pack" })
+                                    packid: t.String({ description: "The ID of the pack" }),
+                                    "g-captcha-response": t.String({ description: "hCaptcha response token" }),
+                                    "h-captcha-response": t.String({ description: "hCaptcha response token" })
                                 }),
                                 detail: {
                                     description: "Submit a comment on a pack",
                                     tags: ["App", "Pack", "Protected"]
-                                },
-                                response: DashboardPackCommentSchema
+                                }
                             }
                         )
                 )
@@ -319,7 +320,42 @@ const apiRoute = new Elysia({ prefix: "/api" })
             response: { 200: t.Array(DashboardFinalPackCommentSchema), 400: t.String() }
         }
     )
-    .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema });
+    .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema })
+    .get(
+        "/downloadpack",
+        ({ query: { packid, version }, error, redirect }) => {
+            const cdn = "https://bedless-cdn.mester.info";
+
+            // find pack and return download link
+            const pack = packData.packs.find((pack) => pack.id === packid);
+            if (!pack) {
+                return error(400, "Invalid pack ID");
+            }
+
+            const file = pack.downloads[version];
+            if (!file) {
+                return error(400, "Invalid version");
+            }
+
+            return redirect(`${cdn}/${file}`);
+        },
+        {
+            query: t.Object({
+                packid: t.String({
+                    description: "The ID of the pack to download",
+                    default: "15k"
+                }),
+                version: t.Union([t.Literal("1.8.9"), t.Literal("1.20.5"), t.Literal("bedrock")], {
+                    description: "The version of the pack to download",
+                    default: "1.8.9"
+                })
+            }),
+            detail: {
+                tags: ["App", "Pack"],
+                description: "Download a pack"
+            }
+        }
+    );
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))

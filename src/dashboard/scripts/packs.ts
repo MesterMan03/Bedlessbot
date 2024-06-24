@@ -6,8 +6,8 @@ import type { PackData } from "../api-types";
 import "./loadworker";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
-// note that because we don't import anything, this script can only be run in browsers, where the moment library is already loaded
-declare const moment: typeof import("moment-timezone");
+// note that because we don't import anything, this script can only be run in browsers, where the luxon library is already loaded
+declare const luxon: typeof import("luxon");
 
 const cdn = "https://bedless-cdn.mester.info";
 
@@ -15,15 +15,13 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
-// Code snippet for using the moment library
+// Code snippet for using the luxon library
 // Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
 // somehow to a human-readable format. I guess you could use the built-in Date object, but that's
-// a bit of a hassle. Meanwhile, moment can handle timezones and custom formats with the downside of
-// bloat - it is slightly mitigated by the script file being cached -, and we're also using like a single
-// feature of it, so decide if writing your own function is worth it (personally I'd say it's not) - Mester
+// a bit of a hassle. Meanwhile, luxon can handle timezones and custom formats with almost no downside
+// compared to moment (luxon uses the built-in Intl API, which greatly reduces the bundle size)
 
-const tz = moment.tz.guess();
-console.log(moment(new Date()).tz(tz).format("HH:mm DD/MM/YYYY"));
+console.log(luxon.DateTime.now().setZone("system").toFormat("HH:mm dd/LL/yyyy"));
 
 // I'm not sure if using Markdown will be a good idea in the long rung
 // It'd be nice if comments could be formatted, but adding an entire Markdown parser to the script
@@ -132,7 +130,9 @@ for (const pack of packData.packs) {
 commentForm.prepend(select);
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-select.addEventListener("change", updateComments);
+select.addEventListener("change", () => {
+    updateComments();
+});
 
 // function to update comments with packid from the select menu
 async function updateComments() {

@@ -10,7 +10,7 @@ import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserS
 import packData from "./data.json";
 import { randomBytes } from "crypto";
 
-const DashboardAPI = process.env.DEV_DASH === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
+const DashboardAPI = process.env["DEV_DASH"] === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
@@ -33,7 +33,7 @@ await Bun.build({
 });
 
 // load EdDSA key from base64 secret
-const jwtSecret = Buffer.from(process.env.JWT_SECRET as string, "base64");
+const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
 // generate a random password for the production /packs.html (temporary)
 // TODO: remove this
@@ -146,7 +146,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
             });
 
             // generate a random state and save it in cookie
-            const state = Math.random().toString(36).substring(2);
+            const state = randomBytes(32).toString("base64");
 
             oauthState.set({
                 value: state,
@@ -219,7 +219,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     return error(401, "Unauthorized");
                 }
 
-                store.userid = validToken.userid as string;
+                store.userid = validToken["userid"] as string;
             }
         },
         (app) =>

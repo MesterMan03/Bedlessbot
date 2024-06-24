@@ -121,19 +121,21 @@ await loadUsers(pageCursor);
 pageCursor++;
 
 let doneLoading = true;
-addEventListener("scroll", async function listener() {
-    if (scrollY + innerHeight == document.body.clientHeight && doneLoading) {
-        doneLoading = false;
-        const successCode = await loadUsers(pageCursor).then((successCode) => {
-            doneLoading = true;
-            return successCode;
-        });
-        if (successCode === PageLoadCode.InvalidPage) {
-            // we've reached the end, stop loading
-            removeEventListener("scroll", listener);
+addEventListener("scroll", function listener() {
+    (async () => {
+        if (scrollY + innerHeight == document.body.clientHeight && doneLoading) {
+            doneLoading = false;
+            const successCode = await loadUsers(pageCursor).then((successCode) => {
+                doneLoading = true;
+                return successCode;
+            });
+            if (successCode === PageLoadCode.InvalidPage) {
+                // we've reached the end, stop loading
+                removeEventListener("scroll", listener);
+            }
+            if (successCode === PageLoadCode.Success) {
+                pageCursor++;
+            }
         }
-        if (successCode === PageLoadCode.Success) {
-            pageCursor++;
-        }
-    }
+    })();
 });

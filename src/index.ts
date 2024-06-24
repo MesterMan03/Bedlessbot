@@ -11,6 +11,7 @@ import {
     MessageComponentInteraction,
     REST,
     Routes,
+    SnowflakeUtil,
     type RESTPostAPIChatInputApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
@@ -33,9 +34,9 @@ import { SendRequest } from "./apimanager";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
-const token = process.env.TOKEN as string;
-const clientID = process.env.CLIENT_ID as string;
-const guildID = process.env.GUILD_ID as string;
+const token = process.env["TOKEN"] as string;
+const clientID = process.env["CLIENT_ID"] as string;
+const guildID = process.env["GUILD_ID"] as string;
 
 type ClientCommand = {
     execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
@@ -317,6 +318,11 @@ function shutdown(reason?: string) {
     process.exit(0);
 }
 
+function GenerateSnowflake() {
+    // use 2024-01-01 as the epoch
+    return SnowflakeUtil.generate({ timestamp: 1704063600 });
+}
+
 process.on("uncaughtException", (err) => {
     console.error(err);
 });
@@ -338,6 +344,6 @@ process.on("SIGTERM", () => {
 // start the bot
 client.login(token);
 
-export { GetGuild, GetResFolder, browser, db, type ClientCommand };
+export { GetGuild, GetResFolder, browser, db, type ClientCommand, GenerateSnowflake };
 
 export default client;

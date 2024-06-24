@@ -1,5 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, SlashCommandBuilder } from "discord.js";
-import moment from "moment-timezone";
+import * as luxon from "luxon";
 import { DateToNumber } from "../birthdaymanager";
 import { db } from "..";
 
@@ -24,29 +24,29 @@ export default {
             return void interaction.reply({ embeds: [embed] });
         }
 
-        const date = moment(dateRaw, dateRaw.length === 10 ? "DD/MM/YYYY" : "DD/MM");
-        if (!date.isValid()) {
+        let date = luxon.DateTime.fromFormat(dateRaw, dateRaw.length === 10 ? "dd/LL/yyyy" : "dd/LL");
+        if (!date.isValid) {
             return void interaction.reply("Please provide a valid date in the format DD/MM/YYYY or DD/MM.");
         }
-        const thisYear = moment().year();
+        const thisYear = luxon.DateTime.now().year;
 
         // check if year is at least 1800
-        if (date.year() < 1800 || date.year() > thisYear) {
+        if (date.year < 1800 || date.year > thisYear) {
             return void interaction.reply("Please provide a valid year.");
         }
 
         // if year is not provided, set it to 0
-        if (date.year() === thisYear) {
-            date.set("year", 0);
+        if (date.year === thisYear) {
+            date = date.set({ year: 0 });
         }
 
-        const dateStr = date.year() === 0 ? date.format("DD MMMM") : date.format("DD MMMM YYYY");
-        const dateNum = DateToNumber(date.format("DD/MM"));
+        const dateStr = date.year === 0 ? date.toFormat("dd LLLL") : date.toFormat("dd LLLL yyyy");
+        const dateNum = DateToNumber(date.toFormat("dd/LL"));
 
         // insert or update the birthday
         db.query("INSERT OR REPLACE INTO birthdays (userid, date, datenum) VALUES ($userid, $date, $datenum)").run({
             $userid: user.id,
-            $date: date.format("DD/MM/YYYY"),
+            $date: date.toFormat("dd/LL/yyyy"),
             $datenum: dateNum
         });
 

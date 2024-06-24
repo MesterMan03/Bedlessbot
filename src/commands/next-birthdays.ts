@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { db } from "..";
 import { DateToNumber, timezone, type Birthday } from "../birthdaymanager";
-import moment from "moment-timezone";
+import * as luxon from "luxon";
 
 const cooldowns = new Map<string, number>();
 
@@ -15,8 +15,9 @@ export default {
         cooldowns.set(interaction.user.id, Date.now());
 
         // calculate today's date in orderable format
-        const today = moment().tz(timezone).format("DD/MM");
-        const thisYear = moment().tz(timezone).year();
+        const now = luxon.DateTime.now().setZone(timezone);
+        const today = now.toFormat("dd/LL");
+        const thisYear = now.year;
         const todayNum = DateToNumber(today);
 
         // now we just need to find the offset, so find every birthday that is today or later
@@ -33,7 +34,7 @@ export default {
                     `SELECT userid, date FROM birthdays ORDER BY datenum ASC LIMIT ${10 - birthdays.length}`
                 )
                 .all()
-                // deduplicate
+                // deduplicate (technically with a big enough database this bot operates with this isn't necessary, but it's good practice)
                 .filter((birthday) => !birthdays.some((b) => b.userid === birthday.userid));
             birthdays.push(...wraparound);
         }
@@ -42,19 +43,19 @@ export default {
 
         // turn the dates into (day, month name, year) format
         birthdays.map((birthday) => {
-            const date = moment(birthday.date, "DD/MM/YYYY");
-            const year = date.year();
-            const dateNum = DateToNumber(date.format("DD/MM"));
+            let date = luxon.DateTime.fromFormat(birthday.date, "dd/LL/yyyy");
+            const year = date.year;
+            const dateNum = DateToNumber(date.toFormat("dd/LL"));
 
             // if date is today or later, it's this year, otherwise it's next year
             if (dateNum >= todayNum) {
-                date.set("year", thisYear);
+                date = date.set({ year: thisYear });
             } else {
-                date.set("year", thisYear + 1);
+                date = date.set({ year: thisYear + 1 });
             }
 
             // format the month as English short name
-            const dateString = date.format("DD MMMM YYYY");
+            const dateString = date.toFormat("dd LLLL yyyy");
 
             // calculate age the user will be (-1 if year is 0)
             const age = year === 0 ? -1 : thisYear - year;

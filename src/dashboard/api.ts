@@ -1,6 +1,6 @@
 import DiscordOauth2 from "discord-oauth2";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, OAuth2Scopes } from "discord.js";
-import client, { db } from "..";
+import client, { GenerateSnowflake, db } from "..";
 import config from "../config";
 import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
 import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
@@ -13,8 +13,8 @@ const CommentsPageSize = 10;
 const allPackIDs = data.packs.map((pack) => pack.id);
 
 const oauth2Client = new DiscordOauth2({
-    clientId: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
+    clientId: process.env["CLIENT_ID"],
+    clientSecret: process.env["CLIENT_SECRET"],
     redirectUri: new URL(config.OAuthRedirect, config.DashOrigin).toString()
 });
 
@@ -132,7 +132,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
         }
 
         // validate captcha response
-        await verify(process.env.HCAPTCHA_SECRET as string, captcha)
+        await verify(process.env["HCAPTCHA_SECRET"] as string, captcha)
             .then((data) => {
                 if (!data.success) {
                     throw new Error("Invalid captcha");
@@ -143,7 +143,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
             });
 
         const commentObj = {
-            id: Math.random().toString(10).substring(2),
+            id: GenerateSnowflake().toString(),
             packid,
             userid,
             comment,

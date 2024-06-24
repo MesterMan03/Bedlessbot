@@ -26,10 +26,9 @@
 
     <form id="commentForm" action="/api/comments" method="POST">
         <label for="comment">Comment:</label>
-        <textarea id="comment" name="comment" minlength="32" maxlength="1024" rows="10" cols="60">
-            </textarea>
-        <div class="h-captcha" data-sitekey="7c279daa-4c7e-4c0a-8814-fca3646e78cc"></div>
-        <button type="submit">Submit</button>
+        <textarea id="comment" name="comment" minlength="32" maxlength="1024" rows="10" cols="60"></textarea>
+        <button class="h-captcha" data-sitekey="7c279daa-4c7e-4c0a-8814-fca3646e78cc" data-theme="dark"
+            data-callback="sendComment">Submit</button>
     </form>
 
     <div id="comments"></div>

@@ -129,6 +129,35 @@ for (const pack of packData.packs) {
 }
 commentForm.prepend(select);
 
+export function sendComment() {
+    // create a form data object
+    const formData = new FormData(commentForm);
+
+    // send the comment to the server
+    app.api.comments
+        .post({
+            packid: formData.get("packid") as string,
+            comment: formData.get("comment") as string,
+            "h-captcha-response": formData.get("h-captcha-response") as string
+        })
+        .then((res) => {
+            if (res.status === 200) {
+                // TODO: show some kind of modal ("your comment has been sent to review" or smth)
+                return;
+            }
+            if (res.status === 422) {
+                // TODO: badly formatted comment (maybe user was a nerd and tried to bypass textarea length limit)
+                return;
+            }
+            if (res.status === 401) {
+                // TODO: invalid captcha
+                return;
+            }
+        });
+}
+//@ts-ignore bind the function to the window object
+window.sendComment = sendComment;
+
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
 select.addEventListener("change", () => {
     updateComments();

@@ -263,7 +263,6 @@ const apiRoute = new Elysia({ prefix: "/api" })
                                         description: "The comment body (Markdown formatted text)"
                                     }),
                                     packid: t.String({ description: "The ID of the pack" }),
-                                    "g-recaptcha-response": t.String({ description: "Google reCAPTCHA response token" }),
                                     "h-captcha-response": t.String({ description: "hCaptcha response token" })
                                 }),
                                 detail: {

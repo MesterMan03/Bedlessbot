@@ -251,9 +251,9 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         )
                         .post(
                             "/comments",
-                            async ({ body, store: { userid }, redirect }) => {
+                            async ({ body, store: { userid } }) => {
                                 api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
-                                return redirect(`/packs.html`);
+                                return "ok";
                             },
                             {
                                 body: t.Object({

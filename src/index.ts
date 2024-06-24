@@ -11,13 +11,14 @@ import {
     MessageComponentInteraction,
     REST,
     Routes,
-    SnowflakeUtil,
     type RESTPostAPIChatInputApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
+import { Snowflake } from "nodejs-snowflake";
 import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
+import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
 import config from "./config";
 import {
@@ -30,9 +31,10 @@ import {
     XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
-import { SendRequest } from "./apimanager";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
+
+const snowflake = new Snowflake({ custom_epoch: 1704063600, instance_id: 69 });
 
 const token = process.env["TOKEN"] as string;
 const clientID = process.env["CLIENT_ID"] as string;
@@ -320,7 +322,7 @@ function shutdown(reason?: string) {
 
 function GenerateSnowflake() {
     // use 2024-01-01 as the epoch
-    return SnowflakeUtil.generate({ timestamp: 1704063600 });
+    return snowflake.getUniqueID().toString();
 }
 
 process.on("uncaughtException", (err) => {
@@ -344,6 +346,6 @@ process.on("SIGTERM", () => {
 // start the bot
 client.login(token);
 
-export { GetGuild, GetResFolder, browser, db, type ClientCommand, GenerateSnowflake };
+export { GenerateSnowflake, GetGuild, GetResFolder, browser, db, type ClientCommand };
 
 export default client;

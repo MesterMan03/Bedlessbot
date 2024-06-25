@@ -101,13 +101,19 @@ for (const pack of packData.packs) {
     packElement.classList.add("pack");
     const description = marked.parse(pack.description, { async: false }) as string;
     packElement.innerHTML = `
-        <img src="${icon}" alt="${pack.friendly_name}" class="packImage">
-        <h2>${pack.friendly_name}</h2>
-        <div>${description}</div>
+        <br />
+        <div>
+            <div>
+                <img src="${icon}" alt="${pack.friendly_name}" class="packImage">
+                <h2>${pack.friendly_name}</h2>
+            </div>
+            <div>${description}</div>
+        </div>
+        
     `;
 
     // dinamically load the download buttons
-    for (const version of <const>["1.8.9", "1.20.5", "bedrock"]) {
+    for (const version of <const>["bedrock", "1.20.5", "1.8.9"]) {
         if (!pack.downloads[version]) {
             continue;
         }
@@ -115,7 +121,7 @@ for (const pack of packData.packs) {
         const downloadButton = document.createElement("button");
         downloadButton.textContent = `Download for ${version === "bedrock" ? "Bedrock" : version}`;
         downloadButton.addEventListener("click", () => downloadPack(pack.id, version));
-        packElement.appendChild(downloadButton);
+        packElement.prepend(downloadButton);
     }
     (document.getElementById(pack.variant ? pack.variant : pack.id) as HTMLDivElement).appendChild(packElement);
 }

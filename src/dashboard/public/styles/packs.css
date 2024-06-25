@@ -76,7 +76,12 @@ div.pack {
     border: 1px var(--text) solid;
     float: left;
 }
-
+div.pack > div {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 1dvh;
+}
 textarea {
     resize: none;
 }

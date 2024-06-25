@@ -1,10 +1,13 @@
 #!/bin/bash
 
+# Get the directory where the script is located
+script_dir=$(dirname "$(realpath "$0")")
+
 # Define the backup directory with full path
-backup_dir="$(pwd)/backup"
+backup_dir="$script_dir/backup"
 
 # Define the maximum number of directories to keep
-max_dirs=14
+max_dirs=50
 
 # Check if the backup directory exists, create it if it doesn't
 if [ ! -d "$backup_dir" ]; then
@@ -36,6 +39,6 @@ backup_subdir="$backup_dir/$current_date"
 mkdir "$backup_subdir"
 
 # Copy files matching "data.db*" into the newly created directory
-cp "$(pwd)"/data.db* "$backup_subdir"
+cp "$script_dir"/data.db* "$backup_subdir"
 
 echo "Backup completed successfully in $backup_subdir."

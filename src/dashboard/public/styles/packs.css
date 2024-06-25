@@ -75,3 +75,7 @@ div.pack {
     border-radius: 2dvh;
     border: 1px var(--text) solid;
 }
+
+textarea {
+    resize: none;
+}

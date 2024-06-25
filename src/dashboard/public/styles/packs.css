@@ -74,6 +74,7 @@ div.pack {
     width: fit-content;
     border-radius: 2dvh;
     border: 1px var(--text) solid;
+    float: left;
 }
 
 textarea {

@@ -15,6 +15,11 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
+let variants = new Array<string>;
+packData.packs.forEach((pack) => variants.push(pack.variant ? pack.variant : pack.id));
+
+variants = variants.filter((variant, idx, arr) => arr.indexOf(variant) === idx);
+
 // Code snippet for using the luxon library
 // Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
 // somehow to a human-readable format. I guess you could use the built-in Date object, but that's
@@ -80,6 +85,16 @@ function getPackIcon(packid: string) {
 }
 
 // render all packs
+
+for (const variant of variants) {
+    const variantElement = document.createElement("div");
+    variantElement.id = variant;
+    variantElement.innerHTML = `
+        <h1>${variant} Packs:</h1>
+    `;
+    document.body.appendChild(variantElement);
+}
+
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
     const packElement = document.createElement("div");
@@ -102,7 +117,7 @@ for (const pack of packData.packs) {
         downloadButton.addEventListener("click", () => downloadPack(pack.id, version));
         packElement.appendChild(downloadButton);
     }
-    document.body.appendChild(packElement);
+    document.getElementById(pack.variant ? pack.variant : pack.id)?.appendChild(packElement);
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;

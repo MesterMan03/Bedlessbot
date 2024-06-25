@@ -65,8 +65,8 @@ main {
 }
 
 .packImage {
-    width: 30dvh;
-    height: 30dvh;
+    width: 20dvw;
+    height: 20dvw;
 }
 div.pack {
     padding: 2dvh;

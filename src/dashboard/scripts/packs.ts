@@ -15,7 +15,7 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
-let variants = new Array<string>;
+let variants = new Array<string>();
 packData.packs.forEach((pack) => variants.push(pack.variant ? pack.variant : pack.id));
 
 variants = variants.filter((variant, idx, arr) => arr.indexOf(variant) === idx);
@@ -117,7 +117,7 @@ for (const pack of packData.packs) {
         downloadButton.addEventListener("click", () => downloadPack(pack.id, version));
         packElement.appendChild(downloadButton);
     }
-    document.getElementById(pack.variant ? pack.variant : pack.id)?.appendChild(packElement);
+    (document.getElementById(pack.variant ? pack.variant : pack.id) as HTMLDivElement).appendChild(packElement);
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
@@ -137,13 +137,20 @@ app.api.user.get().then((response) => {
 // add select menu for all packs
 const select = document.createElement("select");
 select.name = "packid";
+commentForm.prepend(select);
+
+for (const variant of variants) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = variant;
+    optgroup.id = `variant-${variant}`;
+    select.appendChild(optgroup);
+}
 for (const pack of packData.packs) {
     const option = document.createElement("option");
     option.value = pack.id;
     option.innerText = pack.friendly_name;
-    select.appendChild(option);
+    (document.getElementById(`variant-${pack.variant ? pack.variant : pack.id}`) as HTMLOptGroupElement)?.appendChild(option);
 }
-commentForm.prepend(select);
 
 export function sendComment() {
     // create a form data object

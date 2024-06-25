@@ -1,5 +1,3 @@
-/// <reference lib="dom" />
-
 import { treaty } from "@elysiajs/eden";
 import type { DashboardApp } from "..";
 import "./loadworker";

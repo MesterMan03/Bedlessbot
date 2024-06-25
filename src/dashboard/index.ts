@@ -2,14 +2,15 @@ import jwt from "@elysiajs/jwt";
 import staticPlugin from "@elysiajs/static";
 import swagger from "@elysiajs/swagger";
 import { fileURLToPath } from "bun";
+import { randomBytes } from "crypto";
 import Elysia, { t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
 import { rmSync } from "node:fs";
 import { join } from "path";
 import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
-import { randomBytes } from "crypto";
 
+// load the test or normal api based on DEV_DASH environment variable
 const DashboardAPI = process.env["DEV_DASH"] === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
 
@@ -18,25 +19,28 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const scriptsLocation = "scripts";
 const port = 8146;
 
-// build scripts
+const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "inline";
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(__dirname, scriptsLocation) }));
-console.log("Building scripts for dashboard:", scriptFiles);
+
 // clear the output directory
 rmSync(join(__dirname, "public", scriptsLocation), { recursive: true, force: true });
+
+console.log("Building scripts for dashboard:", scriptFiles);
 await Bun.build({
     entrypoints: [...scriptFiles.map((file) => join(__dirname, scriptsLocation, file))],
     minify: true,
     external: ["moment", "moment-timezone"],
     outdir: join(__dirname, "public", scriptsLocation),
     splitting: true,
-    sourcemap: process.env.NODE_ENV === "development" ? "inline" : "none"
+    //@ts-ignore supported in Bun canary
+    sourcemap: process.env.NODE_ENV === "development" ? sourceMapOption : "none"
 });
 
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
 // generate a random password for the production /packs.html (temporary)
-// TODO: remove this
+// TODO: remove this once packs become public
 const packsPassword = Math.random().toString(36).substring(2);
 console.log("Password for packs:", packsPassword);
 

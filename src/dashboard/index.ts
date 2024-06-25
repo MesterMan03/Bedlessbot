@@ -435,8 +435,8 @@ const app = new Elysia()
             const nonce = randomBytes(32).toString("base64");
 
             response.headers.set(
-                "Content-Security-Policy",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
+                process.env.NODE_ENV === "production" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self'; report-to /dev/csp-violation-report;`
             );
 
             const rewriter = new HTMLRewriter();

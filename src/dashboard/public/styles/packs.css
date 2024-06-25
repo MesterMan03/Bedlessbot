@@ -68,3 +68,10 @@ main {
     width: 30dvh;
     height: 30dvh;
 }
+div.pack {
+    padding: 2dvh;
+    margin: 1dvh 0;
+    width: fit-content;
+    border-radius: 2dvh;
+    border: 1px var(--text) solid;
+}

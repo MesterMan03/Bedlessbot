@@ -83,6 +83,7 @@ function getPackIcon(packid: string) {
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
     const packElement = document.createElement("div");
+    packElement.classList.add("pack");
     const description = marked.parse(pack.description, { async: false }) as string;
     packElement.innerHTML = `
         <img src="${icon}" alt="${pack.friendly_name}" class="packImage">

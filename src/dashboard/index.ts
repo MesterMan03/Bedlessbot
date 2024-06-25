@@ -429,22 +429,17 @@ const app = new Elysia()
         }
 
         if (response.headers.get("content-type")?.includes("text/html")) {
+            const responseText = await response.text();
+
             // generate random nonce
             const nonce = randomBytes(32).toString("base64");
 
             response.headers.set(
                 "Content-Security-Policy",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self';`
             );
 
             const rewriter = new HTMLRewriter();
-
-            // rewrite every script tag
-            rewriter.on("script", {
-                element(el) {
-                    el.setAttribute("nonce", nonce);
-                }
-            });
 
             // add Matomo tracker script to every html response
             if (process.env.NODE_ENV === "production") {
@@ -456,8 +451,17 @@ const app = new Elysia()
             }
 
             // rewrite the response
-            const text = await response.text();
-            return new Response(rewriter.transform(text), { headers: response.headers });
+            const processed = rewriter.transform(responseText);
+
+            // rewrite every script tag to add nonce
+            const nonceRewriter = new HTMLRewriter();
+            nonceRewriter.on("script", {
+                element(el) {
+                    el.setAttribute("nonce", nonce);
+                }
+            });
+
+            return new Response(nonceRewriter.transform(processed), { headers: response.headers });
         }
     })
     .use(apiRoute)

@@ -80,3 +80,8 @@ div.pack {
 textarea {
     resize: none;
 }
+
+form a {
+    color: var(--text);
+    text-decoration: none;
+}

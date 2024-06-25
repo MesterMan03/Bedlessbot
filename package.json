@@ -4,13 +4,12 @@
   "type": "module",
   "devDependencies": {
     "@biomejs/biome": "1.7.3",
-    "@types/bun": "^1.0.12",
+    "@types/bun": "^1.1.5",
     "@types/dompurify": "^3.0.5",
     "@types/luxon": "^3.4.2",
     "@types/node-cron": "^3.0.11",
     "csv-parser": "^3.0.0",
-    "csv-writer": "^1.6.0",
-    "prettier": "^3.2.5"
+    "csv-writer": "^1.6.0"
   },
   "scripts": {
     "dev": "NODE_ENV=development bun run src/index.ts",
@@ -22,7 +21,7 @@
     "devdash": "NODE_ENV=development DEV_DASH=yes bun run src/dashboard/index.ts"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.5.2"
   },
   "dependencies": {
     "@elysiajs/eden": "^1.0.14",
@@ -31,9 +30,9 @@
     "@elysiajs/swagger": "^1.0.5",
     "bufferutil": "^4.0.8",
     "discord-oauth2": "^2.12.1",
-    "discord.js": "^14.14.1",
+    "discord.js": "^14.15.3",
     "dompurify": "^3.1.5",
-    "elysia": "^1.0.22",
+    "elysia": "^1.0.25",
     "elysia-rate-limit": "^4.1.0",
     "googleapis": "^134.0.0",
     "hcaptcha": "^0.1.1",
@@ -41,12 +40,11 @@
     "marked": "^12.0.2",
     "node-cron": "^3.0.3",
     "nodejs-snowflake": "^2.0.1",
-    "openai": "^4.32.1",
     "ordinal": "^1.0.3",
-    "puppeteer": "^22.6.5",
-    "sharp": "^0.33.3",
+    "puppeteer": "^22.12.0",
+    "sharp": "^0.33.4",
     "svg-captcha": "^1.4.0",
-    "utf-8-validate": "^6.0.3",
+    "utf-8-validate": "^6.0.4",
     "zlib-sync": "^0.1.9"
   }
 }

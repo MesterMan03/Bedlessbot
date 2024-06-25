@@ -85,7 +85,7 @@ for (const pack of packData.packs) {
     const packElement = document.createElement("div");
     const description = marked.parse(pack.description, { async: false }) as string;
     packElement.innerHTML = `
-        <img src="${icon}" alt="${pack.friendly_name}">
+        <img src="${icon}" alt="${pack.friendly_name}" class="packImage">
         <h2>${pack.friendly_name}</h2>
         <div>${description}</div>
     `;

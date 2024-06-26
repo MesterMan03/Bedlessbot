@@ -191,7 +191,7 @@ async function processInteraction(interaction: ButtonInteraction) {
 
 const allowedFileTypes = ["mp4", "mov", "webm", "gif", "png", "jpeg"];
 const allowedFileTypesString = allowedFileTypes.map((type) => `.${type}`).join(", ");
-const allowedWebsites = ["youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
+const allowedWebsites = ["www.youtube.com", "youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("role", true);
@@ -275,13 +275,13 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         const proofURL = new URL(proof);
 
         // check if link is from an allowed website
-        if (!allowedWebsites.some((website) => proofURL.hostname.endsWith(website))) {
+        if (!allowedWebsites.some((website) => proofURL.hostname === website)) {
             await interaction.editReply("The proof link must be from YouTube, Imgur, Medal or Streamable.");
             return null;
         }
 
-        // check if video is private
-        if (proofURL.hostname === "youtu.be" || proofURL.hostname.endsWith("youtube.com")) {
+        // check if video is private (either hostname is)
+        if (proofURL.hostname === "youtu.be" || /(www\.)?youtube\.com/.test(proofURL.hostname)) {
             let isPrivate: VideoPrivacyResult;
 
             // extract video id using search params

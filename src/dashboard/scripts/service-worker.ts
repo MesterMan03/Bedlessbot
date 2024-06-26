@@ -56,8 +56,6 @@ self.addEventListener("push", (event) => {
             tag: data.tag
         });
     }
-
-    console.log("Push event received:", data);
 });
 
 function isNotificationData(data: unknown): data is NotificationData {

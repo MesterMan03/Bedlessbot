@@ -165,8 +165,6 @@ export default class DashboardAPI implements DashboardAPIInterface {
             date: Date.now()
         } satisfies DashboardPackComment;
 
-        console.log(commentObj);
-
         // insert the comment into the database
         db.run("INSERT INTO pending_pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?)", [
             commentObj.id,

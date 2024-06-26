@@ -17,7 +17,7 @@ const api = new DashboardAPI();
 const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 
 const scriptsLocation = "scripts";
-const port = 8146;
+const port = parseInt(process.env["PORT"] as string) || 8146;
 
 const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "inline";
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(__dirname, scriptsLocation) }));

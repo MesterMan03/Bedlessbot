@@ -201,7 +201,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
         db.run("INSERT OR REPLACE INTO push_subscriptions (userid, endpoint, expiration, auth, p256dh) VALUES (?, ?, ?, ?, ?);", [
             userid,
             subscription.endpoint,
-            subscription.expirationTime,
+            subscription.expirationTime ?? null,
             subscription.keys.auth,
             subscription.keys.p256dh
         ]);

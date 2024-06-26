@@ -28,19 +28,28 @@ export async function subscribeToPushNotifications() {
         return;
     }
 
+    // check if we have permissions for notifications
+    const perm = await reg.pushManager.permissionState({ userVisibleOnly: true });
+    if (perm !== "granted") {
+        console.error("No permission for notifications, aborting subscription.");
+        return;
+    }
+
     // check if we have a subscription already, if yes, unsubscribe and remove it from server
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
         console.warn("We already have a subscription, aborting subscription.");
-        //@ts-ignore - we're adding this to the window object so we can call it from the console
-        window.UnsubscribeFromPushNotifications = function () {
+        async function unsubscribe() {
             if (sub == null) {
                 return;
             }
-            sub.unsubscribe().then(() => {
-                app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
+            await sub.unsubscribe().then(() => {
+                return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
             });
-        };
+        }
+        //@ts-ignore - we're adding this to the window object so we can call it from the console
+        window.UnsubscribeFromPushNotifications = unsubscribe;
+
         return;
     }
 
@@ -64,10 +73,6 @@ export async function subscribeToPushNotifications() {
         .subscribe({ userVisibleOnly: true, applicationServerKey: pubKeyArray })
         .then((sub) => {
             const data = sub.toJSON() as PushSubscriptionData;
-            if (!data.keys || !data.endpoint) {
-                console.error("Failed to subscribe to push notifications, missing keys or endpoint.");
-                return;
-            }
             app.api["register-push"].post(data);
         })
         .catch(console.error);

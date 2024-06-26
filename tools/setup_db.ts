@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 
 const db = new Database("data.db");
-db.run("PRAGMA journal_mode = delete;");
 
 // Role applications
 db.run("CREATE TABLE cheatpoints (userid TEXT PRIMARY KEY, cheatpoint INTEGER);");

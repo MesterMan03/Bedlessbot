@@ -297,11 +297,13 @@ const apiRoute = new Elysia({ prefix: "/api" })
                             return error(422, "Invalid keys");
                         }
                         api.RegisterPushSubscription(userid, body);
+
+                        return "ok";
                     },
                     {
                         body: t.Object({
                             endpoint: t.String({ description: "The endpoint of the push subscription" }),
-                            expirationTime: t.Union([t.Null(), t.Integer({ description: "The expiration time of the subscription" })]),
+                            expirationTime: t.Optional(t.Union([t.Null(), t.Integer({ description: "The expiration time of the subscription" })])),
                             keys: t.Record(t.String({ description: "Type of the key" }), t.String({ description: "Data of the key" }), {
                                 description: "The keys of the subscription"
                             })
@@ -316,6 +318,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     "/unregister-push",
                     async ({ store: { userid }, body }) => {
                         api.UnregisterPushSubscription(userid, body.endpoint);
+
+                        return "ok";
                     },
                     {
                         body: t.Object({
@@ -464,10 +468,14 @@ const app = new Elysia()
             return new Response(file);
         }
     })
-
-    .onAfterHandle({ as: "global" }, async ({ response }) => {
-        if (!(response instanceof Response)) {
+    .onAfterHandle({ as: "global" }, async ({ response, request }) => {
+        if (!(response instanceof Response && request instanceof Request)) {
             return;
+        }
+
+        const url = new URL(request.url);
+        if (url.pathname === "/scripts/service-worker.js") {
+            response.headers.set("Service-Worker-Allowed", "/");
         }
 
         if (response.headers.get("content-type")?.includes("text/html")) {
@@ -544,18 +552,6 @@ const app = new Elysia()
             exclude: /docs.*/
         })
     )
-    .onAfterHandle({ as: "global" }, async ({ set, request }) => {
-        if (!(request instanceof Request)) {
-            return;
-        }
-
-        try {
-            const url = new URL(request.url);
-            if (url.pathname === "/scripts/service-worker.js") {
-                set.headers["Service-Worker-Allowed"] = "/";
-            }
-        } catch {}
-    })
     .listen(port);
 
 console.log(`Dashboard started on http://localhost:${port}`);

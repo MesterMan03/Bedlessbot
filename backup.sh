@@ -7,7 +7,7 @@ script_dir=$(dirname "$(realpath "$0")")
 backup_dir="$script_dir/backup"
 
 # Define the maximum number of directories to keep
-max_dirs=50
+max_dirs=14
 
 # Check if the backup directory exists, create it if it doesn't
 if [ ! -d "$backup_dir" ]; then

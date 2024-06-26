@@ -23,5 +23,6 @@ db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, us
 
 // Dashboard users
 db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
+db.run("CREATE TABLE push_subscriptions (userid TEXT, endpoint TEXT PRIMARY KEY, expiration INTEGER, auth TEXT, p256dh TEXT);");
 
 db.close();

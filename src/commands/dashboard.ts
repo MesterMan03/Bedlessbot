@@ -1,6 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import type { ClientCommand } from "..";
-import { api } from "../dashboard";
+import { dashboardApi } from "../dashboard";
 
 export default {
     data: null,
@@ -13,10 +13,12 @@ export default {
             return;
         }
 
+        const commentBody = interaction.message.embeds[0]?.fields[2]?.value;
+
         const action = interaction.customId.split("-")[2] as "approve" | "deny" | "spam";
         let success: boolean;
         try {
-            success = await api.ManagePackComment(commentid, action);
+            success = await dashboardApi.ManagePackComment(commentid, action);
         } catch {
             success = false;
         }
@@ -30,14 +32,32 @@ export default {
         if (action === "approve") {
             finalEmbed.setColor("Green");
             finalEmbed.setDescription(`Approved by <@${interaction.user.id}>`);
+            
+            dashboardApi.SendPushNotification("userid", {
+                title: "Comment approved",
+                body: `Your comment (${commentBody.slice(0, 15)}...) has been approved.`,
+                tag: `comment-${commentid}`
+            });
         }
         if (action === "deny") {
             finalEmbed.setColor("Red");
             finalEmbed.setDescription(`Denied by <@${interaction.user.id}>`);
+
+            dashboardApi.SendPushNotification("userid", {
+                title: "Comment denied",
+                body: `Your comment (${commentBody.slice(0, 15)}...) has been denied.`,
+                tag: `comment-denied`
+            });
         }
         if (action === "spam") {
             finalEmbed.setColor("DarkRed");
             finalEmbed.setDescription(`Marked as spam by <@${interaction.user.id}>`);
+
+            dashboardApi.SendPushNotification("userid", {
+                title: "Comment marked as spam",
+                body: `Your comment (${commentBody.slice(0, 15)}...) has been marked as spam.`,
+                tag: `comment-spam`
+            });
         }
 
         interaction.update({ embeds: [finalEmbed], components: [] });

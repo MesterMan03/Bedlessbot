@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+import type { NotificationData } from "../api-types";
+
 declare const self: ServiceWorkerGlobalScope;
 
 const CacheName = "image-cache-v1";
@@ -38,5 +40,38 @@ self.addEventListener("fetch", (event: FetchEvent) => {
                 return caches.match(OfflineUrl) as Promise<Response>;
             })
         );
+    }
+});
+
+self.addEventListener("push", (event) => {
+    const data = event.data?.json();
+    if (!data) {
+        return;
+    }
+
+    if (isNotificationData(data)) {
+        self.registration.showNotification(data.title, {
+            body: data.body,
+            icon: "/icon.gif",
+            tag: data.tag
+        });
+    }
+
+    console.log("Push event received:", data);
+});
+
+function isNotificationData(data: unknown): data is NotificationData {
+    return typeof data === "object" && data !== null && "title" in data && "body" in data && "tag" in data;
+}
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+
+    // read the tag from the notification
+
+    // comment-* -> open /packs
+    if (event.notification.tag.startsWith("comment-")) {
+        // open the packs page
+        self.clients.openWindow("/packs");
     }
 });

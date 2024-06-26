@@ -3,9 +3,18 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, OAuth2Scope
 import client, { GenerateSnowflake, db } from "..";
 import config from "../config";
 import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
-import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
+import type {
+    DashboardAPIInterface,
+    DashboardFinalPackComment,
+    DashboardLbEntry,
+    DashboardPackComment,
+    DashboardUser,
+    NotificationData,
+    PushSubscriptionData
+} from "./api-types";
 import data from "./data.json";
 import { verify } from "hcaptcha";
+import webpush from "web-push";
 
 const LbPageSize = 20;
 const CommentsPageSize = 10;
@@ -257,5 +266,37 @@ export default class DashboardAPI implements DashboardAPIInterface {
         }
 
         return { username: user.username, avatar: user.avatar } satisfies DashboardUser;
+    }
+
+    SendPushNotification(userid: string, notification: NotificationData) {
+        // get all subscriptions for the user
+        const subscription = db
+            .query<{ endpoint: string; auth: string; p256dh: string }, [string]>(
+                "SELECT endpoint, auth, p256dh FROM push_subscriptions WHERE userid = ?"
+            )
+            .all(userid);
+
+        // send the notification to all subscriptions
+        subscription.forEach((sub) => {
+            const pushConfig = {
+                endpoint: sub.endpoint,
+                keys: {
+                    auth: sub.auth,
+                    p256dh: sub.p256dh
+                }
+            };
+
+            webpush.sendNotification(pushConfig, JSON.stringify(notification));
+        });
+    }
+
+    RegisterPushSubscription(userid: string, subscription: PushSubscriptionData) {
+        const data = btoa(JSON.stringify(subscription));
+
+        db.run("UPDATE dash_users SET push = ? WHERE userid = ?", [data, userid]);
+    }
+
+    UnregisterPushSubscription(userid: string, endpoint: string) {
+        db.run("DELETE FROM push_subscriptions WHERE userid = ? AND endpoint = ?", [userid, endpoint]);
     }
 }

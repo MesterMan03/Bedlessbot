@@ -39,9 +39,9 @@ await Bun.build({
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
-// generate a random password for the production /packs.html (temporary)
+// generate a random password for the production /packs.html (temporary), use randomBytes
 // TODO: remove this once packs become public
-const packsPassword = Math.random().toString(36).substring(2);
+const packsPassword = randomBytes(16).toString("base64");
 console.log("Password for packs:", packsPassword);
 
 const trackingCode = `<!-- Matomo -->
@@ -289,6 +289,41 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         response: DashboardUserSchema
                     }
                 )
+                .post(
+                    "/register-push",
+                    async ({ store: { userid }, body, error }) => {
+                        // make sure body.keys only contain auth and p256dh
+                        if (!Object.keys(body.keys).every((key) => ["auth", "p256dh"].includes(key))) {
+                            return error(422, "Invalid keys");
+                        }
+                        api.RegisterPushSubscription(userid, body);
+                    },
+                    {
+                        body: t.Object({
+                            endpoint: t.String({ description: "The endpoint of the push subscription" }),
+                            expirationTime: t.Union([t.Null(), t.Integer({ description: "The expiration time of the subscription" })]),
+                            keys: t.Record(t.String({ description: "Type of the key" }), t.String({ description: "Data of the key" }), {
+                                description: "The keys of the subscription"
+                            })
+                        }),
+                        detail: {
+                            tags: ["App", "Protected"],
+                            description: "Register a push subscription for the currently logged in user"
+                        }
+                    }
+                )
+                .post(
+                    "/unregister-push",
+                    async ({ store: { userid }, body }) => {
+                        api.UnregisterPushSubscription(userid, body.endpoint);
+                    },
+                    {
+                        body: t.Object({
+                            endpoint: t.String({ description: "The endpoint of the push subscription" })
+                        }),
+                        detail: { tags: ["App", "Protected"], description: "Unregister a push subscription" }
+                    }
+                )
     )
     .get(
         "/comments",
@@ -354,7 +389,13 @@ const apiRoute = new Elysia({ prefix: "/api" })
             }
         }
     )
-    .get("/vapid-public-key", () => process.env["VAPID_PUBLIC_KEY"] ?? "");
+    .get("/vapid-public-key", () => process.env["VAPID_PUBLIC_KEY"] ?? null, {
+        detail: { tags: ["App"], description: "Fetch the VAPID public key for push notifications" },
+        response: t.Union([
+            t.String({ description: "The VAPID public key in Base64URL encoding" }),
+            t.Null({ description: "VAPID public key not set" })
+        ])
+    });
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
@@ -413,8 +454,8 @@ const app = new Elysia()
             return new Response(file);
         }
 
-        // check if there is no file extension and we are NOT in /api, then send the equivalent .html file
-        if (!url.pathname.includes(".") && !url.pathname.startsWith("/api")) {
+        // check if there is no file extension and we are NOT in /api or /docs, then send the equivalent .html file
+        if (!url.pathname.includes(".") && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/docs")) {
             const file = Bun.file(join(__dirname, "public", url.pathname + ".html"));
 
             if (!(await file.exists())) {
@@ -437,7 +478,7 @@ const app = new Elysia()
 
             response.headers.set(
                 process.env.NODE_ENV === "production" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; base-uri 'self'; report-to /dev/csp-violation-report;`
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info; font-src 'self' https://fonts.scalar.com; base-uri 'self'; report-to /dev/csp-violation-report;`
             );
 
             const rewriter = new HTMLRewriter();
@@ -450,6 +491,13 @@ const app = new Elysia()
                     }
                 });
             }
+
+            rewriter.on("head", {
+                element(el) {
+                    // add manifest.webmanifest
+                    el.append(`<link rel="manifest" href="/manifest.webmanifest">`, { html: true });
+                }
+            });
 
             // rewrite the response
             const processed = rewriter.transform(responseText);
@@ -514,4 +562,4 @@ console.log(`Dashboard started on http://localhost:${port}`);
 
 export default app;
 export type DashboardApp = typeof app;
-export { api };
+export { api as dashboardApi };

@@ -1,7 +1,16 @@
 import type { User } from "discord-oauth2";
-import type { DashboardAPIInterface, DashboardFinalPackComment, DashboardLbEntry, DashboardPackComment, DashboardUser } from "./api-types";
+import type {
+    DashboardAPIInterface,
+    DashboardFinalPackComment,
+    DashboardLbEntry,
+    DashboardPackComment,
+    DashboardUser,
+    NotificationData,
+    PushSubscriptionData
+} from "./api-types";
 import { Database } from "bun:sqlite";
 import config from "../config";
+import webpush from "web-push";
 
 // set up test database
 const db = new Database(":memory:");
@@ -10,6 +19,13 @@ db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEX
 db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
 db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
+db.run("CREATE TABLE push_subscriptions (userid TEXT, endpoint TEXT PRIMARY KEY, expiration INTEGER, auth TEXT, p256dh TEXT);");
+
+webpush.setVapidDetails(
+    process.env["VAPID_SUBJECT"] as string,
+    process.env["VAPID_PUBLIC_KEY"] as string,
+    process.env["VAPID_PRIVATE_KEY"] as string
+);
 
 const LbPageSize = 20;
 const CommentsPageSize = 10;
@@ -178,5 +194,46 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             username: user.username,
             avatar: user.avatar
         } satisfies DashboardUser;
+    }
+
+    RegisterPushSubscription(userid: string, subscription: PushSubscriptionData) {
+        // update the subscription (or insert if it doesn't exist)
+        db.run("INSERT OR REPLACE INTO push_subscriptions (userid, endpoint, expiration, auth, p256dh) VALUES (?, ?, ?, ?, ?);", [
+            userid,
+            subscription.endpoint,
+            subscription.expirationTime,
+            subscription.keys.auth,
+            subscription.keys.p256dh
+        ]);
+
+        setInterval(() => {
+            this.SendPushNotification(userid, { title: "Test notification", body: "This is a test notification", tag: "test" });
+        }, 5_000);
+    }
+
+    SendPushNotification(userid: string, notification: NotificationData) {
+        // get all subscriptions for the user
+        const subscription = db
+            .query<{ endpoint: string; auth: string; p256dh: string }, [string]>(
+                "SELECT endpoint, auth, p256dh FROM push_subscriptions WHERE userid = ?"
+            )
+            .all(userid);
+
+        // send the notification to all subscriptions
+        subscription.forEach((sub) => {
+            const pushConfig = {
+                endpoint: sub.endpoint,
+                keys: {
+                    auth: sub.auth,
+                    p256dh: sub.p256dh
+                }
+            };
+
+            webpush.sendNotification(pushConfig, JSON.stringify(notification));
+        });
+    }
+
+    UnregisterPushSubscription(userid: string, endpoint: string) {
+        db.run("DELETE FROM push_subscriptions WHERE userid = ? AND endpoint = ?", [userid, endpoint]);
     }
 }

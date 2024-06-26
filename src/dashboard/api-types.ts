@@ -9,6 +9,21 @@ interface DashboardAPIInterface {
     ManagePackComment: (commentid: string, action: "approve" | "deny" | "spam") => Promise<boolean>;
     FetchPackComments: (packid: string, page: number) => Promise<DashboardFinalPackComment[] | null>;
     GetUser: (userid: string) => Promise<DashboardUser | null>;
+    RegisterPushSubscription: (userid: string, subscription: PushSubscriptionData) => void;
+    UnregisterPushSubscription: (userid: string, endpoint: string) => void;
+    SendPushNotification: (userid: string, notification: NotificationData) => void;
+}
+
+interface PushSubscriptionData {
+    endpoint: string;
+    expirationTime: EpochTimeStamp | null;
+    keys: Record<string, string>;
+}
+
+interface NotificationData {
+    title: string;
+    body: string;
+    tag: string;
 }
 
 interface DashboardLbEntry {
@@ -120,6 +135,8 @@ export {
     type DashboardPackComment,
     type DashboardFinalPackComment,
     type DashboardUser,
-    type PackData
+    type PackData,
+    type PushSubscriptionData,
+    type NotificationData
 };
 export { DashboardUserSchema, DashboardPackCommentSchema, DashboardFinalPackCommentSchema, DashboardLbEntrySchema, PackDataSchema };

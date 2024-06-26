@@ -63,4 +63,4 @@ Then you can access the dashboard at `http://test.localhost:8146`. You might als
 
 For the development API to work, you only need the following environment variables:
 - `JWT_SECRET` - You can set this to any base64-encoded string.
-- (optional) `VAPID_PRIVATE_KEY` - If you want push notifications to work, you can set these variables to a valid private key, public key and VAPID subject ("mailto:thisisyou@org.com") respectively. You can generate valid VAPID keys using `bunx web-push generate-vapid-keys`.
+- (optional) `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY` and `VAPID_SUBJECT` - If you want push notifications to work, you can set these variables to a valid VAPID private key, public key and subject (mailto: or https:// link) respectively. You can generate valid VAPID keys using `bunx web-push generate-vapid-keys`.

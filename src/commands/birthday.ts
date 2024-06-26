@@ -45,8 +45,8 @@ export default {
 
         // calculate upcoming days
         const difference = Math.ceil(nextBirthday.diff(luxon.DateTime.now(), "days").days);
-        console.log(difference);
-        const daysString = dateNum === todayNum ? "**today**" : difference <= 1 ? "**tomorrow**" : `in **${difference}** days`;
+        const differenceString = difference <= 1 ? "**tomorrow**" : `in **${difference}** days`;
+        const daysString = dateNum === todayNum ? "**today**" : differenceString;
 
         const embed = new EmbedBuilder()
             .setColor("Grey")

@@ -24,16 +24,24 @@ export async function subscribeToPushNotifications() {
     // check if we're logged in
     const { error } = await app.api.user.get();
     if (error) {
-        console.error("We're not logged in, aborting push notifications.");
+        console.error("We're not logged in, aborting subscription.");
         return;
     }
 
     // check if we have a subscription already, if yes, unsubscribe and remove it from server
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-        console.log("Unsubscribing from push notifications...");
-        await sub.unsubscribe();
-        await app.api["unregister-push"].post({ endpoint: sub.endpoint });
+        console.warn("We already have a subscription, aborting subscription.");
+        //@ts-ignore - we're adding this to the window object so we can call it from the console
+        window.UnsubscribeFromPushNotifications = function () {
+            if (sub == null) {
+                return;
+            }
+            sub.unsubscribe().then(() => {
+                app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
+            });
+        };
+        return;
     }
 
     console.log("Subscribing to push notifications...");

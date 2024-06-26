@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, MessageMentions } from "discord.js";
 import type { ClientCommand } from "..";
 import { dashboardApi } from "../dashboard";
 
@@ -7,13 +7,21 @@ export default {
     name: "dash",
     interactions: ["dash-comment-approve", "dash-comment-deny", "dash-comment-spam"],
     async processInteraction(interaction) {
-        const commentid = interaction.message.embeds[0]?.footer?.text;
+        const embed = interaction.message.embeds[0];
+
+        const commentid = embed.footer?.text;
+        const userid = MessageMentions.UsersPattern.exec(embed.fields[0]?.value)?.groups?.id;
+        const commentBody = embed.fields[2]?.value;
+
         if (!commentid) {
             interaction.reply("Comment ID not found. This is an error, contact Mester.");
             return;
         }
 
-        const commentBody = interaction.message.embeds[0]?.fields[2]?.value;
+        if (!userid) {
+            interaction.reply("User ID not found. This is an error, contact Mester.");
+            return;
+        }
 
         const action = interaction.customId.split("-")[2] as "approve" | "deny" | "spam";
         let success: boolean;
@@ -32,8 +40,8 @@ export default {
         if (action === "approve") {
             finalEmbed.setColor("Green");
             finalEmbed.setDescription(`Approved by <@${interaction.user.id}>`);
-            
-            dashboardApi.SendPushNotification("userid", {
+
+            dashboardApi.SendPushNotification(userid, {
                 title: "Comment approved",
                 body: `Your comment (${commentBody.slice(0, 15)}...) has been approved.`,
                 tag: `comment-${commentid}`

@@ -16,6 +16,12 @@ import data from "./data.json";
 import { verify } from "hcaptcha";
 import webpush from "web-push";
 
+webpush.setVapidDetails(
+    process.env["VAPID_SUBJECT"] as string,
+    process.env["VAPID_PUBLIC_KEY"] as string,
+    process.env["VAPID_PRIVATE_KEY"] as string
+);
+
 const LbPageSize = 20;
 const CommentsPageSize = 10;
 
@@ -286,14 +292,21 @@ export default class DashboardAPI implements DashboardAPIInterface {
                 }
             };
 
+            console.log(pushConfig);
+
             webpush.sendNotification(pushConfig, JSON.stringify(notification));
         });
     }
 
     RegisterPushSubscription(userid: string, subscription: PushSubscriptionData) {
-        const data = btoa(JSON.stringify(subscription));
-
-        db.run("UPDATE dash_users SET push = ? WHERE userid = ?", [data, userid]);
+        // update the subscription (or insert if it doesn't exist)
+        db.run("INSERT OR REPLACE INTO push_subscriptions (userid, endpoint, expiration, auth, p256dh) VALUES (?, ?, ?, ?, ?);", [
+            userid,
+            subscription.endpoint,
+            subscription.expirationTime,
+            subscription.keys.auth,
+            subscription.keys.p256dh
+        ]);
     }
 
     UnregisterPushSubscription(userid: string, endpoint: string) {

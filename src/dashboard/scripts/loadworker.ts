@@ -13,7 +13,7 @@ if ("serviceWorker" in navigator) {
 
             const { data: pubKey } = await app.api["vapid-public-key"].get();
             if (!pubKey) {
-                console.error("Failed to get VAPID public key");
+                console.error("Failed to get VAPID public key, push notifications will not work.");
                 return;
             }
 

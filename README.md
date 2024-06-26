@@ -47,7 +47,7 @@ For hCaptcha to work, you cannot use localhost. Therefore, you can set up a doma
 127.0.0.1 test.localhost
 ```
 
-Then you can access the dashboard at `http://test.localhost:8146`.
+Then you can access the dashboard at `http://test.localhost:8146`. You might also want to mark this origin as a secure origin, so features like Service Workers work using the Chrome flag chrome://flags/#unsafely-treat-insecure-origin-as-secure.
 
 ## Usage
 
@@ -60,3 +60,7 @@ Then you can access the dashboard at `http://test.localhost:8146`.
 5. `bun format` - Run biome formatter (equivalent to `biome format .`).
 6. `bun check` - Run full biome check (linter + formatter), (equivalent to `biome check .`).
 7. `bun devdash` - Run the dashboard in dev API mode (no connection to Discord bot, can be ran without secrets).
+
+For the development API to work, you only need the following environment variables:
+- `JWT_SECRET` - You can set this to any base64-encoded string.
+- (optional) `VAPID_PRIVATE_KEY` - If you want push notifications to work, you can set these variables to a valid private key, public key and VAPID subject ("mailto:thisisyou@org.com") respectively. You can generate valid VAPID keys using `bunx web-push generate-vapid-keys`.

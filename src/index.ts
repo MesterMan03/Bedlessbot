@@ -14,36 +14,47 @@ import {
     type RESTPostAPIChatInputApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
+import { Snowflake } from "nodejs-snowflake";
 import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
+import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
 import config from "./config";
-import { EndVoiceChat, GetLevelConfig, GetXPFromMessage, ManageLevelRole, SetXPMultiplier, StartVoiceChat, XPToLevel } from "./levelmanager";
+import {
+    EndVoiceChat,
+    GetLevelConfig,
+    GetXPFromMessage,
+    ManageLevelRole,
+    SetXPMultiplier,
+    StartVoiceChat,
+    XPToLevel
+} from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
-import "./dashboard/index"; // load the dashboard
-import { SendRequest } from "./apimanager";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
-const token = process.env.TOKEN as string;
-const clientID = process.env.CLIENT_ID as string;
-const guildID = process.env.GUILD_ID as string;
+const snowflake = new Snowflake({ custom_epoch: 1704063600, instance_id: 69 });
+
+const token = process.env["TOKEN"] as string;
+const clientID = process.env["CLIENT_ID"] as string;
+const guildID = process.env["GUILD_ID"] as string;
 
 type ClientCommand = {
     execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-    data: RESTPostAPIChatInputApplicationCommandsJSONBody;
+    name?: string;
+    data: RESTPostAPIChatInputApplicationCommandsJSONBody | null;
     interactions?: string[];
     processInteraction?: (interaction: MessageComponentInteraction) => Promise<void>;
 };
 const clientCommands = new Collection<string, ClientCommand>();
 
 // Grab all the command folders from the commands directory you created earlier
-const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
-const foldersPath = path.join(__dirname, "commands");
+const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
+const foldersPath = path.join(dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 
-const db = new Database(join(__dirname, "..", "data.db"));
+const db = new Database(join(dirname, "..", "data.db"));
 db.run("PRAGMA journal_mode = wal;");
 
 const client = new Client({
@@ -56,7 +67,7 @@ const client = new Client({
 const browser = await puppeteer
     .launch({
         headless: true,
-        userDataDir: join(__dirname, "..", "chrome-data"),
+        userDataDir: join(dirname, "..", "chrome-data"),
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
     .then((browser) => {
@@ -72,10 +83,12 @@ for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
     const command = (await import(filePath)) as { default: ClientCommand };
 
-    if ("data" in command.default && "execute" in command.default) {
+    if (command.default.data && !command.default.name) {
         clientCommands.set(command.default.data.name, command.default);
+    } else if (command.default.name) {
+        clientCommands.set(command.default.name, command.default);
     } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        console.log(`[WARNING] Ignored command at ${filePath} for missing a "data" field and not having a name.`);
     }
 }
 
@@ -84,7 +97,7 @@ const rest = new REST().setToken(token);
 
 // reload slash commands
 try {
-    const commands = clientCommands.map((command) => command.data);
+    const commands = clientCommands.filter((command) => command.data).map((command) => command.data);
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
     // The put method is used to fully refresh all commands in the guild with the current set
@@ -235,6 +248,9 @@ client.on(Events.ClientReady, async () => {
 
     client.user?.setActivity({ name: "Mester", type: ActivityType.Listening });
 
+    // start dashboard
+    await import("./dashboard/index");
+
     console.log(`Logged in as ${client.user?.tag}!`);
 });
 
@@ -246,7 +262,9 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     // if previously there was no channel, but now there is, we joined
     // it also counts as joining if we go from muted or deafened to not muted or deafened or if we moved from afk channel
     if (
-        ((!oldState.channel || oldState.channelId === GetGuild().afkChannelId) && newState.channel && newState.channelId !== GetGuild().afkChannelId) ||
+        ((!oldState.channel || oldState.channelId === GetGuild().afkChannelId) &&
+            newState.channel &&
+            newState.channelId !== GetGuild().afkChannelId) ||
         (!(newState.mute || newState.deaf) && (oldState.mute || oldState.deaf))
     ) {
         StartVoiceChat(newState);
@@ -284,7 +302,7 @@ function ExecuteAdminCommand(message: Message) {
 }
 
 function GetResFolder() {
-    return join(__dirname, "..", "res");
+    return join(dirname, "..", "res");
 }
 
 function GetGuild() {
@@ -300,6 +318,11 @@ function shutdown(reason?: string) {
     db.close();
     cronjob.stop();
     process.exit(0);
+}
+
+function GenerateSnowflake() {
+    // use 2024-01-01 as the epoch
+    return snowflake.getUniqueID().toString();
 }
 
 process.on("uncaughtException", (err) => {
@@ -323,6 +346,6 @@ process.on("SIGTERM", () => {
 // start the bot
 client.login(token);
 
-export { GetGuild, GetResFolder, browser, db };
+export { GenerateSnowflake, GetGuild, GetResFolder, browser, db, type ClientCommand };
 
 export default client;

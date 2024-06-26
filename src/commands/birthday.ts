@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { db } from "..";
 import { DateToNumber, type Birthday } from "../birthdaymanager";
-import moment from "moment-timezone";
+import * as luxon from "luxon";
 import ordinal from "ordinal";
 
 const cooldowns = new Map<string, number>();
@@ -26,28 +26,31 @@ export default {
             return void interaction.reply({ embeds: [embed] });
         }
 
-        const date = moment(birthday.date, "DD/MM/YYYY");
-        const dateNum = DateToNumber(date.format("DD/MM"));
-        const thisYear = moment().year();
-        const todayNum = DateToNumber(moment().format("DD/MM"));
+        const date = luxon.DateTime.fromFormat(birthday.date, "dd/LL/yyyy");
+        const dateNum = DateToNumber(date.toFormat("dd/LL"));
+        const thisYear = luxon.DateTime.now().year;
+        const todayNum = DateToNumber(luxon.DateTime.now().toFormat("dd/LL"));
 
-        const nextBirthday = date.clone();
+        let nextBirthday: luxon.DateTime | undefined;
         if (dateNum >= todayNum) {
-            nextBirthday.set("year", thisYear);
+            nextBirthday = date.set({ year: thisYear });
         } else {
-            nextBirthday.set("year", thisYear + 1);
+            nextBirthday = date.set({ year: thisYear + 1 });
         }
 
         // calculate age the user will be (-1 if year is 0)
-        const age = date.year() === 0 ? -1 : nextBirthday.year() - date.year();
+        const age = date.year === 0 ? -1 : nextBirthday.year - date.year;
         // ageString is either the age in ordinal format or next
         const ageString = age !== -1 ? `**${ordinal(age)}**` : "**next**";
 
         // calculate upcoming days
-        const days = nextBirthday.diff(moment(), "days");
-        const daysString = dateNum === todayNum ? "**today**" : days <= 1 ? "**tomorrow**" : `in **${days}** days`;
+        const difference = Math.ceil(nextBirthday.diff(luxon.DateTime.now(), "days").days);
+        const differenceString = difference <= 1 ? "**tomorrow**" : `in **${difference}** days`;
+        const daysString = dateNum === todayNum ? "**today**" : differenceString;
 
-        const embed = new EmbedBuilder().setColor("Grey").setDescription(`<@${user.id}>'s ${ageString} birthday is ${daysString} on **${nextBirthday.format("DD MMMM YYYY")}** 🕯️`);
+        const embed = new EmbedBuilder()
+            .setColor("Grey")
+            .setDescription(`<@${user.id}>'s ${ageString} birthday is ${daysString} on **${nextBirthday.toFormat("dd LLLL yyyy")}** 🕯️`);
 
         return void interaction.reply({ embeds: [embed] });
     }

@@ -8,5 +8,12 @@
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "GV",
+        "projectKey": "Bedlessbot"
     }
 }

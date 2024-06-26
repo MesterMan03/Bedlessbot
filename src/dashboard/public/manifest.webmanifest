@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+    "id": "info.mester.bedless",
+    "description": "Official Bedless Nation Website",
+    "name": "Bedless Nation",
+    "categories": ["entertainment", "games", "social"],
+    "display": "standalone",
+    "icons": [
+        {
+            "src": "/icon.gif",
+            "sizes": "256x256",
+            "type": "image/gif"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "256x256",
+            "type": "image/x-icon"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "256x256",
+            "type": "image/png"
+        }
+    ],
+    "short_name": "BLN",
+    "shortcuts": [
+        {
+            "name": "Leaderboard",
+            "url": "/leaderboard",
+            "description": "Level leaderboard"
+        },
+        {
+            "name": "Bedless' packs",
+            "url": "/packs",
+            "description": "Download Bedless' Minecraft resource packs",
+            "short_name": "Packs"
+        }
+    ],
+    "start_url": "/",
+    "theme_color": "#FE0000"
+}

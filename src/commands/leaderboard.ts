@@ -1,4 +1,12 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, type Interaction, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import {
+    SlashCommandBuilder,
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    type Interaction,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} from "discord.js";
 import client, { db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelmanager";
 
@@ -24,7 +32,9 @@ export default {
         }
 
         // get the levels
-        const levels = db.query<{ userid: string; xp: number }, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${pageSize} OFFSET ${pageSize * page}`).all();
+        const levels = db
+            .query<{ userid: string; xp: number }, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${pageSize} OFFSET ${pageSize * page}`)
+            .all();
 
         if (levels.length === 0) {
             return void interaction.editReply("No levels found.");
@@ -118,7 +128,9 @@ async function processInteraction(interaction: Interaction) {
     page -= 1;
 
     // redraw the embed
-    const levels = db.query<{ userid: string; xp: number }, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${pageSize} OFFSET ${pageSize * page}`).all();
+    const levels = db
+        .query<{ userid: string; xp: number }, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${pageSize} OFFSET ${pageSize * page}`)
+        .all();
 
     if (levels.length === 0) {
         return void interaction.followUp({ content: "No levels found.", ephemeral: true });

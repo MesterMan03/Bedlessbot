@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         // Enable latest features
-        "lib": ["ESNext"],
+        "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
         "target": "ESNext",
         "module": "ESNext",
         "moduleDetection": "force",
@@ -19,11 +19,9 @@
         "skipLibCheck": true,
         "noFallthroughCasesInSwitch": true,
 
-        // Some stricter flags (disabled by default)
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "noPropertyAccessFromIndexSignature": false
-    },
-    "include": ["**/*.ts"],
-    "exclude": ["node_modules"]
+        // Some stricter flags
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noPropertyAccessFromIndexSignature": true
+    }
 }

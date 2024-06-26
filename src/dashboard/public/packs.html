@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Bedless Packs</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="og:title" content="Bedless' Resource Packs" />
+    <meta name="og:description"
+        content="Welcome to the Bedless Nation Official Website! Here you can find everything about the Bedless Nation Discord server, including the level leaderboard and Bedless' resource packs." />
+    <meta name="og:url" content="https://bedless.mester.info/packs" />
+    <meta name="og:image" content="https://bedless.mester.info/icon.gif" />
+    <meta name="og:locale" content="en_UK" />
+    <meta name="og:type" content="website" />
+    <meta name="color scheme" content="dark" />
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"
+        integrity="sha384-8IfMRI2dZTiLP9YEdmV1crHEnWdDyLYVokg18OO8HivLDMuK1rbsaFRSQl7rgQ0D"
+        crossorigin="anonymous"></script>
+    <script src="/scripts/packs.js" type="module"></script>
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+</head>
+
+<body>
+    <h1>UNDER CONSTRUCTION</h1>
+
+    <form id="commentForm" action="/api/comments" method="POST">
+        <label for="comment">Comment:</label>
+        <textarea id="comment" name="comment" minlength="32" maxlength="1024" rows="10" cols="60"></textarea>
+        <button class="h-captcha" data-sitekey="7c279daa-4c7e-4c0a-8814-fca3646e78cc" data-theme="dark"
+            data-callback="sendComment">Submit</button>
+    </form>
+
+    <div id="comments"></div>
+</body>
+
+</html>

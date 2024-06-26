@@ -11,7 +11,9 @@ export default {
         .setName("rank")
         .setDescription("Shows the rank of a user.")
         .addUserOption((option) => option.setName("member").setDescription("The member to show the rank of.").setRequired(false))
-        .addBooleanOption((option) => option.setName("textmode").setDescription("Whether to show the rank in text mode.").setRequired(false)),
+        .addBooleanOption((option) =>
+            option.setName("textmode").setDescription("Whether to show the rank in text mode.").setRequired(false)
+        ),
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!browser) {

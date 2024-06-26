@@ -24,6 +24,6 @@
         "noUnusedParameters": false,
         "noPropertyAccessFromIndexSignature": false
     },
-    "include": ["**/*.ts", "functions/index.mts"],
+    "include": ["**/*.ts"],
     "exclude": ["node_modules"]
 }

@@ -3,8 +3,8 @@ import { join } from "path";
 
 const endpoint = process.env.API_END as string;
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
-const secret = await Bun.file(join(__dirname, "..", "secret"))
+const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
+const secret = await Bun.file(join(dirname, "..", "secret"))
     .text()
     .catch((err) => {
         console.warn(err);

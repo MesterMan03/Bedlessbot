@@ -14,23 +14,23 @@ import packData from "./data.json";
 const DashboardAPI = process.env["DEV_DASH"] === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
+const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 
 const scriptsLocation = "scripts";
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
 const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "inline";
-const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(__dirname, scriptsLocation) }));
+const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(dirname, scriptsLocation) }));
 
 // clear the output directory
-rmSync(join(__dirname, "public", scriptsLocation), { recursive: true, force: true });
+rmSync(join(dirname, "public", scriptsLocation), { recursive: true, force: true });
 
 console.log("Building scripts for dashboard:", scriptFiles);
 await Bun.build({
-    entrypoints: [...scriptFiles.map((file) => join(__dirname, scriptsLocation, file))],
+    entrypoints: [...scriptFiles.map((file) => join(dirname, scriptsLocation, file))],
     minify: true,
     external: ["moment", "moment-timezone"],
-    outdir: join(__dirname, "public", scriptsLocation),
+    outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
     //@ts-ignore supported in Bun canary
     sourcemap: process.env.NODE_ENV === "development" ? sourceMapOption : "none"
@@ -398,7 +398,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
     });
 
 const app = new Elysia()
-    .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
+    .use(staticPlugin({ assets: join(dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
 
@@ -446,7 +446,7 @@ const app = new Elysia()
 
         // if path is empty (or ends with /), look for index.html
         if (url.pathname.endsWith("/") || url.pathname === "") {
-            const file = Bun.file(join(__dirname, "public", url.pathname, "index.html"));
+            const file = Bun.file(join(dirname, "public", url.pathname, "index.html"));
 
             if (!(await file.exists())) {
                 return new Response("Not found", { status: 404 });
@@ -456,7 +456,7 @@ const app = new Elysia()
 
         // check if there is no file extension and we are NOT in /api or /docs, then send the equivalent .html file
         if (!url.pathname.includes(".") && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/docs")) {
-            const file = Bun.file(join(__dirname, "public", url.pathname + ".html"));
+            const file = Bun.file(join(dirname, "public", url.pathname + ".html"));
 
             if (!(await file.exists())) {
                 return new Response("Not found", { status: 404 });

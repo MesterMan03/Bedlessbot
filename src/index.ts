@@ -50,11 +50,11 @@ type ClientCommand = {
 const clientCommands = new Collection<string, ClientCommand>();
 
 // Grab all the command folders from the commands directory you created earlier
-const __dirname = fileURLToPath(new URL(".", import.meta.url).toString());
-const foldersPath = path.join(__dirname, "commands");
+const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
+const foldersPath = path.join(dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 
-const db = new Database(join(__dirname, "..", "data.db"));
+const db = new Database(join(dirname, "..", "data.db"));
 db.run("PRAGMA journal_mode = wal;");
 
 const client = new Client({
@@ -67,7 +67,7 @@ const client = new Client({
 const browser = await puppeteer
     .launch({
         headless: true,
-        userDataDir: join(__dirname, "..", "chrome-data"),
+        userDataDir: join(dirname, "..", "chrome-data"),
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
     .then((browser) => {
@@ -302,7 +302,7 @@ function ExecuteAdminCommand(message: Message) {
 }
 
 function GetResFolder() {
-    return join(__dirname, "..", "res");
+    return join(dirname, "..", "res");
 }
 
 function GetGuild() {

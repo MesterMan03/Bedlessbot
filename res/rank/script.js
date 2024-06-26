@@ -31,14 +31,14 @@ function setUserValues({ userImage, leaderboard, username, level, totalXP, curre
     // add ellipsis for username
     username = username.length > 13 ? username.slice(0, 13) + "..." : username;
 
-    leaderboardElem.innerHTML = leaderboard;
-    usernameElem.innerHTML = username;
-    levelElem.innerHTML = level;
-    totalXPElem.innerHTML = totalXP;
-    currentXPElem.innerHTML = `${currentXP}&nbsp`;
-    maxXPElem.innerHTML = `	&nbsp;${maxXP}`;
+    leaderboardElem.innerText = leaderboard;
+    usernameElem.innerText = username;
+    levelElem.innerText = level;
+    totalXPElem.innerText = totalXP;
+    currentXPElem.innerText = `${currentXP}&nbsp`;
+    maxXPElem.innerText = `	&nbsp;${maxXP}`;
 
-    percentageElem.innerHTML = ((currentXP / maxXP) * 100).toFixed(2);
+    percentageElem.innerText = ((currentXP / maxXP) * 100).toFixed(2);
 
     XPProgressElem.max = maxXP;
     XPProgressElem.value = currentXP;

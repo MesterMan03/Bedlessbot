@@ -353,7 +353,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 description: "Download a pack"
             }
         }
-    );
+    )
+    .get("/vapid-public-key", () => process.env["VAPID_PUBLIC_KEY"] ?? "");
 
 const app = new Elysia()
     .use(staticPlugin({ assets: join(__dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))

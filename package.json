@@ -29,6 +29,7 @@
     "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/static": "^1.0.3",
     "@elysiajs/swagger": "^1.0.5",
+    "@netlify/functions": "^2.8.0",
     "discord-oauth2": "^2.12.1",
     "discord.js": "^14.15.3",
     "dompurify": "^3.1.5",
@@ -50,5 +51,9 @@
     "bufferutil": "^4.0.8",
     "utf-8-validate": "^6.0.3",
     "zlib-sync": "^0.1.9"
-  }
+  },
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "protobufjs"
+  ]
 }

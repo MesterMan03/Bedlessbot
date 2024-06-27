@@ -19,7 +19,7 @@ const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const scriptsLocation = "scripts";
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
-const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "inline";
+const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "none";
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(dirname, scriptsLocation) }));
 
 // clear the output directory
@@ -32,8 +32,7 @@ await Bun.build({
     external: ["moment", "moment-timezone"],
     outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
-    //@ts-ignore supported in Bun canary
-    sourcemap: process.env.NODE_ENV === "development" ? sourceMapOption : "none"
+    sourcemap: sourceMapOption
 });
 
 // load EdDSA key from base64 secret
@@ -67,7 +66,7 @@ g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript></div>
 <!-- End Matomo Code -->
-<!-- Start cookieyes banner --> <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js"></script> <!-- End cookieyes banner -->
+<!-- Start cookieyes banner --> <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js" defer></script> <!-- End cookieyes banner -->
 <script>
 var waitForTrackerCount = 0;
 function matomoWaitForTracker() {

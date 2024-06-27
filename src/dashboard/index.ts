@@ -485,7 +485,7 @@ const app = new Elysia()
 
             response.headers.set(
                 process.env.NODE_ENV === "production" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' https://fonts.scalar.com; base-uri 'self'; report-to /dev/csp-violation-report;`
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' https://fonts.scalar.com; base-uri 'self'; report-to /dev/csp-violation-report;`
             );
 
             const rewriter = new HTMLRewriter();

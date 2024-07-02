@@ -131,7 +131,7 @@ const devConfig = {
         "0cpsgod": "1074393964016324691"
     } as { [key in ApplyRole]: string },
     OAuthRedirect: "/api/callback",
-    DashOrigin: "https://9h963rrm-8146.euw.devtunnels.ms/"
+    DashOrigin: "https://9h963rrm-8146.euw.devtunnels.ms"
 };
 
 export default process.env.NODE_ENV === "production" ? prodConfig : devConfig;

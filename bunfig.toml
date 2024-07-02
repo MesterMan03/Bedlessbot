@@ -1,0 +1,5 @@
+preload = ["./verify_env.ts"]
+telemetry = false
+
+[test]
+coverage = true

@@ -29,7 +29,6 @@ console.log("Building scripts for dashboard:", scriptFiles);
 await Bun.build({
     entrypoints: [...scriptFiles.map((file) => join(dirname, scriptsLocation, file))],
     minify: true,
-    external: ["moment", "moment-timezone"],
     outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
     sourcemap: sourceMapOption
@@ -302,7 +301,9 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     {
                         body: t.Object({
                             endpoint: t.String({ description: "The endpoint of the push subscription" }),
-                            expirationTime: t.Optional(t.Union([t.Null(), t.Integer({ description: "The expiration time of the subscription" })])),
+                            expirationTime: t.Optional(
+                                t.Union([t.Null(), t.Integer({ description: "The expiration time of the subscription" })])
+                            ),
                             keys: t.Record(t.String({ description: "Type of the key" }), t.String({ description: "Data of the key" }), {
                                 description: "The keys of the subscription"
                             })

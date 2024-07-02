@@ -44,7 +44,8 @@
     "puppeteer": "^22.12.0",
     "sharp": "^0.33.4",
     "svg-captcha": "^1.4.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "zod": "^3.23.8"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8",

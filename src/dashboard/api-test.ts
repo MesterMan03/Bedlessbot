@@ -30,22 +30,22 @@ webpush.setVapidDetails(
 const LbPageSize = 20;
 const CommentsPageSize = 10;
 
-function GenerateRandomName(): string {
-    const minLength = 3;
-    const maxLength = 32;
-    const characters = "abcdefghijklmnopqrstuvwxyz0123456789_."; // Only lowercase letters, numbers, underscore, and period
-    const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-    let result = "";
+export default class DashboardAPITest implements DashboardAPIInterface {
+    GenerateRandomName(): string {
+        const minLength = 3;
+        const maxLength = 32;
+        const characters = "abcdefghijklmnopqrstuvwxyz0123456789_."; // Only lowercase letters, numbers, underscore, and period
+        const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
+        let result = "";
 
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        result += characters.charAt(randomIndex);
+        for (let i = 0; i < length; i++) {
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            result += characters.charAt(randomIndex);
+        }
+
+        return result;
     }
 
-    return result;
-}
-
-export default class DashboardAPITest implements DashboardAPIInterface {
     async FetchLbPage(pageOrId: number | string) {
         // when an ID is supplied, always return the eight page
         const page = typeof pageOrId === "number" ? pageOrId : 8;
@@ -64,7 +64,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                     userid: Math.random().toString(10).substring(2),
                     avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
                     // username is a random string between 3 and 32 characters
-                    username: GenerateRandomName(),
+                    username: this.GenerateRandomName(),
                     progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
                 }) satisfies DashboardLbEntry
         );
@@ -88,7 +88,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
         // return dummy user
         const user = {
             id: Math.random().toString(10).substring(2),
-            username: GenerateRandomName(),
+            username: this.GenerateRandomName(),
             global_name: "Dummy Person",
             avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
             discriminator: "0"
@@ -169,7 +169,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                 const user = await this.GetUser(comment.userid).catch(
                     () =>
                         ({
-                            username: GenerateRandomName(),
+                            username: this.GenerateRandomName(),
                             avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
                         }) satisfies DashboardUser
                 );

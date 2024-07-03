@@ -7,13 +7,11 @@
         <meta name="color-scheme" content="dark" />
         <meta
             name="description"
-            content="Download Bedlessnoob's Minecraft resource packs for Minecraft: Java Edition versions 1.8.9 and 1.20.5 and Minecraft: Bedrock Edition."
-        />
+            content="Download Bedlessnoob's Minecraft resource packs for Minecraft: Java Edition versions 1.8.9 and 1.20.5 and Minecraft: Bedrock Edition." />
         <meta name="og:title" content="Bedless' Resource Packs" />
         <meta
             name="og:description"
-            content="Download Bedlessnoob's Minecraft resource packs for Minecraft: Java Edition versions 1.8.9 and 1.20.5 and Minecraft: Bedrock Edition."
-        />
+            content="Download Bedlessnoob's Minecraft resource packs for Minecraft: Java Edition versions 1.8.9 and 1.20.5 and Minecraft: Bedrock Edition." />
         <meta name="og:url" content="https://bedless.mester.info/packs" />
         <meta name="og:image" content="https://bedless.mester.info/icon.gif" />
         <meta name="og:locale" content="en_UK" />
@@ -25,8 +23,7 @@
             src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"
             integrity="sha512-dUlSLLkxslGILhPdCkALwk4szPhp3xmZIKFtlUD+O9Lslq41Aksmdt5OGqpomDoT4FsCUH70jQU8ezZHI3v1RQ=="
             crossorigin="anonymous"
-            referrerpolicy="no-referrer"
-        ></script>
+            referrerpolicy="no-referrer"></script>
         <script src="/scripts/packs.js" type="module"></script>
         <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
     </head>
@@ -37,7 +34,7 @@
         <main>
             <section class="packs"></section>
             <section class="comments">
-                <form id="commentForm" action="/api/comments" method="POST">
+                <form id="commentForm">
                     <label for="comment">Comment:</label>
                     <textarea
                         id="comment"
@@ -46,16 +43,19 @@
                         maxlength="1024"
                         rows="10"
                         cols="60"
-                        placeholder="Your comment here..."
-                    ></textarea>
+                        placeholder="Your comment here..."></textarea>
                     <button
                         class="h-captcha"
                         data-sitekey="7c279daa-4c7e-4c0a-8814-fca3646e78cc"
-                        data-theme="dark"
-                        data-callback="sendComment"
-                    >
+                        data-theme="dark">
                         Submit
                     </button>
+                    <h-captcha id="hcaptcha"
+                        site-key="7c279daa-4c7e-4c0a-8814-fca3646e78cc"
+                        size="normal"
+                        tabindex="0"
+                        theme="dark"
+                        auto-render="false"></h-captcha>
                 </form>
 
                 <div id="comments"></div>

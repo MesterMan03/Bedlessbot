@@ -5,6 +5,8 @@ import { type DashboardApp } from "..";
 import { marked } from "marked";
 import type { PackData } from "../api-types";
 import "./loadworker";
+import "@hcaptcha/vanilla-hcaptcha";
+import type { VanillaHCaptchaWebComponent } from "@hcaptcha/vanilla-hcaptcha";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
 // note that because we don't import anything, this script can only be run in browsers, where the luxon library is already loaded
@@ -51,9 +53,9 @@ if (!dialogElement) {
     throw new Error("Dialog element not found");
 }
 /**
-@description A function used to open the modal to display a status.
-@param inputText This should be an HTML string. Presumably this is safe HTML as it is hardcoded into the script and not input by the user.
-*/
+ * @description A function used to open the modal to display a status.
+ * @param inputText This should be an HTML string. Presumably this is safe HTML as it is hardcoded into the script and not input by the user.
+ */
 function openModal(inputText: string) {
     if (!dialogElement) {
         throw new Error("Dialog element not found");
@@ -140,34 +142,40 @@ for (const pack of packData.packs) {
 }
 commentForm.prepend(select);
 
-export function sendComment() {
-    // create a form data object
-    const formData = new FormData(commentForm);
+commentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-    // send the comment to the server
-    app.api.comments
-        .post({
-            packid: formData.get("packid") as string,
-            comment: formData.get("comment") as string,
-            "h-captcha-response": formData.get("h-captcha-response") as string
-        })
-        .then((res) => {
-            if (res.status === 200) {
-                openModal("<p>Your comment has been sent to be reviewed.</p>");
-                return;
-            }
-            if (res.status === 422) {
-                openModal(`<p class="error">Error: Badly formatted comment.</p>`);
-                return;
-            }
-            if (res.status === 401) {
-                openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
-                return;
-            }
-        });
-}
-//@ts-ignore bind the function to the window object
-window.sendComment = sendComment;
+    // spawn hCaptcha
+    const hCaptchaElement = document.getElementById("hcaptcha") as VanillaHCaptchaWebComponent;
+    hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark" });
+
+    hCaptchaElement.executeAsync().then(() => {
+        // create a form data object
+        const formData = new FormData(commentForm);
+
+        // send the comment to the server
+        app.api.comments
+            .post({
+                packid: formData.get("packid") as string,
+                comment: formData.get("comment") as string,
+                "h-captcha-response": formData.get("h-captcha-response") as string
+            })
+            .then((res) => {
+                if (res.status === 200) {
+                    openModal("<p>Your comment has been sent to be reviewed.</p>");
+                    return;
+                }
+                if (res.status === 422) {
+                    openModal(`<p class="error">Error: Badly formatted comment.</p>`);
+                    return;
+                }
+                if (res.status === 401) {
+                    openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
+                    return;
+                }
+            });
+    });
+});
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
 select.addEventListener("change", () => {

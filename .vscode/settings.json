@@ -10,7 +10,7 @@
         "editor.defaultFormatter": "biomejs.biome"
     },
     "[html]": {
-        "editor.defaultFormatter": "vscode.html-language-features"
+        "editor.defaultFormatter": "mohd-akram.vscode-html-format"
     },
     "sonarlint.connectedMode.project": {
         "connectionId": "GV",

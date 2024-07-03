@@ -357,6 +357,20 @@ const apiRoute = new Elysia({ prefix: "/api" })
             response: { 200: t.Array(DashboardFinalPackCommentSchema), 400: t.String() }
         }
     )
+    .get(
+        "/comments/maxpage",
+        async ({ query: { packid } }) => {
+            const maxPage = await api.GetMaxCommentsPage(packid);
+            return maxPage;
+        },
+        {
+            query: t.Object({
+                packid: t.String({ description: "The ID of the pack" })
+            }),
+            detail: { tags: ["App", "Pack"], description: "Fetch the max page of comments for a pack" },
+            response: t.Number()
+        }
+    )
     .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema })
     .get(
         "/downloadpack",

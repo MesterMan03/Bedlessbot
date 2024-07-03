@@ -12,6 +12,7 @@ interface DashboardAPIInterface {
     RegisterPushSubscription: (userid: string, subscription: PushSubscriptionData) => void;
     UnregisterPushSubscription: (userid: string, endpoint: string) => void;
     SendPushNotification: (userid: string, notification: NotificationData) => void;
+    GetMaxCommentsPage: (packid: string) => Promise<number>;
 }
 
 interface PushSubscriptionData {

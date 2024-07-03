@@ -1,7 +1,8 @@
+/// <reference lib="dom" />
+
 import { treaty } from "@elysiajs/eden";
 import { type DashboardApp } from "..";
 import { marked } from "marked";
-import DOMPurify from "dompurify";
 import type { PackData } from "../api-types";
 import "./loadworker";
 
@@ -14,40 +15,6 @@ const cdn = "https://bedless-cdn.mester.info";
 // init the app and pack data
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
-
-// Code snippet for using the luxon library
-// Since the date object of pack comments are a UNIX millisecond timestamp, you have to convert it
-// somehow to a human-readable format. I guess you could use the built-in Date object, but that's
-// a bit of a hassle. Meanwhile, luxon can handle timezones and custom formats with almost no downside
-// compared to moment (luxon uses the built-in Intl API, which greatly reduces the bundle size)
-
-console.log(luxon.DateTime.now().setZone("system").toFormat("HH:mm dd/LL/yyyy"));
-
-// I'm not sure if using Markdown will be a good idea in the long rung
-// It'd be nice if comments could be formatted, but adding an entire Markdown parser to the script
-// makes it a tiny bit bloated + there are features that we'd like to disable (masked links, for example)
-// For now, here's a snippet that shows how to use the marked library to parse Markdown, but it might get removed
-// in the future - Mester
-// P.S. even if we drop Markdown for comments, we might want to use them for pack descriptions
-
-const markdownInput = `
-# Hello, world!
-
-This is a test of the markdown parser. Here's a list:
-- Item 1
-- Item 2
-- Item 3
-
-Now a codeblock:
-\`\`\`js
-console.log("Hello, world!");
-\`\`\`
-
-Masked link: [click me](https://google.com)
-`;
-
-const markdownOutput = DOMPurify.sanitize(marked.parse(markdownInput, { async: false }) as string);
-document.body.appendChild(document.createElement("div")).innerHTML = markdownOutput;
 
 // The following functions are meant as a very basic, stripped-down code snippets
 // You can leave them as-is or rework them if the code structure requires it
@@ -79,16 +46,54 @@ function getPackIcon(packid: string) {
     return `${cdn}/icons/${pack.icon}`;
 }
 
+const dialogElement = document.querySelector("dialog");
+if (!dialogElement) {
+    throw new Error("Dialog element not found");
+}
+/**
+@description A function used to open the modal to display a status.
+@param inputText This should be an HTML string. Presumably this is safe HTML as it is hardcoded into the script and not input by the user.
+*/
+function openModal(inputText: string) {
+    if (!dialogElement) {
+        throw new Error("Dialog element not found");
+    }
+    dialogElement.innerHTML = `${inputText}<form method="dialog"><button>Close</button></form>`;
+    dialogElement.showModal();
+}
+
+const mainElement = document.querySelector("main");
+if (!mainElement) {
+    throw new Error("Main element not found");
+}
+
+const packsSectionElement = document.querySelector<HTMLElement>(".packs");
+if (!packsSectionElement) {
+    throw new Error("Packs section element not found");
+}
+
 // render all packs
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
     const packElement = document.createElement("div");
-    const description = marked.parse(pack.description, { async: false }) as string;
+    packElement.className = "pack";
+    const description = marked.parse(pack.description, {
+        async: false
+    }) as string;
     packElement.innerHTML = `
-        <img src="${icon}" alt="${pack.friendly_name}">
+    <section class="top">
+      <img src="${icon}" alt="${pack.friendly_name}">
+      <div class="details">
         <h2>${pack.friendly_name}</h2>
-        <div>${description}</div>
-    `;
+        <div> ${description}</div>
+      </div>
+    </section>
+    <div class="downloads"></div>
+`;
+    const packDownloadsElement = packElement.querySelector(".downloads");
+    if (!packDownloadsElement) {
+        throw new Error("Pack downloads element not found");
+    }
 
     // dinamically load the download buttons
     for (const version of <const>["1.8.9", "1.20.5", "bedrock"]) {
@@ -98,10 +103,16 @@ for (const pack of packData.packs) {
 
         const downloadButton = document.createElement("button");
         downloadButton.textContent = `Download for ${version === "bedrock" ? "Bedrock" : version}`;
-        downloadButton.addEventListener("click", () => downloadPack(pack.id, version));
-        packElement.appendChild(downloadButton);
+        downloadButton.addEventListener("click", () => {
+            downloadPack(pack.id, version);
+            if (version === "bedrock") {
+                // TODO: Write a message to display to the user when the Bedrock pack is downloaded.
+                openModal("<div>Place your input HTML here</div>");
+            }
+        });
+        packDownloadsElement.appendChild(downloadButton);
     }
-    document.body.appendChild(packElement);
+    packsSectionElement.appendChild(packElement);
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
@@ -142,15 +153,15 @@ export function sendComment() {
         })
         .then((res) => {
             if (res.status === 200) {
-                // TODO: show some kind of modal ("your comment has been sent to review" or smth)
+                openModal("<p>Your comment has been sent to be reviewed.</p>");
                 return;
             }
             if (res.status === 422) {
-                // TODO: badly formatted comment (maybe user was a nerd and tried to bypass textarea length limit)
+                openModal(`<p class="error">Error: Badly formatted comment.</p>`);
                 return;
             }
             if (res.status === 401) {
-                // TODO: invalid captcha
+                openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
                 return;
             }
         });
@@ -171,10 +182,10 @@ async function updateComments() {
         for (const comment of comments) {
             const commentElement = document.createElement("div");
             commentElement.innerHTML = `
-                <img src="${comment.avatar}" alt="${comment.username}">
-                <h3>${comment.username}</h3>
-                <p>${comment.comment}</p>
-            `;
+<img src="${comment.avatar}" alt="${comment.username}">
+<h3>${comment.username} </h3>
+<p>${comment.comment}</p>
+  `;
             commentsDiv.appendChild(commentElement);
         }
     } else {

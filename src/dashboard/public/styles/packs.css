@@ -2,6 +2,7 @@ body {
     display: flex;
     flex-direction: column;
     margin: 0;
+    max-height: 100dvh;
     padding: 0 1rem;
 }
 
@@ -26,6 +27,11 @@ main {
     display: flex;
     height: 100%;
     gap: 1rem;
+
+    section {
+        max-height: 90dvh;
+        overflow-x: hidden;
+    }
 }
 
 .comments {
@@ -54,6 +60,12 @@ main {
 
     select {
         font-size: 1rem;
+    }
+    #comments {
+        img {
+            height: 128px;
+            width: 128px;
+        }
     }
 }
 

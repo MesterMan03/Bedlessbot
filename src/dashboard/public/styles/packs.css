@@ -66,8 +66,8 @@ main {
         word-wrap: break-word;
         
         img {
-            height: 128px;
-            width: 128px;
+            height: 8rem;
+            width: 8rem;
         }
     }
 }

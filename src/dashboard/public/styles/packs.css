@@ -61,7 +61,10 @@ main {
     select {
         font-size: 1rem;
     }
+
     #comments {
+        word-wrap: break-word;
+        
         img {
             height: 128px;
             width: 128px;
@@ -118,8 +121,8 @@ main {
 }
 
 dialog {
-    width: 80%;
-    height: 80%;
+    width: 40%;
+    height: 40%;
     border: 0.125rem solid var(--accent);
     border-radius: 1rem;
 

@@ -24,11 +24,11 @@ button {
 
 main {
     display: flex;
-    height: 100%;
+    max-height: 90%;
     gap: 1rem;
 
     section {
-        max-height: 90dvh;
+        max-height: 80dvh;
         overflow-x: hidden;
     }
 }

@@ -204,7 +204,7 @@ client.on(Events.MessageCreate, async (message) => {
         if (response.status !== 200) {
             return;
         }
-        
+
         const answer = response.data.answer as string;
 
         message.reply(answer).catch(() => {

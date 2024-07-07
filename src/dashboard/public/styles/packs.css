@@ -1,7 +1,12 @@
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow-y: hidden;
+}
+
 body {
     display: flex;
-    flex-direction: column;
-    margin: 0;
+    flex-flow: column;
     padding: 0 1rem;
 }
 
@@ -22,14 +27,27 @@ button {
     }
 }
 
+header {
+    height: 10%;
+}
+
 main {
+    height: 90%;
+
     display: flex;
-    max-height: 90%;
     gap: 1rem;
 
     section {
-        max-height: 80dvh;
+        padding-bottom: 1rem;
+
         overflow-x: auto;
+        overflow-y: auto;
+
+        /* Hide scrollbar */
+        scrollbar-width: none;
+        ::-webkit-scrollbar{
+            display: none;
+        }
     }
 }
 
@@ -37,10 +55,8 @@ main {
     max-width: 24rem;
     display: flex;
     flex-direction: column;
-    padding-right: 1rem;
     position: sticky;
     top: 1rem;
-    height: min-content;
 
     form {
         display: flex;

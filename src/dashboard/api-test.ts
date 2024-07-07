@@ -238,9 +238,9 @@ export default class DashboardAPITest implements DashboardAPIInterface {
     }
 
     async GetMaxCommentsPage(packid: string) {
-        const comments = db
-            .query<{ row_count: number; }, [string]>(`SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?`)
-            .get(packid)?.row_count ?? 0;
+        const comments =
+            db.query<{ row_count: number }, [string]>(`SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?`).get(packid)
+                ?.row_count ?? 0;
 
         return Math.ceil(Math.max(comments, 1) / CommentsPageSize);
     }

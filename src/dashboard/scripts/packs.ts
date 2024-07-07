@@ -2,15 +2,15 @@
 
 import { treaty } from "@elysiajs/eden";
 import { type DashboardApp } from "..";
-import { marked } from "marked";
 import type { PackData } from "../api-types";
-import "./loadworker";
 import "@hcaptcha/vanilla-hcaptcha";
 import type { VanillaHCaptchaWebComponent } from "@hcaptcha/vanilla-hcaptcha";
+import { subscribeToPushNotifications } from "./loadworker";
 
 // this trick lets us use autocomplete, but doesn't actually import anything
 // note that because we don't import anything, this script can only be run in browsers, where the luxon library is already loaded
 declare const luxon: typeof import("luxon");
+declare const marked: typeof import("../../../types/marked-13.0.2.d.ts");
 
 const cdn = "https://bedless-cdn.mester.info";
 
@@ -84,7 +84,10 @@ for (const pack of packData.packs) {
     }) as string;
     packElement.innerHTML = `
     <section class="top">
-      <img src="${icon}" alt="${pack.friendly_name}">
+      <picture>
+        <source srcset="${icon}.webp" type="image/webp">
+        <img loading="lazy" src="${icon}.png" alt="${pack.friendly_name}">
+      </picture>
       <div class="details">
         <h2>${pack.friendly_name}</h2>
         <div> ${description}</div>
@@ -162,7 +165,18 @@ commentForm.addEventListener("submit", async (event) => {
             })
             .then((res) => {
                 if (res.status === 200) {
-                    openModal("<p>Your comment has been sent to be reviewed.</p>");
+                    // show a confirmation modal and a button to enable notifications
+                    openModal(
+                        `<p>Your comment has been sent to be reviewed.</p><p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`
+                    );
+                    document.getElementById("enablenotifs")?.addEventListener("click", async () => {
+                        Notification.requestPermission().then(function (granted) {
+                            if (granted !== "granted") {
+                                return;
+                            }
+                            subscribeToPushNotifications();
+                        });
+                    });
                     return;
                 }
                 if (res.status === 422) {
@@ -184,8 +198,12 @@ select.addEventListener("change", () => {
 
 // function to update comments with packid from the select menu
 async function updateComments() {
-    commentsDiv.innerHTML = "";
+    console.log(`Fetching comments for ${select.value}`);
+
+    commentsDiv.innerHTML = "Loading...";
     const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;
+    commentsDiv.innerHTML = "";
+
     if (comments && comments?.length !== 0) {
         for (const comment of comments) {
             const commentElement = document.createElement("div");
@@ -196,10 +214,23 @@ async function updateComments() {
   `;
             commentsDiv.appendChild(commentElement);
         }
-    } else {
+    } else if (comments != null) {
+        // we have no comments
         const noComments = document.createElement("p");
         noComments.innerText = "No comments yet!";
         commentsDiv.appendChild(noComments);
+    } else {
+        // something went wrong
+        const error = document.createElement("p");
+        error.innerText = "An error occurred while fetching comments.";
+        commentsDiv.appendChild(error);
     }
 }
 updateComments();
+
+navigator.serviceWorker.addEventListener("message", (event) => {
+    // check if the message is "sync-comments"
+    if (event.data === "sync-comments") {
+        updateComments();
+    }
+});

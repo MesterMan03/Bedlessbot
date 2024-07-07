@@ -2,7 +2,7 @@
     "packs": [
         {
             "id": "15k",
-            "icon": "15k.png",
+            "icon": "15k",
             "short_name": "15k pack",
             "friendly_name": "15k Pack",
             "description": "# Description",
@@ -14,7 +14,7 @@
         },
         {
             "id": "60k",
-            "icon": "60k.png",
+            "icon": "60k",
             "short_name": "60k pack",
             "friendly_name": "60k Pack",
             "description": "# Description",
@@ -26,7 +26,7 @@
         },
         {
             "id": "60k-overlay",
-            "icon": "60k.png",
+            "icon": "60k",
             "variant": "60k",
             "short_name": "60k overlay",
             "friendly_name": "60k Bed Sword Overlay",
@@ -39,7 +39,7 @@
         },
         {
             "id": "60k-halloween",
-            "icon": "60k-halloween.png",
+            "icon": "60k-halloween",
             "variant": "60k",
             "short_name": "60k halloween",
             "friendly_name": "60k Halloween",
@@ -52,7 +52,7 @@
         },
         {
             "id": "200k",
-            "icon": "200k.png",
+            "icon": "200k",
             "short_name": "200k pack",
             "friendly_name": "200k Pack",
             "description": "# Description",
@@ -64,7 +64,7 @@
         },
         {
             "id": "200k-gura",
-            "icon": "200k.png",
+            "icon": "200k",
             "variant": "200k",
             "short_name": "200k gura",
             "friendly_name": "200k Gura Bed Overlay",
@@ -77,7 +77,7 @@
         },
         {
             "id": "200k-retrowave",
-            "icon": "200k-retrowave.png",
+            "icon": "200k-retrowave",
             "variant": "200k",
             "short_name": "200k retrowave",
             "friendly_name": "200k Retrowave Recolor",
@@ -90,7 +90,7 @@
         },
         {
             "id": "200k-blackred",
-            "icon": "200k-blackred.png",
+            "icon": "200k-blackred",
             "variant": "200k",
             "short_name": "200k blackred",
             "friendly_name": "200k BlackRed Recolor",
@@ -103,7 +103,7 @@
         },
         {
             "id": "200k-green",
-            "icon": "200k-green.png",
+            "icon": "200k-green",
             "variant": "200k",
             "short_name": "200k green",
             "friendly_name": "200k Green Recolor",
@@ -116,7 +116,7 @@
         },
         {
             "id": "200k-default",
-            "icon": "200k-default.png",
+            "icon": "200k-default",
             "variant": "200k",
             "short_name": "200k default",
             "friendly_name": "200k Default Recolor",
@@ -129,7 +129,7 @@
         },
         {
             "id": "300k",
-            "icon": "300k.png",
+            "icon": "300k",
             "short_name": "300k pack",
             "friendly_name": "300k Pack",
             "description": "# Description",
@@ -141,7 +141,7 @@
         },
         {
             "id": "300k-nobonk",
-            "icon": "300k.png",
+            "icon": "300k",
             "variant": "300k",
             "short_name": "300k nobonk",
             "friendly_name": "300k No Bonk Sound Effect",
@@ -154,7 +154,7 @@
         },
         {
             "id": "300k-purple",
-            "icon": "300k-purple.png",
+            "icon": "300k-purple",
             "variant": "300k",
             "short_name": "300k purple",
             "friendly_name": "300k Purple Recolor",
@@ -167,7 +167,7 @@
         },
         {
             "id": "300k-synthwave",
-            "icon": "300k-synthwave.png",
+            "icon": "300k-synthwave",
             "variant": "300k",
             "short_name": "300k synthwave",
             "friendly_name": "300k Synthwave Recolor",
@@ -180,7 +180,7 @@
         },
         {
             "id": "300k-red",
-            "icon": "300k-red.png",
+            "icon": "300k-red",
             "variant": "300k",
             "short_name": "300k red",
             "friendly_name": "300k Red Recolor",
@@ -193,7 +193,7 @@
         },
         {
             "id": "300k-default",
-            "icon": "300k-default.png",
+            "icon": "300k-default",
             "variant": "300k",
             "short_name": "300k default",
             "friendly_name": "300k Default Recolor",
@@ -206,7 +206,7 @@
         },
         {
             "id": "300k-blue",
-            "icon": "300k-blue.png",
+            "icon": "300k-blue",
             "variant": "300k",
             "short_name": "300k blue",
             "friendly_name": "300k Blue Recolor",
@@ -219,7 +219,7 @@
         },
         {
             "id": "300k-periwinkle",
-            "icon": "300k-periwinkle.png",
+            "icon": "300k-periwinkle",
             "variant": "300k",
             "short_name": "300k periwinkle",
             "friendly_name": "300k Periwinkle Recolor",
@@ -232,7 +232,7 @@
         },
         {
             "id": "300k-green",
-            "icon": "300k-green.png",
+            "icon": "300k-green",
             "variant": "300k",
             "short_name": "300k green",
             "friendly_name": "300k Green Recolor",
@@ -245,7 +245,7 @@
         },
         {
             "id": "300k-watermelon",
-            "icon": "300k-watermelon.png",
+            "icon": "300k-watermelon",
             "variant": "300k",
             "short_name": "300k watermelon",
             "friendly_name": "300k Watermelon Recolor",
@@ -258,7 +258,7 @@
         },
         {
             "id": "300k-black",
-            "icon": "300k-black.png",
+            "icon": "300k-black",
             "variant": "300k",
             "short_name": "300k black",
             "friendly_name": "300k Black Recolor",
@@ -271,7 +271,7 @@
         },
         {
             "id": "450k",
-            "icon": "450k.png",
+            "icon": "450k",
             "short_name": "450k galaxy",
             "friendly_name": "450k Galaxy Pack",
             "description": "# Description",
@@ -283,7 +283,7 @@
         },
         {
             "id": "550k",
-            "icon": "550k.png",
+            "icon": "550k",
             "short_name": "550k fault",
             "friendly_name": "550k BedlessFault",
             "description": "# Description",
@@ -295,7 +295,7 @@
         },
         {
             "id": "550k-tokyo",
-            "icon": "550k.png",
+            "icon": "550k",
             "variant": "550k",
             "short_name": "550k tokyo",
             "friendly_name": "550k BedlessFault - tokyo edit",
@@ -308,7 +308,7 @@
         },
         {
             "id": "550k-buddha",
-            "icon": "550k-buddha.png",
+            "icon": "550k-buddha",
             "variant": "550k",
             "short_name": "550k budda",
             "friendly_name": "550k BedlessFault - BuddaTortoise edit",
@@ -321,7 +321,7 @@
         },
         {
             "id": "550k-sid",
-            "icon": "550k-sid.png",
+            "icon": "550k-sid",
             "variant": "550k",
             "short_name": "550k sid",
             "friendly_name": "550k BedlessFault - SidNotAvenged edit",
@@ -334,7 +334,7 @@
         },
         {
             "id": "550k-pvrple",
-            "icon": "550k-pvrple.png",
+            "icon": "550k-pvrple",
             "variant": "550k",
             "short_name": "550k pvrple",
             "friendly_name": "550k BedlessFault - Pvrpleflare edit",
@@ -347,7 +347,7 @@
         },
         {
             "id": "550k-durian",
-            "icon": "550k-durian.png",
+            "icon": "550k-durian",
             "variant": "550k",
             "short_name": "550k durian",
             "friendly_name": "550k BedlessFault - daDurian edit",

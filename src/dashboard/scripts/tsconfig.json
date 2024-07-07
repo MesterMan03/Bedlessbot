@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
         // Enable latest features
-        "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleDetection": "force",
+        "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+        "target": "ES2023",
+        "module": "ES2022",
+        "moduleDetection": "auto",
         "jsx": "react-jsx",
         "allowJs": true,
 
@@ -23,5 +23,7 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noPropertyAccessFromIndexSignature": true
-    }
+    },
+    "include": ["../../../types/periodic-sync.d.ts", "../../../types/marked-13.0.2.d.ts", "**/*.ts"],
+    "exclude": ["node_modules"]
 }

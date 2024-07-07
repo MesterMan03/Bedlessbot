@@ -29,7 +29,7 @@ main {
 
     section {
         max-height: 80dvh;
-        overflow-x: hidden;
+        overflow-x: auto;
     }
 }
 

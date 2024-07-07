@@ -8,10 +8,14 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
         .register("/scripts/service-worker.js", { scope: "/", type: "module" })
         .then(async (reg) => {
-            console.log("Service Worker registered with scope:", reg.scope);
-
-            // TODO: replace this to run on a button click (for example when a comment is submitted) which will let Notification.requestPermission() to be called
-            subscribeToPushNotifications();
+            // setup periodic sync for new pack comments
+            if (reg.periodicSync) {
+                reg.periodicSync
+                    .register("pack-comments", {
+                        minInterval: 5 * 60 * 1000 // 5 minutes
+                    })
+                    .catch(console.error);
+            }
         })
         .catch((error) => {
             console.log("Service Worker registration failed:", error);
@@ -38,10 +42,12 @@ export async function subscribeToPushNotifications() {
     // check if we have a subscription already, if yes, unsubscribe and remove it from server
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-        console.warn("We already have a subscription, aborting subscription.");
+        console.warn(
+            "We already have a subscription, aborting subscription. Injected UnsubscribeFromPushNotifications() to remove subscription."
+        );
         async function unsubscribe() {
             if (sub == null) {
-                return;
+                return "No subscription found";
             }
             await sub.unsubscribe().then(() => {
                 return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
@@ -73,7 +79,7 @@ export async function subscribeToPushNotifications() {
         .subscribe({ userVisibleOnly: true, applicationServerKey: pubKeyArray })
         .then((sub) => {
             const data = sub.toJSON() as PushSubscriptionData;
-            app.api["register-push"].post(data);
+            app.api["register-push"].post(data).catch(console.error);
         })
         .catch(console.error);
 }

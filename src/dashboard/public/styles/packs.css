@@ -27,12 +27,8 @@ button {
     }
 }
 
-header {
-    height: 10%;
-}
-
 main {
-    height: 90%;
+    height: calc(100% - 5rem);
 
     display: flex;
     gap: 1rem;

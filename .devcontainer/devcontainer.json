@@ -1,0 +1,8 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "features": {
+    "features": {
+    "ghcr.io/prulloac/devcontainer-features/bun:1": {}
+    }
+  }
+}

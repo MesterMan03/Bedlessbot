@@ -253,14 +253,17 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         )
                         .post(
                             "/comments",
-                            async ({ body, store: { userid } }) => {
+                            async ({ body, store: { userid }, error }) => {
+                                // validate comment
+                                if(/^(?=.{32,1024}$)([^\s].*\S)?$/s.test(body.comment) === false) {
+                                    return error(422, "Comment must be at least 32 characters and no more than 1024 characters.");
+                                }
                                 api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
                                 return "ok";
                             },
                             {
                                 body: t.Object({
                                     comment: t.String({
-                                        pattern: "^(?=.{32,1024}$)\\S[\\s\\S]*\\S$",
                                         description: "The comment body (Markdown formatted text)"
                                     }),
                                     packid: t.String({ description: "The ID of the pack" }),

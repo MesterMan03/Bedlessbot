@@ -71,6 +71,10 @@ main {
 
     select {
         font-size: 1rem;
+        border-radius: 1rem; padding: 0.25rem;
+        background-color: oklch(from var(--accent) L CH / . 8);
+        border: 0.125rem solid var (--primary);
+        color: var (--text);
     }
 
     #comments {

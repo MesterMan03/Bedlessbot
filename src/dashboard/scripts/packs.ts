@@ -56,12 +56,19 @@ if (!dialogElement) {
  * @description A function used to open the modal to display a status.
  * @param inputText This should be an HTML string. Presumably this is safe HTML as it is hardcoded into the script and not input by the user.
  */
-function openModal(inputText: string) {
+function openModal(inputText: string, onClose?: () => void) {
     if (!dialogElement) {
         throw new Error("Dialog element not found");
     }
     dialogElement.innerHTML = `${inputText}<form method="dialog"><button>Close</button></form>`;
     dialogElement.showModal();
+
+    if (onClose) {
+        dialogElement.querySelector("form")?.addEventListener("submit", function close() {
+            dialogElement.querySelector("form")?.removeEventListener("submit", close);
+            onClose();
+        });
+    }
 }
 
 const mainElement = document.querySelector("main");
@@ -109,10 +116,15 @@ for (const pack of packData.packs) {
         const downloadButton = document.createElement("button");
         downloadButton.textContent = `Download for ${version === "bedrock" ? "Bedrock" : version}`;
         downloadButton.addEventListener("click", () => {
-            downloadPack(pack.id, version);
             if (version === "bedrock") {
-                // TODO: Write a message to display to the user when the Bedrock pack is downloaded.
-                openModal("<div>Place your input HTML here</div>");
+                openModal(
+                    "<div>DISCLAIMER: The Bedrock pack does NOT support OptiFine features, which means you lose custom skies and connected textures.</div>",
+                    () => {
+                        downloadPack(pack.id, version);
+                    }
+                );
+            } else {
+                downloadPack(pack.id, version);
             }
         });
         packDownloadsElement.appendChild(downloadButton);
@@ -123,16 +135,20 @@ for (const pack of packData.packs) {
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
 const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
 
-// add "log in to comment" warning
+// add login warning or submit button, based on whether the user is logged in or not
 app.api.user.get().then((response) => {
     if (response.status !== 200) {
-        // remove the submit button
-        commentForm.querySelector("button")?.remove();
-
         const warning = document.createElement("a");
         warning.innerText = "You must be logged in to comment!";
         warning.href = "/api/auth?redirect=/packs.html";
+
         commentForm.append(warning);
+    } else {
+        const button = document.createElement("button");
+        button.innerText = "Submit";
+        button.type = "submit";
+
+        commentForm.append(button);
     }
 });
 
@@ -185,7 +201,7 @@ commentForm.addEventListener("submit", async (event) => {
                     switch (res.status) {
                         case 200: {
                             // show a confirmation modal and a button to enable notifications
-                            const hasNotifications = (await Notification.requestPermission()) === "granted";
+                            const hasNotifications = Notification.permission === "granted";
                             const notificationsButtonCode = hasNotifications
                                 ? ""
                                 : `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`;

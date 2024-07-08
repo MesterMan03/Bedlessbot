@@ -179,12 +179,13 @@ dialog {
 
     form {
         position: absolute;
+        bottom: 1rem;
         right: 1rem;
-        top: 1rem;
     }
 
     .error {
         color: var(--secondary);
         font-weight: bold;
     }
+
 }

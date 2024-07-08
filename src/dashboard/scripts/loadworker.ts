@@ -16,6 +16,25 @@ if ("serviceWorker" in navigator) {
                     })
                     .catch(console.error);
             }
+
+            // For developers: check if we have a push subscription
+            // if yes, bind a function to window to unsubscribe and remove it from server
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                console.warn(
+                    "Injected UnsubscribeFromPushNotifications() to remove subscription."
+                );
+                async function unsubscribe() {
+                    if (sub == null) {
+                        return "No subscription found";
+                    }
+                    await sub.unsubscribe().then(() => {
+                        return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
+                    });
+                }
+                //@ts-ignore - we're adding this to the window object so we can call it from the console
+                window.UnsubscribeFromPushNotifications = unsubscribe;
+            }
         })
         .catch((error) => {
             console.log("Service Worker registration failed:", error);
@@ -42,20 +61,7 @@ export async function subscribeToPushNotifications() {
     // check if we have a subscription already, if yes, unsubscribe and remove it from server
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-        console.warn(
-            "We already have a subscription, aborting subscription. Injected UnsubscribeFromPushNotifications() to remove subscription."
-        );
-        async function unsubscribe() {
-            if (sub == null) {
-                return "No subscription found";
-            }
-            await sub.unsubscribe().then(() => {
-                return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
-            });
-        }
-        //@ts-ignore - we're adding this to the window object so we can call it from the console
-        window.UnsubscribeFromPushNotifications = unsubscribe;
-
+        console.warn("We already have a subscription, aborting subscription.");
         return;
     }
 

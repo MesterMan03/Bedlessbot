@@ -260,8 +260,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                             {
                                 body: t.Object({
                                     comment: t.String({
-                                        minLength: 32,
-                                        maxLength: 1024,
+                                        pattern: "^(?=.{32,1024}$)\\S[\\s\\S]*\\S$",
                                         description: "The comment body (Markdown formatted text)"
                                     }),
                                     packid: t.String({ description: "The ID of the pack" }),

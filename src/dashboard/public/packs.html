@@ -37,7 +37,7 @@
         <main>
             <section class="packs"></section>
             <section class="comments">
-                <form id="commentForm">
+                <form id="commentForm" autocomplete="off">
                     <label for="comment">Comment:</label>
                     <textarea
                         id="comment"
@@ -50,12 +50,7 @@
                     <button type="submit">
                         Submit
                     </button>
-                    <h-captcha id="hcaptcha"
-                        site-key="7c279daa-4c7e-4c0a-8814-fca3646e78cc"
-                        size="normal"
-                        tabindex="0"
-                        theme="dark"
-                        auto-render="false"></h-captcha>
+                    <h-captcha id="hcaptcha" auto-render="false"></h-captcha>
                 </form>
 
                 <div id="comments"></div>

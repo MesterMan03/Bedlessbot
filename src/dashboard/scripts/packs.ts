@@ -121,6 +121,8 @@ for (const pack of packData.packs) {
 }
 
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
+const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
+
 // add "log in to comment" warning
 app.api.user.get().then((response) => {
     if (response.status !== 200) {
@@ -148,47 +150,90 @@ commentForm.prepend(select);
 commentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+    // create a form data object
+    const formData = new FormData(commentForm);
+
+    // validate comment (must be trimmed, at least 32 characters, max 1024 characters)
+    const comment = (formData.get("comment") as string).trim();
+    if (comment.length < 32 || comment.length > 1024) {
+        commentElement.setCustomValidity("Comment must be at least 32 characters and no more than 1024 characters.");
+        commentElement.reportValidity();
+        return;
+    }
+
+    const submitButton = commentForm.querySelector<HTMLButtonElement>("button[type=submit]");
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerText = "Loading captcha...";
+    }
+
     // spawn hCaptcha
     const hCaptchaElement = document.getElementById("hcaptcha") as VanillaHCaptchaWebComponent;
-    hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark" });
+    hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark", size: "invisible", tabindex: 0 });
 
-    hCaptchaElement.executeAsync().then(() => {
-        // create a form data object
-        const formData = new FormData(commentForm);
+    hCaptchaElement
+        .executeAsync()
+        .then(({ response }) => {
+            // send the comment to the server
+            app.api.comments
+                .post({
+                    packid: formData.get("packid") as string,
+                    comment,
+                    "h-captcha-response": response
+                })
+                .then(async (res) => {
+                    switch (res.status) {
+                        case 200: {
+                            // show a confirmation modal and a button to enable notifications
+                            const hasNotifications = (await Notification.requestPermission()) === "granted";
+                            const notificationsButtonCode = hasNotifications
+                                ? ""
+                                : `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`;
 
-        // send the comment to the server
-        app.api.comments
-            .post({
-                packid: formData.get("packid") as string,
-                comment: formData.get("comment") as string,
-                "h-captcha-response": formData.get("h-captcha-response") as string
-            })
-            .then((res) => {
-                if (res.status === 200) {
-                    // show a confirmation modal and a button to enable notifications
-                    openModal(
-                        `<p>Your comment has been sent to be reviewed.</p><p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`
-                    );
-                    document.getElementById("enablenotifs")?.addEventListener("click", async () => {
-                        Notification.requestPermission().then(function (granted) {
-                            if (granted !== "granted") {
-                                return;
+                            openModal(`<p>Your comment has been sent for review.</p>` + notificationsButtonCode);
+
+                            if (!hasNotifications) {
+                                document.getElementById("enablenotifs")?.addEventListener("click", async () => {
+                                    if ((await Notification.requestPermission()) === "granted") {
+                                        subscribeToPushNotifications();
+                                    }
+                                });
                             }
-                            subscribeToPushNotifications();
-                        });
-                    });
-                    return;
-                }
-                if (res.status === 422) {
-                    openModal(`<p class="error">Error: Badly formatted comment.</p>`);
-                    return;
-                }
-                if (res.status === 401) {
-                    openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
-                    return;
-                }
-            });
-    });
+                            break;
+                        }
+                        case 422: {
+                            openModal(`<p class="error">Error: Badly formatted comment.</p>`);
+                            break;
+                        }
+                        case 401: {
+                            openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
+                            break;
+                        }
+                        default: {
+                            openModal(`<p class="error">Error: Unknown response from server.</p>`);
+                            break;
+                        }
+                    }
+                });
+        })
+        .catch((err) => {
+            if (err === "challenge-closed") {
+                return;
+            }
+            console.error(err);
+            openModal(`<p class="error">Error: CAPTCHA failed due to an unexpected error.</p>`);
+        })
+        .finally(() => {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerText = "Submit";
+            }
+        });
+});
+
+// remove custom validity from comment element when user types
+commentElement.addEventListener("input", () => {
+    commentElement.setCustomValidity("");
 });
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;

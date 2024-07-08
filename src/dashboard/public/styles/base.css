@@ -36,7 +36,18 @@ body {
 }
 
 body {
+    margin: 0;
     font-weight: 400;
     background-color: var(--background);
     color: var(--text);
+}
+
+html {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    box-sizing: border-box;
 }

@@ -138,6 +138,7 @@ main {
             &:disabled,
             &[disabled] {
                 filter: brightness(50%);
+                cursor: not-allowed;
             }
         }
 

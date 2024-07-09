@@ -201,14 +201,20 @@ commentForm.addEventListener("submit", async (event) => {
                     switch (res.status) {
                         case 200: {
                             // show a confirmation modal and a button to enable notifications
-                            const hasNotifications = Notification.permission === "granted";
-                            const notificationsButtonCode = hasNotifications
-                                ? ""
-                                : `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`;
+                            const disabledNotifications = Notification.permission === "denied";
+                            if (disabledNotifications) {
+                                openModal(`<p>Your comment has been sent for review.</p>`);
+                                return;
+                            }
+
+                            const hasPushSubscription = (await (await navigator.serviceWorker.ready).pushManager.getSubscription()) != null;
+                            const notificationsButtonCode = !hasPushSubscription
+                                ? `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`
+                                : "";
 
                             openModal(`<p>Your comment has been sent for review.</p>` + notificationsButtonCode);
 
-                            if (!hasNotifications) {
+                            if (!hasPushSubscription) {
                                 document.getElementById("enablenotifs")?.addEventListener("click", async () => {
                                     if ((await Notification.requestPermission()) === "granted") {
                                         subscribeToPushNotifications();
@@ -288,6 +294,11 @@ async function updateComments() {
     }
 }
 updateComments();
+
+document.getElementById("togglecomments")?.addEventListener("click", () => {
+    console.log("sup");
+    document.querySelector<HTMLDivElement>("section.comments")?.classList.toggle("hidden");
+});
 
 navigator.serviceWorker.addEventListener("message", (event) => {
     // check if the message is "sync-comments"

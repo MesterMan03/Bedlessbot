@@ -36,7 +36,7 @@
 
         <main>
             <section class="packs"></section>
-            <section class="comments">
+            <section class="comments hidden">
                 <form id="commentForm" autocomplete="off">
                     <label for="comment">Comment:</label>
                     <textarea
@@ -45,13 +45,14 @@
                         minlength="32"
                         maxlength="1024"
                         rows="10"
-                        cols="60"
+                        cols="40"
                         placeholder="Your comment here..."></textarea>
                     <h-captcha id="hcaptcha" auto-render="false"></h-captcha>
                 </form>
 
                 <div id="comments"></div>
             </section>
+            <button id="togglecomments"><img src="/images/comment.svg" alt="Toggle comments"></button>
             <dialog>
                 <form method="dialog">
                     <button>Close</button>

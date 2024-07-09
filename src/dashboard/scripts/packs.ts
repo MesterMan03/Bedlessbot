@@ -208,10 +208,14 @@ async function updateComments() {
         for (const comment of comments) {
             const commentElement = document.createElement("div");
             commentElement.innerHTML = `
-<img src="${comment.avatar}" alt="${comment.username}">
-<h3>${comment.username} </h3>
-<p>${comment.comment}</p>
-  `;
+<div class="commentInfo">
+    <img src="${comment.avatar}" alt="${comment.username}">
+    <div>
+        <h3>${comment.username}</h3>
+        <span>&EmptySmallSquare; ${luxon.DateTime.fromMillis(Date.now()).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */}</span>
+    </div>
+</div>
+<p>${comment.comment}</p>`;
             commentsDiv.appendChild(commentElement);
         }
     } else if (comments != null) {

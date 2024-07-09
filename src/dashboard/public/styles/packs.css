@@ -79,11 +79,42 @@ main {
     }
 
     #comments {
-        word-wrap: break-word;
-        
+        div.commentInfo {
+            display: flex;
+            flex-direction: row;
+            text-align: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            justify-content: center;
+            align-items: center;
+            text-align: left;
+        }
+
+        span {
+            font-size: 0.8rem;
+        }
+
+        h3 {
+            color: var(--primary);
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 9rem;
+        }
+
+        h3,
+        span {
+            margin: 0;
+        }
+
         img {
-            height: 8rem;
-            width: 8rem;
+            height: 4rem;
+            width: 4rem;
+            border-radius: 100%;
+        }
+
+        p {
+            margin-left: 2rem;
+            overflow-wrap: anywhere;
         }
     }
 }

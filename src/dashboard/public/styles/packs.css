@@ -191,10 +191,10 @@ dialog {
         position: absolute;
         right: 1rem;
         bottom: 1rem;
-    }
 
-    section.comments.hidden {
-        display: none;
+        &.hidden {
+            display: none;
+        }
     }
 
     #togglecomments {

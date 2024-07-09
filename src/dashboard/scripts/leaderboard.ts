@@ -1,6 +1,7 @@
 import { treaty } from "@elysiajs/eden";
 import type { DashboardApp } from "..";
 import "./loadworker";
+import type { DashboardLbEntry } from "../api-types";
 
 const app = treaty<DashboardApp>(location.origin);
 
@@ -47,68 +48,72 @@ async function loadUsers(pageCursor: number) {
     const page = request.data;
 
     for (const user of page) {
-        const podiumHTML = `<img src="${user.avatar}" loading="lazy"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
-        const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
-
-        let podiumElement: HTMLDivElement | null = null;
-
-        if (1 <= user.pos && user.pos <= 3) {
-            if (user.pos === 1) {
-                podiumElement = document.querySelector<HTMLDivElement>("#first");
-            }
-            if (user.pos === 2) {
-                podiumElement = document.querySelector<HTMLDivElement>("#second");
-            }
-            if (user.pos === 3) {
-                podiumElement = document.querySelector<HTMLDivElement>("#third");
-            }
-
-            if (!podiumElement) {
-                throw new Error("Podium element not found");
-            }
-
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            podiumElement.querySelector("h2")!.innerHTML = podiumHTML;
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            podiumElement.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            podiumElement.querySelector("#xp")!.innerHTML = xpInfoHTML;
-
-            continue;
-        }
-
-        const listings = document.querySelector("section");
-        if (!listings) {
-            throw new Error("Listings not found");
-        }
-
-        listings.insertAdjacentHTML(
-            "beforeend",
-            `<div class="user">
-      <p class="pos">${user.pos}</p>
-      <p class="name new"><img src="${user.avatar}" loading="lazy"><span>${user.username}</span></p>
-      <label>
-        <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
-        <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(
-            (user.progress[0] * 100) / user.progress[1]
-        )}</progress>
-        ${xpInfoHTML}
-      </label>
-    </div>`
-        );
-
-        // setup click listener for name
-        const nameElement = listings.querySelector<HTMLParagraphElement>(".name.new");
-        if (nameElement) {
-            nameElement.addEventListener("click", () => {
-                navigator.clipboard.writeText(user.userid);
-            });
-            nameElement.classList.remove("new");
-        }
+        renderUser(user);
     }
 
     loadingIndicator.style.display = "none";
     return PageLoadCode.Success;
+}
+
+function renderUser(user: DashboardLbEntry) {
+    const podiumHTML = `<img src="${user.avatar}" loading="lazy"><span onclick="navigator.clipboard.writeText('${user.userid}')">${user.username}</span>`;
+    const xpInfoHTML = `<span class="xp-popup">${user.progress[0]}/${Math.floor((user.progress[0] * 100) / user.progress[1])}</span>`;
+
+    let podiumElement: HTMLDivElement | null = null;
+
+    if (1 <= user.pos && user.pos <= 3) {
+        if (user.pos === 1) {
+            podiumElement = document.querySelector<HTMLDivElement>("#first");
+        }
+        if (user.pos === 2) {
+            podiumElement = document.querySelector<HTMLDivElement>("#second");
+        }
+        if (user.pos === 3) {
+            podiumElement = document.querySelector<HTMLDivElement>("#third");
+        }
+
+        if (!podiumElement) {
+            throw new Error("Podium element not found");
+        }
+
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        podiumElement.querySelector("h2")!.innerHTML = podiumHTML;
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        podiumElement.querySelector("#total-xp-level")!.innerHTML = `Level: ${user.level}<br>Total XP: ${user.xp}`;
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        podiumElement.querySelector("#xp")!.innerHTML = xpInfoHTML;
+
+        return;
+    }
+
+    const listings = document.querySelector("section");
+    if (!listings) {
+        throw new Error("Listings not found");
+    }
+
+    listings.insertAdjacentHTML(
+        "beforeend",
+        `<div class="user">
+  <p class="pos">${user.pos}</p>
+  <p class="name new"><img src="${user.avatar}" loading="lazy"><span>${user.username}</span></p>
+  <label>
+    <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
+    <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(
+        (user.progress[0] * 100) / user.progress[1]
+    )}</progress>
+    ${xpInfoHTML}
+  </label>
+</div>`
+    );
+
+    // setup click listener for name
+    const nameElement = listings.querySelector<HTMLParagraphElement>(".name.new");
+    if (nameElement) {
+        nameElement.addEventListener("click", () => {
+            navigator.clipboard.writeText(user.userid);
+        });
+        nameElement.classList.remove("new");
+    }
 }
 
 // set up toast

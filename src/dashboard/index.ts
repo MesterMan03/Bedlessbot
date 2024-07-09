@@ -37,11 +37,6 @@ await Bun.build({
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
-// generate a random password for the production /packs.html (temporary), use randomBytes
-// TODO: remove this once packs become public
-const packsPassword = randomBytes(16).toString("base64");
-console.log("Password for packs:", packsPassword);
-
 const trackingCode = `<!-- Matomo -->
 <script>
 var _paq = window._paq = window._paq || [];
@@ -255,7 +250,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                             "/comments",
                             async ({ body, store: { userid }, error }) => {
                                 // validate comment
-                                if(/^(?=.{32,1024}$)([^\s].*\S)?$/s.test(body.comment) === false) {
+                                if (/^(?=.{32,1024}$)([^\s].*\S)?$/s.test(body.comment) === false) {
                                     return error(422, "Comment must be at least 32 characters and no more than 1024 characters.");
                                 }
                                 api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
@@ -361,7 +356,10 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/comments/maxpage",
-        async ({ query: { packid } }) => {
+        async ({ query: { packid }, error }) => {
+            if (!packData.packs.find((pack) => pack.id === packid)) {
+                return error(400, "Pack not found");
+            }
             const maxPage = await api.GetMaxCommentsPage(packid);
             return maxPage;
         },
@@ -370,7 +368,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 packid: t.String({ description: "The ID of the pack" })
             }),
             detail: { tags: ["App", "Pack"], description: "Fetch the max page of comments for a pack" },
-            response: t.Number()
+            response: { 200: t.Number(), 400: t.String() }
         }
     )
     .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema })
@@ -422,16 +420,6 @@ const app = new Elysia()
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
 
-        // TODO: delete this once index.html is set up correctly
-        if (url.pathname === "/" && process.env.NODE_ENV === "production") {
-            return new Response(null, {
-                status: 301,
-                headers: {
-                    Location: "/leaderboard"
-                }
-            });
-        }
-
         // check if url ends with .html, then redirect without the extension
         if (url.pathname.endsWith(".html")) {
             return new Response(null, {
@@ -440,28 +428,6 @@ const app = new Elysia()
                     Location: url.pathname.slice(0, -5) + url.search
                 }
             });
-        }
-
-        // check if request is /packs
-        if (url.pathname === "/packs" && process.env.NODE_ENV === "production") {
-            // check for Authorization header
-            const authHeader = request.headers.get("Authorization");
-
-            if (!authHeader) {
-                // return 401 reponse with WWW-Authenticate header
-                return new Response(null, {
-                    status: 401,
-                    headers: {
-                        "WWW-Authenticate": `Basic realm="Bedlessbot Packs", charset="UTF-8"`
-                    }
-                });
-            }
-
-            // get username and password from header
-            const [username, password] = atob(authHeader.split(" ")[1]).split(":");
-            if (username !== "mester" || password !== packsPassword) {
-                return new Response("Unauthorized", { status: 401 });
-            }
         }
 
         // if path is empty (or ends with /), look for index.html

@@ -18,7 +18,7 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
-if(!packData) {
+if (!packData) {
     openModal(`<p class="error">Error: Pack data not found.</p>`);
     throw new Error("Pack data not found");
 }
@@ -293,10 +293,49 @@ async function processCommentResponse(code: number) {
 commentElement.addEventListener("input", () => {
     commentElement.setCustomValidity("");
 });
+// pagination for comments
+let page = 0;
+let maxPage = 0;
+const prevPageButton = document.getElementById("prevCommentPage") as HTMLButtonElement;
+const nextPageButton = document.getElementById("nextCommentPage") as HTMLButtonElement;
+app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
+    maxPage = (response.data ?? 1) as number;
+    nextPageButton.disabled = maxPage === 1;
+});
+const pageLabel = document.getElementById("pageLabel") as HTMLSpanElement;
+
+prevPageButton.addEventListener("click", () => {
+    if (page === 0) {
+        prevPageButton.disabled = true;
+        return;
+    }
+    // disable button if at second page
+    prevPageButton.disabled = page === 1;
+    --page;
+    nextPageButton.disabled = false;
+    pageLabel.innerHTML = `${page + 1}`;
+    updateComments();
+});
+
+nextPageButton.addEventListener("click", () => {
+    if (page === maxPage - 1) {
+        nextPageButton.disabled = true;
+        return;
+    }
+    // disable button if at second to last page
+    nextPageButton.disabled = page === maxPage - 2;
+    ++page;
+    prevPageButton.disabled = false;
+    pageLabel.innerHTML = `${page + 1}`;
+    updateComments();
+});
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-select.addEventListener("change", () => {
+select.addEventListener("change", async () => {
+    page = 0;
     updateComments();
+    maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
+    nextPageButton.disabled = maxPage === 1;
 });
 
 /**
@@ -306,7 +345,7 @@ async function updateComments() {
     console.log(`Fetching comments for ${select.value}`);
 
     commentsDiv.innerHTML = "Loading...";
-    const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;
+    const comments = (await app.api.comments.get({ query: { packid: select.value, page: page } })).data;
     commentsDiv.innerHTML = "";
 
     if (comments && comments?.length !== 0) {
@@ -317,7 +356,9 @@ async function updateComments() {
     <img src="${comment.avatar}" alt="${comment.username}">
     <div>
         <h3>${comment.username}</h3>
-        <span>&EmptySmallSquare; ${luxon.DateTime.fromMillis(Date.now()).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */}</span>
+        <span>&EmptySmallSquare; ${
+            luxon.DateTime.fromMillis(Date.now()).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */
+        }</span>
     </div>
 </div>
 <p>${comment.comment}</p>`;

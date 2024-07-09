@@ -90,12 +90,10 @@ main {
         div.commentInfo {
             display: flex;
             flex-direction: row;
-            text-align: center;
             gap: 0.5rem;
             white-space: nowrap;
-            justify-content: center;
+            justify-content: left;
             align-items: center;
-            text-align: left;
         }
 
         span {
@@ -123,6 +121,28 @@ main {
         p {
             margin-left: 2rem;
             overflow-wrap: anywhere;
+        }
+        
+    }
+    
+    #pageSelect {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+
+        button {
+            width: 2rem;
+            height: 2rem;
+
+            &:disabled,
+            &[disabled] {
+                filter: brightness(50%);
+            }
+        }
+
+        span {
+            font-weight: bold;
         }
     }
 }

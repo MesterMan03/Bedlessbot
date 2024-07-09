@@ -19,13 +19,25 @@
         <link rel="icon" href="icon.gif?cache=invalidatepls" type="image/gif" />
         <link rel="stylesheet" href="/styles/base.css" />
         <link rel="stylesheet" href="/styles/leaderboard.css" />
+        <link rel="stylesheet" href="/styles/header.css" />
         <script src="/scripts/leaderboard.js" type="module"></script>
     </head>
 
     <body>
         <header>
-            <h1>Bedless Nation level leaderboard</h1>
+            <ul>
+                <li>
+                    <a href="/"><h1>Home</h1></a>
+                </li>
+                <li class="active">
+                    <a href="/leaderboard"><h1>Leaderboard</h1></a>
+                </li>
+                <li>
+                    <a href="/packs"><h1>Packs</h1></a>
+                </li>
+            </ul>
         </header>
+
         <main>
             <div class="podium">
                 <div id="second" class="name">

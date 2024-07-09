@@ -18,9 +18,16 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
-// The following functions are meant as a very basic, stripped-down code snippets
-// You can leave them as-is or rework them if the code structure requires it
+if(!packData) {
+    openModal(`<p class="error">Error: Pack data not found.</p>`);
+    throw new Error("Pack data not found");
+}
 
+/**
+ * A function to download a pack.
+ * @param packid The packid to download.
+ * @param version The version of the pack to download.
+ */
 function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
@@ -39,6 +46,11 @@ function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
     location.replace(downloadLink.toString());
 }
 
+/**
+ * A function to get the URL of the pack icon without the extension.
+ * @param packid The packid of the pack.
+ * @returns The URL of the pack icon (missing extension).
+ */
 function getPackIcon(packid: string) {
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
@@ -152,17 +164,30 @@ app.api.user.get().then((response) => {
     }
 });
 
-// add select menu for all packs
+const variants = packData.packs
+    .map((pack) => (pack.variant ? pack.variant : pack.id))
+    .filter((variant, idx, arr) => arr.indexOf(variant) === idx);
+
+// set up select menu with select options based on variants
 const select = document.createElement("select");
 select.name = "packid";
+commentForm.prepend(select);
+
+for (const variant of variants) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = variant;
+    optgroup.id = `variant-${variant}`;
+    select.appendChild(optgroup);
+}
 for (const pack of packData.packs) {
     const option = document.createElement("option");
     option.value = pack.id;
     option.innerText = pack.friendly_name;
     select.appendChild(option);
+    (document.getElementById(`variant-${pack.variant ? pack.variant : pack.id}`) as HTMLOptGroupElement)?.appendChild(option);
 }
-commentForm.prepend(select);
 
+// add event listener to the comment form
 commentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -185,7 +210,10 @@ commentForm.addEventListener("submit", async (event) => {
 
     // spawn hCaptcha
     const hCaptchaElement = document.getElementById("hcaptcha") as VanillaHCaptchaWebComponent;
-    hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark", size: "invisible", tabindex: 0 });
+    // check if the hCaptcha element has no children -> render it
+    if (hCaptchaElement.children.length === 0) {
+        hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark", size: "invisible", tabindex: 0 });
+    }
 
     hCaptchaElement
         .executeAsync()
@@ -197,45 +225,8 @@ commentForm.addEventListener("submit", async (event) => {
                     comment,
                     "h-captcha-response": response
                 })
-                .then(async (res) => {
-                    switch (res.status) {
-                        case 200: {
-                            // show a confirmation modal and a button to enable notifications
-                            const disabledNotifications = Notification.permission === "denied";
-                            if (disabledNotifications) {
-                                openModal(`<p>Your comment has been sent for review.</p>`);
-                                return;
-                            }
-
-                            const hasPushSubscription = (await (await navigator.serviceWorker.ready).pushManager.getSubscription()) != null;
-                            const notificationsButtonCode = !hasPushSubscription
-                                ? `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`
-                                : "";
-
-                            openModal(`<p>Your comment has been sent for review.</p>` + notificationsButtonCode);
-
-                            if (!hasPushSubscription) {
-                                document.getElementById("enablenotifs")?.addEventListener("click", async () => {
-                                    if ((await Notification.requestPermission()) === "granted") {
-                                        subscribeToPushNotifications();
-                                    }
-                                });
-                            }
-                            break;
-                        }
-                        case 422: {
-                            openModal(`<p class="error">Error: Badly formatted comment.</p>`);
-                            break;
-                        }
-                        case 401: {
-                            openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
-                            break;
-                        }
-                        default: {
-                            openModal(`<p class="error">Error: Unknown response from server.</p>`);
-                            break;
-                        }
-                    }
+                .then((res) => {
+                    processCommentResponse(res.status);
                 });
         })
         .catch((err) => {
@@ -253,6 +244,51 @@ commentForm.addEventListener("submit", async (event) => {
         });
 });
 
+/**
+ * A function to process the response from the server after submitting a comment.
+ * @param code The status code of the response from the server.
+ */
+async function processCommentResponse(code: number) {
+    switch (code) {
+        case 200: {
+            // show a confirmation modal and a button to enable notifications
+            const disabledNotifications = Notification.permission === "denied";
+            if (disabledNotifications) {
+                openModal(`<p>Your comment has been sent for review.</p>`);
+                return;
+            }
+
+            const hasPushSubscription = (await (await navigator.serviceWorker.ready).pushManager.getSubscription()) != null;
+            const notificationsButtonCode = !hasPushSubscription
+                ? `<p>You can enable notifications for this pack by clicking the button below.</p><button id="enablenotifs">Enable notifications</button>`
+                : "";
+
+            openModal(`<p>Your comment has been sent for review.</p>` + notificationsButtonCode);
+
+            if (!hasPushSubscription) {
+                document.getElementById("enablenotifs")?.addEventListener("click", async () => {
+                    if ((await Notification.requestPermission()) === "granted") {
+                        subscribeToPushNotifications();
+                    }
+                });
+            }
+            break;
+        }
+        case 422: {
+            openModal(`<p class="error">Error: Badly formatted comment.</p>`);
+            break;
+        }
+        case 401: {
+            openModal(`<p class="error">Error: CAPTCHA failed. Are you a robot?</p>`);
+            break;
+        }
+        default: {
+            openModal(`<p class="error">Error: Unknown response from server.</p>`);
+            break;
+        }
+    }
+}
+
 // remove custom validity from comment element when user types
 commentElement.addEventListener("input", () => {
     commentElement.setCustomValidity("");
@@ -263,7 +299,9 @@ select.addEventListener("change", () => {
     updateComments();
 });
 
-// function to update comments with packid from the select menu
+/**
+ * A function to update the comments section with the comments for the currently selected pack.
+ */
 async function updateComments() {
     console.log(`Fetching comments for ${select.value}`);
 

@@ -1,7 +1,7 @@
 html, body {
     width: 100%;
     height: 100%;
-    overflow-y: hidden;
+    overflow: hidden;
 }
 
 body {
@@ -24,6 +24,14 @@ button {
 
     &:hover {
         filter: brightness(125%);
+    }
+}
+
+header {
+    height: 5rem;
+
+    h1 {
+        margin: 1.5rem 0 1.5rem 0;
     }
 }
 
@@ -181,19 +189,26 @@ dialog {
     section.comments {
         display: flex;
 
-        max-width: calc(100% - 4rem);
+        max-width: min(24rem, calc(100% - 4rem));
 
         padding: 1rem;
-        background-color: black;
+        padding-right: 2rem;
+        background-color: var(--background);
 
-        border-radius: 1rem;
+        border: 0.125rem solid var(--primary);
+        border-right: none;
+        border-bottom-left-radius: 1rem;
+        border-top-left-radius: 1rem;
 
         position: absolute;
-        right: 1rem;
+        right: 0;
         bottom: 1rem;
+        top: 5rem;
+
+        transition: transform 0.4s ease-in-out;
 
         &.hidden {
-            display: none;
+            transform: translateX(120%);
         }
     }
 

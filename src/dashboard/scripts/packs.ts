@@ -299,7 +299,7 @@ let maxPage = 0;
 const prevPageButton = document.getElementById("prevCommentPage") as HTMLButtonElement;
 const nextPageButton = document.getElementById("nextCommentPage") as HTMLButtonElement;
 app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
-    maxPage = (response.data ?? 1) as number;
+    maxPage = response.data ?? 1;
     nextPageButton.disabled = maxPage === 1;
 });
 const pageLabel = document.getElementById("pageLabel") as HTMLSpanElement;
@@ -345,7 +345,7 @@ async function updateComments() {
     console.log(`Fetching comments for ${select.value}`);
 
     commentsDiv.innerHTML = "Loading...";
-    const comments = (await app.api.comments.get({ query: { packid: select.value, page: page } })).data;
+    const comments = (await app.api.comments.get({ query: { packid: select.value, page } })).data;
     commentsDiv.innerHTML = "";
 
     if (comments && comments?.length !== 0) {
@@ -357,7 +357,7 @@ async function updateComments() {
     <div>
         <h3>${comment.username}</h3>
         <span>&EmptySmallSquare; ${
-            luxon.DateTime.fromMillis(Date.now()).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */
+            luxon.DateTime.fromMillis(comment.date).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */
         }</span>
     </div>
 </div>

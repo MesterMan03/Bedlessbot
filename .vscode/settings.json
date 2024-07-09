@@ -19,5 +19,5 @@
     "[xml]": {
         "editor.defaultFormatter": "redhat.vscode-xml"
     },
-    "github-actions.workflows.pinned.workflows": [".github/workflows/deploy.yml"]
+    "github-actions.workflows.pinned.workflows": []
 }

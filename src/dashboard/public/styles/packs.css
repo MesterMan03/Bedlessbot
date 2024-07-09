@@ -189,3 +189,52 @@ dialog {
     }
 
 }
+
+#togglecomments {
+    display: none;
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    background-color: var(--accent);
+    color: var(--text);
+    border-radius: 100%;
+
+    padding: 5px;
+    aspect-ratio: 1;
+
+    img {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (max-width: 1250px) {
+    section.comments {
+        display: flex;
+
+        max-width: calc(100% - 4rem);
+
+        padding: 1rem;
+        background-color: black;
+
+        border-radius: 1rem;
+
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+    }
+
+    section.comments.hidden {
+        display: none;
+    }
+
+    #togglecomments {
+        display: block;
+    }
+}
+
+@media (max-width: 850px) {
+    section.packs {
+        grid-template-columns: 1fr;
+    }
+}

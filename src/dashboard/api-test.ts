@@ -229,7 +229,10 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                 }
             };
 
-            webpush.sendNotification(pushConfig, JSON.stringify(notification));
+            webpush.sendNotification(pushConfig, JSON.stringify(notification)).catch(() => {
+                // unregister the subscription if it fails
+                this.UnregisterPushSubscription(userid, sub.endpoint);
+            });
         });
     }
 

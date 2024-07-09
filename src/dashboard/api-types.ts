@@ -17,7 +17,7 @@ interface DashboardAPIInterface {
 
 interface PushSubscriptionData {
     endpoint: string;
-    expirationTime?: EpochTimeStamp | null;
+    expirationTime?: number | null;
     keys: Record<string, string>;
 }
 

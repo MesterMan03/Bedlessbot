@@ -1,0 +1,54 @@
+header {
+    ul {
+        /* Horziontal list */
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+
+        margin: 0;
+        padding: 0;
+
+        li {
+            /* Remove list bullets */
+            list-style-type: none;
+
+            a {
+                text-decoration: none;
+                color: var(--text);
+                position: relative;
+                transition: color 0.25s ease-in-out;
+
+                &:hover {
+                    color: var(--accent);
+                }
+
+                &::after {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    bottom: -2px; /* Adjust based on your preference */
+                    width: 0;
+                    height: 2px; /* Adjust based on your preferred underline thickness */
+                    background-color: var(--accent);
+                    transition: width 0.25s ease-in-out;
+                }
+
+                &:hover::after {
+                   width: 100%;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 600px) {
+    header {
+        ul {
+            li.active {
+                display: none;
+            }
+        }
+    }
+} 

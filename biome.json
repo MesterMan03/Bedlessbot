@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.7.3/schema.json",
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -15,7 +15,7 @@
         "lineWidth": 140,
         "attributePosition": "auto",
         "ignore": ["**/package.json"],
-        "include": ["src/**/*.ts", "res/rank/script.js"]
+        "include": ["src/**/*.ts", "res/rank/script.js", "src/dashboard/public/styles/*.css"]
     },
     "organizeImports": {
         "enabled": false
@@ -115,5 +115,10 @@
             "attributePosition": "auto"
         },
         "globals": ["const", "Bun", "HTMLRewriter"]
+    },
+    "css": {
+        "formatter": {
+            "enabled": true
+        }
     }
 }

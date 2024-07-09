@@ -19,6 +19,7 @@
         <meta name="color scheme" content="dark" />
         <link rel="stylesheet" href="/styles/base.css" />
         <link rel="stylesheet" href="/styles/packs.css" />
+        <link rel="stylesheet" href="/styles/header.css" />
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/luxon/3.4.4/luxon.min.js"
             integrity="sha512-dUlSLLkxslGILhPdCkALwk4szPhp3xmZIKFtlUD+O9Lslq41Aksmdt5OGqpomDoT4FsCUH70jQU8ezZHI3v1RQ=="
@@ -32,7 +33,19 @@
     </head>
 
     <body>
-        <header><h1>Packs</h1></header>
+        <header>
+            <ul>
+                <li>
+                    <a href="/"><h1>Home</h1></a>
+                </li>
+                <li>
+                    <a href="/leaderboard"><h1>Leaderboard</h1></a>
+                </li>
+                <li class="active">
+                    <a href="/packs"><h1>Packs</h1></a>
+                </li>
+            </ul>
+        </header>
 
         <main>
             <section class="packs"></section>

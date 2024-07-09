@@ -86,9 +86,7 @@ async function loadUsers(pageCursor: number) {
             "beforeend",
             `<div class="user">
       <p class="pos">${user.pos}</p>
-      <p class="name" onclick="navigator.clipboard.writeText('${user.userid}')"><img src="${user.avatar}" loading="lazy"><span>${
-          user.username
-      }</span></p>
+      <p class="name new"><img src="${user.avatar}" loading="lazy"><span>${user.username}</span></p>
       <label>
         <p><span>Level: ${user.level}</span><span>XP: ${user.xp}</span></p>
         <progress value="${user.progress[0]}" max="${(user.progress[0] * 100) / user.progress[1]}">${Math.floor(
@@ -98,6 +96,15 @@ async function loadUsers(pageCursor: number) {
       </label>
     </div>`
         );
+
+        // setup click listener for name
+        const nameElement = listings.querySelector<HTMLParagraphElement>(".name.new");
+        if (nameElement) {
+            nameElement.addEventListener("click", () => {
+                navigator.clipboard.writeText(user.userid);
+            });
+            nameElement.classList.remove("new");
+        }
     }
 
     loadingIndicator.style.display = "none";

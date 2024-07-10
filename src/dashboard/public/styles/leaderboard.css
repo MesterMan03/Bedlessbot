@@ -1,65 +1,22 @@
-@font-face {
-    font-family: "Noto Sans Caucasian Albanian";
-    src: url("/Noto_Sans_Caucasian_Albanian/NotoSansCaucasianAlbanian-Regular.ttf")
-        format("truetype");
-    font-display: swap;
-}
-
 :root {
     --gold: oklch(88.68% 0.182 95.33);
     --silver: oklch(80.78% 0 0);
     --bronze: oklch(66.61% 0.132 61.29);
-
-    @media (prefers-color-scheme: light) {
-        --text: oklch(15.61% 0.049 18.32);
-        --background: oklch(96.31% 0.015 17.42);
-        --primary: oklch(62.61% 0.257 29.23);
-        --secondary: oklch(62.06% 0.252 27.85);
-        --accent: oklch(77.45% 0.126 66.99);
-    }
-
-    @media (prefers-color-scheme: dark) {
-        --text: oklch(93.67% 0.028 12.12);
-        --background: oklch(12.52% 0.037 24.12);
-        --primary: oklch(62.8% 0.258 29.23);
-        --secondary: oklch(62.01% 0.252 27.99);
-        --accent: oklch(56.68% 0.124 61.83);
-    }
-
-    accent-color: var(--primary);
-}
-
-h1,
-h2,
-h3,
-h4,
-h5 {
-    font-family: "Noto Sans Caucasian Albanian", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 html {
     font-size: 100%; /* 16px */
-    min-height: 100dvh;
+}
+
+html,
+body {
+    min-height: 100%;
 }
 
 body {
-    font-family: "Noto Sans Caucasian Albanian", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    font-weight: 400;
-    background-color: var(--background);
-    color: var(--text);
-    display: grid;
-    grid-template-rows: auto 1fr;
-    margin: 0;
-    min-height: 100dvh;
-}
-
-header {
-    padding: 0.5rem 1rem;
-    text-align: center;
-
-    h1 {
-        margin: 0;
-    }
+    display: flex;
+    flex-flow: column;
+    padding: 0 1rem;
 }
 
 main {
@@ -123,9 +80,7 @@ img {
             border-radius: 0.5rem;
             opacity: 0;
             visibility: hidden;
-            transition:
-                opacity 0.25s,
-                visibility 0.25s;
+            transition: opacity 0.25s, visibility 0.25s;
         }
 
         &:hover #xp {
@@ -153,11 +108,7 @@ img {
 
         &::after {
             height: 4rem;
-            background-image: linear-gradient(
-                to top,
-                var(--gold),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--gold), oklch(0 0 0 / 0%));
         }
     }
 
@@ -168,11 +119,7 @@ img {
 
         &::after {
             height: 2rem;
-            background-image: linear-gradient(
-                to top,
-                var(--silver),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--silver), oklch(0 0 0 / 0%));
         }
     }
 
@@ -183,11 +130,7 @@ img {
 
         &::after {
             height: 1rem;
-            background-image: linear-gradient(
-                to top,
-                var(--bronze),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--bronze), oklch(0 0 0 / 0%));
         }
     }
 }
@@ -249,9 +192,7 @@ img {
             border-radius: 0.5rem;
             opacity: 0;
             visibility: hidden;
-            transition:
-                opacity 0.25s,
-                visibility 0.25s;
+            transition: opacity 0.25s, visibility 0.25s;
         }
 
         &:hover span {
@@ -272,9 +213,7 @@ img {
     border-radius: 0.5rem;
     background-color: var(--accent);
     color: var(--text);
-    transition:
-        opacity 0.25s,
-        visibility 0.25s;
+    transition: opacity 0.25s, visibility 0.25s;
     opacity: 0;
     visibility: hidden;
 }

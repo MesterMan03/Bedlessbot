@@ -8,10 +8,31 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
         .register("/scripts/service-worker.js", { scope: "/", type: "module" })
         .then(async (reg) => {
-            console.log("Service Worker registered with scope:", reg.scope);
+            // setup periodic sync for new pack comments
+            if (reg.periodicSync) {
+                reg.periodicSync
+                    .register("pack-comments", {
+                        minInterval: 5 * 60 * 1000 // 5 minutes
+                    })
+                    .catch(console.error);
+            }
 
-            // TODO: replace this to run on a button click (for example when a comment is submitted) which will let Notification.requestPermission() to be called
-            subscribeToPushNotifications();
+            // For developers: check if we have a push subscription
+            // if yes, bind a function to window to unsubscribe and remove it from server
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+                console.warn("Injected UnsubscribeFromPushNotifications() to remove subscription.");
+                async function unsubscribe() {
+                    if (sub == null) {
+                        return "No subscription found";
+                    }
+                    await sub.unsubscribe().then(() => {
+                        return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
+                    });
+                }
+                //@ts-ignore - we're adding this to the window object so we can call it from the console
+                window.UnsubscribeFromPushNotifications = unsubscribe;
+            }
         })
         .catch((error) => {
             console.log("Service Worker registration failed:", error);
@@ -39,17 +60,6 @@ export async function subscribeToPushNotifications() {
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
         console.warn("We already have a subscription, aborting subscription.");
-        async function unsubscribe() {
-            if (sub == null) {
-                return;
-            }
-            await sub.unsubscribe().then(() => {
-                return app.api["unregister-push"].post({ endpoint: sub.toJSON().endpoint as string });
-            });
-        }
-        //@ts-ignore - we're adding this to the window object so we can call it from the console
-        window.UnsubscribeFromPushNotifications = unsubscribe;
-
         return;
     }
 
@@ -73,7 +83,7 @@ export async function subscribeToPushNotifications() {
         .subscribe({ userVisibleOnly: true, applicationServerKey: pubKeyArray })
         .then((sub) => {
             const data = sub.toJSON() as PushSubscriptionData;
-            app.api["register-push"].post(data);
+            app.api["register-push"].post(data).catch(console.error);
         })
         .catch(console.error);
 }

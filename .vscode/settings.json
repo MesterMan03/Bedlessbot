@@ -10,7 +10,7 @@
         "editor.defaultFormatter": "biomejs.biome"
     },
     "[html]": {
-        "editor.defaultFormatter": "vscode.html-language-features"
+        "editor.defaultFormatter": "mohd-akram.vscode-html-format"
     },
     "sonarlint.connectedMode.project": {
         "connectionId": "GV",
@@ -19,5 +19,5 @@
     "[xml]": {
         "editor.defaultFormatter": "redhat.vscode-xml"
     },
-    "github-actions.workflows.pinned.workflows": [".github/workflows/deploy.yml"]
+    "github-actions.workflows.pinned.workflows": []
 }

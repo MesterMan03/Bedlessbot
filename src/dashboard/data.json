@@ -2,10 +2,10 @@
     "packs": [
         {
             "id": "15k",
-            "icon": "15k.png",
+            "icon": "15k",
             "short_name": "15k pack",
             "friendly_name": "15k Pack",
-            "description": "# Description",
+            "description": "* Release date: 2020-06-14\n* [First appearence](https://www.youtube.com/watch?v=-mYb79EnvNg)\n* Creator: Miel\n\nThe very first pack ever released by Bedless!",
             "downloads": {
                 "1.8.9": "§cBedless §l15k Jupiner edit.zip",
                 "1.20.5": "§cBedless §l15k Jupiner edit 1.20.5.zip",
@@ -14,10 +14,10 @@
         },
         {
             "id": "60k",
-            "icon": "60k.png",
+            "icon": "60k",
             "short_name": "60k pack",
             "friendly_name": "60k Pack",
-            "description": "# Description",
+            "description": "* Release date: 2020-09-12\n* [First appearence](https://www.youtube.com/watch?v=yJoWf6el0mo)\n* Creators: TOKYEO, VilError, iSparkton, MCM 939, Ham\n\nIncludes a block overlay for bridging and a 3D bed model.",
             "downloads": {
                 "1.8.9": "§4Bedless §c60k.zip",
                 "1.20.5": "§4Bedless §c60k 1.20.5.zip",
@@ -26,11 +26,11 @@
         },
         {
             "id": "60k-overlay",
-            "icon": "60k.png",
+            "icon": "60k",
             "variant": "60k",
             "short_name": "60k overlay",
             "friendly_name": "60k Bed Sword Overlay",
-            "description": "# Description",
+            "description": "Only has the sword textures of the 60k pack.",
             "downloads": {
                 "1.8.9": "§4Bedless §c60k - Bed Sword Overlay.zip",
                 "1.20.5": "§4Bedless §c60k - Bed Sword Overlay 1.20.5.zip",
@@ -39,11 +39,11 @@
         },
         {
             "id": "60k-halloween",
-            "icon": "60k-halloween.png",
+            "icon": "60k-halloween",
             "variant": "60k",
             "short_name": "60k halloween",
             "friendly_name": "60k Halloween",
-            "description": "# Description",
+            "description": "* Release date: 2020-10-27\n* [First appearence](https://www.youtube.com/watch?v=RJFuOZMpyS0)\n\nThe 60k pack with a Halloween theme.",
             "downloads": {
                 "1.8.9": "§7Bedless §c60k §6Halloween.zip",
                 "1.20.5": "§7Bedless §c60k §6Halloween 1.20.5.zip",
@@ -52,10 +52,10 @@
         },
         {
             "id": "200k",
-            "icon": "200k.png",
+            "icon": "200k",
             "short_name": "200k pack",
             "friendly_name": "200k Pack",
-            "description": "# Description",
+            "description": "* Release date: 2021-03-14\n* [First appearence](https://www.youtube.com/watch?v=QUALS48_Q4Y)\n* Creator: Yuruze\n\nThe first 128x Bedless pack. It makes you 100x better (real).",
             "downloads": {
                 "1.8.9": "§4Bedless §b200k [128x].zip",
                 "1.20.5": "§4Bedless §b200k [128x] 1.20.5.zip",
@@ -64,11 +64,11 @@
         },
         {
             "id": "200k-gura",
-            "icon": "200k.png",
+            "icon": "200k",
             "variant": "200k",
             "short_name": "200k gura",
             "friendly_name": "200k Gura Bed Overlay",
-            "description": "# Description",
+            "description": "The 200k pack which also includes the Gawr Gura bed texture.",
             "downloads": {
                 "1.8.9": "§4Bedless §b200k Gura Bed Overlay.zip",
                 "1.20.5": "§4Bedless §b200k Gura Bed Overlay 1.20.5.zip",
@@ -77,11 +77,11 @@
         },
         {
             "id": "200k-retrowave",
-            "icon": "200k-retrowave.png",
+            "icon": "200k-retrowave",
             "variant": "200k",
             "short_name": "200k retrowave",
             "friendly_name": "200k Retrowave Recolor",
-            "description": "# Description",
+            "description": "The 200k pack with a retrowave theme.",
             "downloads": {
                 "1.8.9": "§6Bedless §5200k [128x] Retrowave.zip",
                 "1.20.5": "§6Bedless §5200k [128x] Retrowave 1.20.5.zip",
@@ -90,11 +90,11 @@
         },
         {
             "id": "200k-blackred",
-            "icon": "200k-blackred.png",
+            "icon": "200k-blackred",
             "variant": "200k",
             "short_name": "200k blackred",
             "friendly_name": "200k BlackRed Recolor",
-            "description": "# Description",
+            "description": "The 200k pack in black-red color scheme.",
             "downloads": {
                 "1.8.9": "§8Bedless §b200k [128x] Black&Red.zip",
                 "1.20.5": "§8Bedless §b200k [128x] Black&Red 1.20.5.zip",
@@ -103,11 +103,11 @@
         },
         {
             "id": "200k-green",
-            "icon": "200k-green.png",
+            "icon": "200k-green",
             "variant": "200k",
             "short_name": "200k green",
             "friendly_name": "200k Green Recolor",
-            "description": "# Description",
+            "description": "The 200k pack with a green theme.",
             "downloads": {
                 "1.8.9": "§aBedless §b200k [128x] Green.zip",
                 "1.20.5": "§aBedless §b200k [128x] Green 1.20.5.zip",
@@ -116,11 +116,11 @@
         },
         {
             "id": "200k-default",
-            "icon": "200k-default.png",
+            "icon": "200k-default",
             "variant": "200k",
             "short_name": "200k default",
             "friendly_name": "200k Default Recolor",
-            "description": "# Description",
+            "description": "The 200k pack with a more vanilla-like theme.",
             "downloads": {
                 "1.8.9": "§bBedless §b200k [128x] Default.zip",
                 "1.20.5": "§bBedless §b200k [128x] Default 1.20.5.zip",
@@ -128,11 +128,11 @@
             }
         },
         {
-            "id": "300k",
-            "icon": "300k.png",
-            "short_name": "300k pack",
-            "friendly_name": "300k Pack",
-            "description": "# Description",
+            "id": "350k",
+            "icon": "300k",
+            "short_name": "350k pack",
+            "friendly_name": "350k Pack",
+            "description": "* Release date: 2021-07-21\n* [First appearence](https://www.youtube.com/watch?v=ZOzMuTjCdZc)\n* Creator: Yuruze\n\nActivating this texture pack makes your mic quality 10000x better. Includes bonk hit sound effect.",
             "downloads": {
                 "1.8.9": "§4Bedless §6300k.zip",
                 "1.20.5": "§4Bedless §6300k 1.20.5.zip",
@@ -140,12 +140,12 @@
             }
         },
         {
-            "id": "300k-nobonk",
-            "icon": "300k.png",
-            "variant": "300k",
-            "short_name": "300k nobonk",
-            "friendly_name": "300k No Bonk Sound Effect",
-            "description": "# Description",
+            "id": "350k-nobonk",
+            "icon": "300k",
+            "variant": "350k",
+            "short_name": "350k nobonk",
+            "friendly_name": "350k No Bonk Sound Effect",
+            "description": "The 350k pack without the bonk hit sound effect.",
             "downloads": {
                 "1.8.9": "§dBedless §b300k [64x] (no bonk sound eff).zip",
                 "1.20.5": "§dBedless §b300k [64x] (no bonk sound eff) 1.20.5.zip",
@@ -153,12 +153,12 @@
             }
         },
         {
-            "id": "300k-purple",
-            "icon": "300k-purple.png",
-            "variant": "300k",
-            "short_name": "300k purple",
-            "friendly_name": "300k Purple Recolor",
-            "description": "# Description",
+            "id": "350k-purple",
+            "icon": "300k-purple",
+            "variant": "350k",
+            "short_name": "350k purple",
+            "friendly_name": "350k Purple Recolor",
+            "description": "A purple-colored version of the 350k pack.",
             "downloads": {
                 "1.8.9": "§dBedless §d300k [64x] Purple.zip",
                 "1.20.5": "§dBedless §d300k [64x] Purple 1.20.5.zip",
@@ -166,12 +166,12 @@
             }
         },
         {
-            "id": "300k-synthwave",
-            "icon": "300k-synthwave.png",
-            "variant": "300k",
-            "short_name": "300k synthwave",
-            "friendly_name": "300k Synthwave Recolor",
-            "description": "# Description",
+            "id": "350k-synthwave",
+            "icon": "300k-synthwave",
+            "variant": "350k",
+            "short_name": "350k synthwave",
+            "friendly_name": "350k Synthwave Recolor",
+            "description": "The 350k pack with a synthwave theme.",
             "downloads": {
                 "1.8.9": "§6Bedless §5300k [64x] Synthwave.zip",
                 "1.20.5": "§6Bedless §5300k [64x] Synthwave 1.20.5.zip",
@@ -179,12 +179,12 @@
             }
         },
         {
-            "id": "300k-red",
-            "icon": "300k-red.png",
-            "variant": "300k",
-            "short_name": "300k red",
-            "friendly_name": "300k Red Recolor",
-            "description": "# Description",
+            "id": "350k-red",
+            "icon": "300k-red",
+            "variant": "350k",
+            "short_name": "350k red",
+            "friendly_name": "350k Red Recolor",
+            "description": "The red recolor of the 350k pack.",
             "downloads": {
                 "1.8.9": "§4Bedless §4300k [64x] Red.zip",
                 "1.20.5": "§4Bedless §4300k [64x] Red 1.20.5.zip",
@@ -192,12 +192,12 @@
             }
         },
         {
-            "id": "300k-default",
-            "icon": "300k-default.png",
-            "variant": "300k",
-            "short_name": "300k default",
-            "friendly_name": "300k Default Recolor",
-            "description": "# Description",
+            "id": "350k-default",
+            "icon": "300k-default",
+            "variant": "350k",
+            "short_name": "350k default",
+            "friendly_name": "350k Default Recolor",
+            "description": "The 350k pack with a vanilla-like theme.",
             "downloads": {
                 "1.8.9": "§bBedless §b300k [64x] Default.zip",
                 "1.20.5": "§bBedless §b300k [64x] Default 1.20.5.zip",
@@ -205,12 +205,12 @@
             }
         },
         {
-            "id": "300k-blue",
-            "icon": "300k-blue.png",
-            "variant": "300k",
-            "short_name": "300k blue",
-            "friendly_name": "300k Blue Recolor",
-            "description": "# Description",
+            "id": "350k-blue",
+            "icon": "300k-blue",
+            "variant": "350k",
+            "short_name": "350k blue",
+            "friendly_name": "350k Blue Recolor",
+            "description": "Blue lovers will love this version of the 350k pack.",
             "downloads": {
                 "1.8.9": "§bBedless §b300k [64x] Blue.zip",
                 "1.20.5": "§bBedless §b300k [64x] Blue 1.20.5.zip",
@@ -218,12 +218,12 @@
             }
         },
         {
-            "id": "300k-periwinkle",
-            "icon": "300k-periwinkle.png",
-            "variant": "300k",
-            "short_name": "300k periwinkle",
-            "friendly_name": "300k Periwinkle Recolor",
-            "description": "# Description",
+            "id": "350k-periwinkle",
+            "icon": "300k-periwinkle",
+            "variant": "350k",
+            "short_name": "350k periwinkle",
+            "friendly_name": "350k Periwinkle Recolor",
+            "description": "The frick is periwinkle?",
             "downloads": {
                 "1.8.9": "§bBedless §5300k [64x] Periwinkle.zip",
                 "1.20.5": "§bBedless §5300k [64x] Periwinkle 1.20.5.zip",
@@ -231,12 +231,12 @@
             }
         },
         {
-            "id": "300k-green",
-            "icon": "300k-green.png",
-            "variant": "300k",
-            "short_name": "300k green",
-            "friendly_name": "300k Green Recolor",
-            "description": "# Description",
+            "id": "350k-green",
+            "icon": "300k-green",
+            "variant": "350k",
+            "short_name": "350k green",
+            "friendly_name": "350k Green Recolor",
+            "description": "The 350k pack with a green theme.",
             "downloads": {
                 "1.8.9": "§aBedless §a300k [64x] Green.zip",
                 "1.20.5": "§aBedless §a300k [64x] Green 1.20.5.zip",
@@ -244,12 +244,12 @@
             }
         },
         {
-            "id": "300k-watermelon",
-            "icon": "300k-watermelon.png",
-            "variant": "300k",
-            "short_name": "300k watermelon",
-            "friendly_name": "300k Watermelon Recolor",
-            "description": "# Description",
+            "id": "350k-watermelon",
+            "icon": "300k-watermelon",
+            "variant": "350k",
+            "short_name": "350k watermelon",
+            "friendly_name": "350k Watermelon Recolor",
+            "description": "A watermelon (red-green) version of the 350k pack.",
             "downloads": {
                 "1.8.9": "§aBedless §c300k [64x] Watermelon.zip",
                 "1.20.5": "§aBedless §c300k [64x] Watermelon 1.20.5.zip",
@@ -257,12 +257,12 @@
             }
         },
         {
-            "id": "300k-black",
-            "icon": "300k-black.png",
-            "variant": "300k",
-            "short_name": "300k black",
-            "friendly_name": "300k Black Recolor",
-            "description": "# Description",
+            "id": "350k-black",
+            "icon": "300k-black",
+            "variant": "350k",
+            "short_name": "350k black",
+            "friendly_name": "350k Black Recolor",
+            "description": "The emo pack.",
             "downloads": {
                 "1.8.9": "§0Bedless §0300k [64x] Black.zip",
                 "1.20.5": "§0Bedless §0300k [64x] Black 1.20.5.zip",
@@ -271,10 +271,10 @@
         },
         {
             "id": "450k",
-            "icon": "450k.png",
+            "icon": "450k",
             "short_name": "450k galaxy",
             "friendly_name": "450k Galaxy Pack",
-            "description": "# Description",
+            "description": "* Release date: 2021-09-25\n* [First appearence](https://www.youtube.com/watch?v=iJeHvtINhJY)\n* Creator: Yuruze\n\nIncludes custom Hypixel Bedwars diamond upgrade icons and wool lines.",
             "downloads": {
                 "1.8.9": "§4§lBedless §5450k [128x].zip",
                 "1.20.5": "§4§lBedless §5450k [128x] 1.20.5.zip",
@@ -283,10 +283,10 @@
         },
         {
             "id": "550k",
-            "icon": "550k.png",
+            "icon": "550k",
             "short_name": "550k fault",
             "friendly_name": "550k BedlessFault",
-            "description": "# Description",
+            "description": "* Release date: 2022-09-16\n* [First appearence](https://www.youtube.com/watch?v=aj3RKqoIIdk)\n* Creator: Yuruze\n\n\"A texture pack is a pack of textures\" - BedlessNoob, 2022",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x].zip",
                 "1.20.5": "§bBedless §5550k [16x] 1.20.5.zip",
@@ -295,11 +295,11 @@
         },
         {
             "id": "550k-tokyo",
-            "icon": "550k.png",
+            "icon": "550k",
             "variant": "550k",
             "short_name": "550k tokyo",
             "friendly_name": "550k BedlessFault - tokyo edit",
-            "description": "# Description",
+            "description": "The 550k pack edit made by tokyo as part of the edit contest, placed #1.",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x]§r - tokyo edit.zip",
                 "1.20.5": "§bBedless §5550k [16x]§r - tokyo edit 1.20.5.zip",
@@ -308,11 +308,11 @@
         },
         {
             "id": "550k-buddha",
-            "icon": "550k-buddha.png",
+            "icon": "550k-buddha",
             "variant": "550k",
             "short_name": "550k budda",
             "friendly_name": "550k BedlessFault - BuddaTortoise edit",
-            "description": "# Description",
+            "description": "The 550k pack edit made by BuddaTortoise as part of the edit contest, placed #2.",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x]§r - BuddhaTortoise edit.zip",
                 "1.20.5": "§bBedless §5550k [16x]§r - BuddhaTortoise edit 1.20.5.zip",
@@ -321,11 +321,11 @@
         },
         {
             "id": "550k-sid",
-            "icon": "550k-sid.png",
+            "icon": "550k-sid",
             "variant": "550k",
             "short_name": "550k sid",
             "friendly_name": "550k BedlessFault - SidNotAvenged edit",
-            "description": "# Description",
+            "description": "The 550k pack edit made by SidNotAvenged as part of the edit contest, placed #3.",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x]§r - SidNotAvenged edit.zip",
                 "1.20.5": "§bBedless §5550k [16x]§r - SidNotAvenged edit 1.20.5.zip",
@@ -334,11 +334,11 @@
         },
         {
             "id": "550k-pvrple",
-            "icon": "550k-pvrple.png",
+            "icon": "550k-pvrple",
             "variant": "550k",
             "short_name": "550k pvrple",
             "friendly_name": "550k BedlessFault - Pvrpleflare edit",
-            "description": "# Description",
+            "description": "The 550k pack edit made by Pvrpleflare as part of the edit contest, placed #4.",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x]§r - Pvrpleflare edit",
                 "1.20.5": "§bBedless §5550k [16x]§r - Pvrpleflare edit 1.20.5.zip",
@@ -347,11 +347,11 @@
         },
         {
             "id": "550k-durian",
-            "icon": "550k-durian.png",
+            "icon": "550k-durian",
             "variant": "550k",
             "short_name": "550k durian",
             "friendly_name": "550k BedlessFault - daDurian edit",
-            "description": "# Description",
+            "description": "The 550k pack edit made by daDurian as part of the edit contest, placed #5.",
             "downloads": {
                 "1.8.9": "§bBedless §5550k [16x]§r - daDurian edit",
                 "1.20.5": "§bBedless §5550k [16x]§r - daDurian edit 1.20.5.zip",

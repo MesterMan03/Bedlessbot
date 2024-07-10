@@ -11,6 +11,7 @@ import type {
 import { Database } from "bun:sqlite";
 import config from "../config";
 import webpush from "web-push";
+import packData from "./data.json";
 
 // set up test database
 const db = new Database(":memory:");
@@ -20,6 +21,19 @@ db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
 db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
 db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
 db.run("CREATE TABLE push_subscriptions (userid TEXT, endpoint TEXT PRIMARY KEY, expiration INTEGER, auth TEXT, p256dh TEXT);");
+
+// fill pack comments with test data
+for (const pack of packData.packs) {
+    for (let i = 0; i < 50; i++) {
+        db.run("INSERT INTO pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?)", [
+            `${pack.id}-${i}`,
+            pack.id,
+            "testuser",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque adipiscing commodo elit at imperdiet. Sit amet consectetur adipiscing elit duis tristique sollicitudin. Euismod nisi porta lorem mollis aliquam ut porttitor leo a. Ultricies mi quis hendrerit dolor.",
+            Date.now()
+        ]);
+    }
+}
 
 webpush.setVapidDetails(
     process.env["VAPID_SUBJECT"] as string,
@@ -229,11 +243,22 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                 }
             };
 
-            webpush.sendNotification(pushConfig, JSON.stringify(notification));
+            webpush.sendNotification(pushConfig, JSON.stringify(notification)).catch(() => {
+                // unregister the subscription if it fails
+                this.UnregisterPushSubscription(userid, sub.endpoint);
+            });
         });
     }
 
     UnregisterPushSubscription(userid: string, endpoint: string) {
         db.run("DELETE FROM push_subscriptions WHERE userid = ? AND endpoint = ?", [userid, endpoint]);
+    }
+
+    async GetMaxCommentsPage(packid: string) {
+        const comments =
+            db.query<{ row_count: number }, [string]>(`SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?`).get(packid)
+                ?.row_count ?? 0;
+
+        return Math.ceil(Math.max(comments, 1) / CommentsPageSize);
     }
 }

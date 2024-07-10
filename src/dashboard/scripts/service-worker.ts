@@ -73,3 +73,14 @@ self.addEventListener("notificationclick", (event) => {
         self.clients.openWindow("/packs");
     }
 });
+
+self.addEventListener("periodicsync", (event) => {
+    if (event.tag === "sync-packs-comments") {
+        // send "sync-comments" message to all clients
+        self.clients.matchAll().then((clients) => {
+            clients.forEach((client) => {
+                client.postMessage("sync-comments");
+            });
+        });
+    }
+});

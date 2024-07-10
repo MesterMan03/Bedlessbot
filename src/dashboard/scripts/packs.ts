@@ -185,14 +185,14 @@ for (const pack of packData.packs) {
     (document.getElementById(`variant-${pack.variant ?? pack.id}`) as HTMLOptGroupElement).appendChild(option);
 }
 
-// add event listener to the comment form
+// Add event listener to the comment form
 commentForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // create a form data object
+    // Create a form data object
     const formData = new FormData(commentForm);
 
-    // validate comment (must be trimmed, at least 32 characters, max 1024 characters)
+    // Validate comment (must be trimmed, at least 32 characters, max 1024 characters)
     const comment = (formData.get("comment") as string).trim();
     if (comment.length < 32 || comment.length > 1024) {
         commentElement.setCustomValidity("Comment must be at least 32 characters and no more than 1024 characters.");
@@ -206,9 +206,9 @@ commentForm.addEventListener("submit", async (event) => {
         submitButton.innerText = "Loading captcha...";
     }
 
-    // spawn hCaptcha
+    // Spawn hCaptcha
     const hCaptchaElement = document.getElementById("hcaptcha") as VanillaHCaptchaWebComponent;
-    // check if the hCaptcha element has no children -> render it
+    // Check if the hCaptcha element has no children -> render it
     if (hCaptchaElement.children.length === 0) {
         hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark", size: "invisible", tabindex: 0 });
     }
@@ -216,7 +216,7 @@ commentForm.addEventListener("submit", async (event) => {
     hCaptchaElement
         .executeAsync()
         .then(({ response }) => {
-            // send the comment to the server
+            // Send the comment to the server
             app.api.comments
                 .post({
                     packid: formData.get("packid") as string,
@@ -225,6 +225,10 @@ commentForm.addEventListener("submit", async (event) => {
                 })
                 .then((res) => {
                     processCommentResponse(res.status);
+                    // Clear the comment field on successful submission
+                    if (res.status === 200) {
+                        commentElement.value = "";
+                    }
                 });
         })
         .catch((err) => {

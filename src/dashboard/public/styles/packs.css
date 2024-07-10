@@ -208,10 +208,15 @@ main {
 }
 
 dialog {
-    width: 40%;
-    height: 40%;
+    width: min(40%, 500px);
+    height: fit-content;
     border: 0.125rem solid var(--accent);
     border-radius: 1rem;
+
+    padding: 1rem;
+    padding-bottom: 4rem;
+
+    word-wrap: break-word;
 
     &::backdrop {
         filter: blur(1rem);
@@ -219,8 +224,8 @@ dialog {
 
     form {
         position: absolute;
-        bottom: 1rem;
-        right: 1rem;
+        bottom: 0.5rem;
+        right: 0.5rem;
     }
 
     .error {

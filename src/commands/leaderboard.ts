@@ -55,7 +55,7 @@ export default {
                 new ButtonBuilder().setCustomId("lb-back15").setLabel("15").setEmoji("◀").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("lb-for15").setLabel("15").setEmoji("▶").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("lb-for50").setLabel("50").setEmoji("⏩").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setURL("https://bedless.mester.info").setLabel("View in browser").setStyle(ButtonStyle.Link)
+                new ButtonBuilder().setURL("https://bedless.mester.info/leaderboard").setLabel("View in browser").setStyle(ButtonStyle.Link)
             )
         ];
 

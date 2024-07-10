@@ -106,7 +106,7 @@
         "formatter": {
             "jsxQuoteStyle": "double",
             "quoteProperties": "asNeeded",
-            "trailingCommas": "none",
+            "trailingComma": "none",
             "semicolons": "always",
             "arrowParentheses": "always",
             "bracketSpacing": true,

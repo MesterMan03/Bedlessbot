@@ -88,8 +88,6 @@ main {
     }
 
     #comments {
-        margin-top: 1rem;
-
         div.commentInfo {
             display: flex;
             flex-direction: row;
@@ -136,7 +134,8 @@ main {
         }
     }
 
-    #pageSelect {
+    .pageSelect {
+        margin: 0.5rem 0;
         display: flex;
         gap: 1rem;
         justify-content: center;

@@ -294,48 +294,77 @@ commentElement.addEventListener("input", () => {
 // pagination for comments
 let page = 0;
 let maxPage = 0;
-const prevPageButton = document.getElementById("prevCommentPage") as HTMLButtonElement;
-const nextPageButton = document.getElementById("nextCommentPage") as HTMLButtonElement;
-const pageLabel = document.getElementById("pageLabel") as HTMLSpanElement;
+const prevPageButtons = document.getElementsByClassName("prevCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
+const nextPageButtons = document.getElementsByClassName("nextCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
+const pageLabels = document.getElementsByClassName("pageLabel") as HTMLCollectionOf<HTMLSpanElement>;
 
 app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
     maxPage = response.data ?? 1;
-    nextPageButton.disabled = maxPage === 1;
-    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = maxPage === 1;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
 });
 
-prevPageButton.addEventListener("click", () => {
+for (const prevPageButton of prevPageButtons) {
+    prevPageButton.addEventListener("click", previousCommentPage);
+}
+for (const nextPageButton of nextPageButtons) {
+    nextPageButton.addEventListener("click", nextCommentPage);
+}
+
+function previousCommentPage() {
     if (page === 0) {
-        prevPageButton.disabled = true;
+        for (const prevPageButton of prevPageButtons) {
+            prevPageButton.disabled = true;
+        }
         return;
     }
     // disable button if at second page
-    prevPageButton.disabled = page === 1;
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = page === 1;
+    }
     --page;
-    nextPageButton.disabled = false;
-    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = false;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
     updateComments();
-});
+}
 
-nextPageButton.addEventListener("click", () => {
+function nextCommentPage() {
     if (page === maxPage - 1) {
-        nextPageButton.disabled = true;
+        for (const nextPageButton of nextPageButtons) {
+            nextPageButton.disabled = true;
+        }
         return;
     }
     // disable button if at second to last page
-    nextPageButton.disabled = page === maxPage - 2;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = page === maxPage - 2;
+    }
     ++page;
-    prevPageButton.disabled = false;
-    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = false;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
     updateComments();
-});
+}
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
 select.addEventListener("change", async () => {
     page = 0;
     updateComments();
     maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
-    nextPageButton.disabled = maxPage === 1;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = maxPage === 1;
+    }
 });
 
 /**

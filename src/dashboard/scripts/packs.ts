@@ -365,6 +365,9 @@ select.addEventListener("change", async () => {
     for (const nextPageButton of nextPageButtons) {
         nextPageButton.disabled = maxPage === 1;
     }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
 });
 
 /**

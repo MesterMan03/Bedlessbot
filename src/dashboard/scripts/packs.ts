@@ -356,7 +356,7 @@ async function updateComments() {
     <img src="${comment.avatar}" alt="${comment.username}">
     <div>
         <h3>${comment.username}</h3>
-        <span>&EmptySmallSquare; ${
+        <span>${
             luxon.DateTime.fromMillis(comment.date).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */
         }</span>
     </div>

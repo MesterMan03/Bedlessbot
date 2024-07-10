@@ -21,9 +21,7 @@ if ("serviceWorker" in navigator) {
             // if yes, bind a function to window to unsubscribe and remove it from server
             const sub = await reg.pushManager.getSubscription();
             if (sub) {
-                console.warn(
-                    "Injected UnsubscribeFromPushNotifications() to remove subscription."
-                );
+                console.warn("Injected UnsubscribeFromPushNotifications() to remove subscription.");
                 async function unsubscribe() {
                     if (sub == null) {
                         return "No subscription found";

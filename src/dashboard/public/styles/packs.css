@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -41,7 +42,7 @@ main {
     display: flex;
     gap: 1rem;
 
-    &>section {
+    & > section {
         padding-bottom: 1rem;
 
         overflow-x: auto;
@@ -49,7 +50,7 @@ main {
 
         /* Hide scrollbar */
         scrollbar-width: none;
-        ::-webkit-scrollbar{
+        ::-webkit-scrollbar {
             display: none;
         }
     }
@@ -81,7 +82,7 @@ main {
         font-size: 1rem;
         border-radius: 1rem;
         padding: 0.25rem;
-        background-color: oklch(from var(--accent) L C H / .8);
+        background-color: oklch(from var(--accent) L C H / 0.8);
         border: 0.125rem solid var(--primary);
         color: var(--text);
     }
@@ -133,9 +134,8 @@ main {
             margin-left: 2rem;
             overflow-wrap: anywhere;
         }
-        
     }
-    
+
     #pageSelect {
         display: flex;
         gap: 1rem;
@@ -228,7 +228,6 @@ dialog {
         color: var(--secondary);
         font-weight: bold;
     }
-
 }
 
 #togglecomments {

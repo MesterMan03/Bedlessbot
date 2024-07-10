@@ -94,6 +94,9 @@ if (!packsSectionElement) {
 }
 
 // render all packs
+const commentForm = document.getElementById("commentForm") as HTMLFormElement;
+const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
+
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
     const packElement = document.createElement("div");
@@ -144,9 +147,6 @@ for (const pack of packData.packs) {
     packsSectionElement.appendChild(packElement);
 }
 
-const commentForm = document.getElementById("commentForm") as HTMLFormElement;
-const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
-
 // add login warning or submit button, based on whether the user is logged in or not
 app.api.user.get().then((response) => {
     if (response.status !== 200) {
@@ -164,9 +164,7 @@ app.api.user.get().then((response) => {
     }
 });
 
-const variants = packData.packs
-    .map((pack) => (pack.variant ?? pack.id))
-    .filter((variant, idx, arr) => arr.indexOf(variant) === idx);
+const variants = packData.packs.map((pack) => pack.variant ?? pack.id).filter((variant, idx, arr) => arr.indexOf(variant) === idx);
 
 // set up select menu with select options based on variants
 const select = document.createElement("select");
@@ -298,11 +296,13 @@ let page = 0;
 let maxPage = 0;
 const prevPageButton = document.getElementById("prevCommentPage") as HTMLButtonElement;
 const nextPageButton = document.getElementById("nextCommentPage") as HTMLButtonElement;
+const pageLabel = document.getElementById("pageLabel") as HTMLSpanElement;
+
 app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
     maxPage = response.data ?? 1;
     nextPageButton.disabled = maxPage === 1;
+    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
 });
-const pageLabel = document.getElementById("pageLabel") as HTMLSpanElement;
 
 prevPageButton.addEventListener("click", () => {
     if (page === 0) {
@@ -313,7 +313,7 @@ prevPageButton.addEventListener("click", () => {
     prevPageButton.disabled = page === 1;
     --page;
     nextPageButton.disabled = false;
-    pageLabel.innerHTML = `${page + 1}`;
+    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
     updateComments();
 });
 
@@ -326,7 +326,7 @@ nextPageButton.addEventListener("click", () => {
     nextPageButton.disabled = page === maxPage - 2;
     ++page;
     prevPageButton.disabled = false;
-    pageLabel.innerHTML = `${page + 1}`;
+    pageLabel.innerHTML = `${page + 1}/${maxPage}`;
     updateComments();
 });
 
@@ -353,12 +353,10 @@ async function updateComments() {
             const commentElement = document.createElement("div");
             commentElement.innerHTML = `
 <div class="commentInfo">
-    <img src="${comment.avatar}" alt="${comment.username}">
+    <img loading="lazy" src="${comment.avatar}" alt="${comment.username}">
     <div>
         <h3>${comment.username}</h3>
-        <span>${
-            luxon.DateTime.fromMillis(comment.date).toLocaleString(luxon.DateTime.DATETIME_SHORT)
-        }</span>
+        <span>${luxon.DateTime.fromMillis(comment.date).toLocaleString(luxon.DateTime.DATETIME_SHORT)}</span>
     </div>
 </div>
 <p>${comment.comment}</p>`;

@@ -87,6 +87,8 @@ main {
     }
 
     #comments {
+        margin-top: 1rem;
+
         div.commentInfo {
             display: flex;
             flex-direction: row;

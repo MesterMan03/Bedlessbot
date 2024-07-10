@@ -41,7 +41,7 @@ main {
     display: flex;
     gap: 1rem;
 
-    section {
+    &>section {
         padding-bottom: 1rem;
 
         overflow-x: auto;
@@ -177,6 +177,7 @@ main {
     .top {
         display: flex;
         gap: 1rem;
+        margin-bottom: auto;
     }
 
     img {

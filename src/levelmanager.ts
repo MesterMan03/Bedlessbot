@@ -48,7 +48,9 @@ function XPToLevelUp(level: number) {
 }
 
 function GetLeaderboardPos(userid: string) {
-    const pos = db.query<{ pos: number }, []>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = '${userid}')`).get()?.pos;
+    const pos = db
+        .query<{ pos: number }, []>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = '${userid}')`)
+        .get()?.pos;
     return pos ? pos + 1 : 1;
 }
 
@@ -205,7 +207,9 @@ function EndVoiceChat(vs: VoiceState) {
     // 1 xp for every 5 seconds + 1 xp for every second of talking
     const xp = Math.floor(time / 1000 / 5);
 
-    console.log(`User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`);
+    console.log(
+        `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`
+    );
 
     AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
 }

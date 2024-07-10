@@ -8,5 +8,16 @@
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"
-    }
+    },
+    "[html]": {
+        "editor.defaultFormatter": "mohd-akram.vscode-html-format"
+    },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "GV",
+        "projectKey": "Bedlessbot"
+    },
+    "[xml]": {
+        "editor.defaultFormatter": "redhat.vscode-xml"
+    },
+    "github-actions.workflows.pinned.workflows": []
 }

@@ -174,8 +174,8 @@ dist
 # Finder (MacOS) folder config
 .DS_Store
 
-.env.development
-.env.production
+.env.*
+!.env.example
 
 data.db*
 tools/*

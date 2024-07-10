@@ -155,7 +155,11 @@ async function processInteraction(interaction: ButtonInteraction) {
             interaction.message.edit({ embeds: [embed], components: [] });
             reasonMessage.delete();
 
-            outcomeChannel.send(`<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${reasonMessage.content}`);
+            outcomeChannel.send(
+                `<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${
+                    reasonMessage.content
+                }`
+            );
         });
 
         reasonCollector.on("end", () => {
@@ -176,7 +180,9 @@ async function processInteraction(interaction: ButtonInteraction) {
         ).cheatpoint;
 
         outcomeChannel.send(
-            `<@${member.id}>, your role application for ${shortRoleToName(role)} has received an infraction. You now have ${cheatpoint}/3 infractions${
+            `<@${member.id}>, your role application for ${shortRoleToName(
+                role
+            )} has received an infraction. You now have ${cheatpoint}/3 infractions${
                 cheatpoint === 3 ? " and have been permanently banned from role applications 💀" : ""
             }. ${cheatpoint === 2 ? "One more and you're permanently banned from role applications." : ""}`
         );
@@ -189,7 +195,10 @@ const allowedWebsites = ["www.youtube.com", "youtube.com", "youtu.be", "imgur.co
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("role", true);
-    let proof = interaction.options.getSubcommand(true) === "link" ? interaction.options.getString("proof", true) : interaction.options.getAttachment("proof", true);
+    let proof =
+        interaction.options.getSubcommand(true) === "link"
+            ? interaction.options.getString("proof", true)
+            : interaction.options.getAttachment("proof", true);
     let proofString = "";
     const isLink = interaction.options.getSubcommand(true) === "link";
 
@@ -214,13 +223,20 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
     }
 
     const guideReaction = guideMessage.reactions.cache.get("👍");
-    if (!guideReaction || (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id) {
-        await interaction.editReply(`Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`);
+    if (
+        !guideReaction ||
+        (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id
+    ) {
+        await interaction.editReply(
+            `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
+        );
         return null;
     }
 
     // check if user has at least 3 cheatpoints
-    const cheatpoint = db.query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`).get()?.cheatpoint;
+    const cheatpoint = db
+        .query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`)
+        .get()?.cheatpoint;
 
     if (cheatpoint && cheatpoint >= 3) {
         await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");
@@ -340,7 +356,9 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
             return;
         }
         if (Date.now() / 1000 < time + 60) {
-            await interaction.editReply(`You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`);
+            await interaction.editReply(
+                `You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`
+            );
             return null;
         }
     }
@@ -365,7 +383,9 @@ export default {
                 .setName("link")
                 .setDescription("Apply with a link.")
                 .addStringOption(commandRoleOption)
-                .addStringOption((option) => option.setName("proof").setDescription("Accepts YouTube, Imgur, Medal and Streamable links.").setRequired(true))
+                .addStringOption((option) =>
+                    option.setName("proof").setDescription("Accepts YouTube, Imgur, Medal and Streamable links.").setRequired(true)
+                )
         )
         .addSubcommand((subcommand) =>
             subcommand
@@ -373,7 +393,10 @@ export default {
                 .setDescription("Apply with a file.")
                 .addStringOption(commandRoleOption)
                 .addAttachmentOption((option) =>
-                    option.setName("proof").setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.").setRequired(true)
+                    option
+                        .setName("proof")
+                        .setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.")
+                        .setRequired(true)
                 )
         ),
 
@@ -401,7 +424,7 @@ export default {
 
             interaction.editReply("Your application has been submitted for review.");
 
-            const reviewChannel = (await client.channels.fetch(config.Channels.Toreview)) as TextBasedChannel;
+            const reviewChannel = (await client.channels.fetch(config.Channels.ToReview)) as TextBasedChannel;
             if (!reviewChannel) {
                 throw new Error("No review channel");
             }
@@ -420,7 +443,11 @@ export default {
                 new ActionRowBuilder<ButtonBuilder>().setComponents(
                     new ButtonBuilder().setCustomId("ap-accept").setLabel("Accept").setStyle(ButtonStyle.Success),
                     new ButtonBuilder().setCustomId("ap-deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
-                    new ButtonBuilder().setCustomId("ap-infraction").setEmoji("907725559352664154").setLabel("Infraction").setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder()
+                        .setCustomId("ap-infraction")
+                        .setEmoji("907725559352664154")
+                        .setLabel("Infraction")
+                        .setStyle(ButtonStyle.Secondary),
                     new ButtonBuilder().setURL(proofString).setLabel("View Proof").setStyle(ButtonStyle.Link)
                 )
             ];

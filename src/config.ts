@@ -1,4 +1,16 @@
-const ApplyRoles = <const>["dragclick", "16cps", "eagle", "witchly", "breezily", "goodpvp", "moonwalk", "god", "diagod", "telly", "0cpsgod"];
+const ApplyRoles = <const>[
+    "dragclick",
+    "16cps",
+    "eagle",
+    "witchly",
+    "breezily",
+    "goodpvp",
+    "moonwalk",
+    "god",
+    "diagod",
+    "telly",
+    "0cpsgod"
+];
 
 type ApplyRole = (typeof ApplyRoles)[number];
 
@@ -38,7 +50,8 @@ const prodConfig = {
         Guide: "692074640486563871",
         GuideMessage: "1223815275099717766",
         Outcome: "692075719726989312",
-        Toreview: "771791897806766112"
+        ToReview: "771791897806766112",
+        PackComments: "1246489783530684589"
     },
     Roles: {
         Birthday: "715495353159254018"
@@ -68,7 +81,9 @@ const prodConfig = {
         diagod: "1223797545952874590",
         telly: "1223797553703944282",
         "0cpsgod": "1245099069064351827"
-    } as { [key in ApplyRole]: string }
+    } as { [key in ApplyRole]: string },
+    OAuthRedirect: "/api/callback",
+    DashOrigin: "https://bedless.mester.info"
 };
 
 // development config, useful for testing
@@ -96,7 +111,8 @@ const devConfig = {
         Guide: "1224111389321203834",
         GuideMessage: "1225827434679504896",
         Outcome: "1074393964788060178",
-        Toreview: "1074393964788060178"
+        ToReview: "1074393964788060178",
+        PackComments: "1246489938510352395"
     },
     Roles: {
         Birthday: "1074393964016324691"
@@ -113,7 +129,9 @@ const devConfig = {
         diagod: "1074393964016324691",
         telly: "1074393964016324691",
         "0cpsgod": "1074393964016324691"
-    } as { [key in ApplyRole]: string }
+    } as { [key in ApplyRole]: string },
+    OAuthRedirect: "/api/callback",
+    DashOrigin: "http://dev.local:8146"
 };
 
 export default process.env.NODE_ENV === "production" ? prodConfig : devConfig;

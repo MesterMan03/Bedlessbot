@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.7.3/schema.json",
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -12,10 +12,10 @@
         "indentStyle": "space",
         "indentWidth": 4,
         "lineEnding": "lf",
-        "lineWidth": 180,
+        "lineWidth": 140,
         "attributePosition": "auto",
         "ignore": ["**/package.json"],
-        "include": ["src/**/*.ts", "res/rank/script.js"]
+        "include": ["src/**/*.ts", "res/rank/script.js", "src/dashboard/public/styles/*.css"]
     },
     "organizeImports": {
         "enabled": false
@@ -106,7 +106,7 @@
         "formatter": {
             "jsxQuoteStyle": "double",
             "quoteProperties": "asNeeded",
-            "trailingComma": "none",
+            "trailingCommas": "none",
             "semicolons": "always",
             "arrowParentheses": "always",
             "bracketSpacing": true,
@@ -114,6 +114,11 @@
             "quoteStyle": "double",
             "attributePosition": "auto"
         },
-        "globals": ["const", "Bun"]
+        "globals": ["const", "Bun", "HTMLRewriter"]
+    },
+    "css": {
+        "formatter": {
+            "enabled": true
+        }
     }
 }

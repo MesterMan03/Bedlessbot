@@ -1,4 +1,4 @@
-import moment from "moment-timezone";
+import * as luxon from "luxon";
 import cron from "node-cron";
 import client, { GetGuild, db } from ".";
 import config from "./config";
@@ -9,8 +9,8 @@ import config from "./config";
  * @returns Its order in the year
  */
 function DateToNumber(date: string) {
-    const dateObj = moment(date, "DD/MM");
-    return dateObj.month() * 31 + dateObj.date();
+    const dateObj = luxon.DateTime.fromFormat(date, "dd/LL");
+    return dateObj.month * 31 + dateObj.day;
 }
 
 interface Birthday {
@@ -37,16 +37,16 @@ async function WishBirthdays() {
         }
 
         // get today's date in DD/MM format
-        const today = moment().tz(timezone).format("DD/MM");
+        const today = luxon.DateTime.now().setZone(timezone).toFormat("dd/LL");
 
         // find everyone with a birthday today
         const query = db.query<Omit<Birthday, "datenum">, []>(`SELECT userid, date FROM birthdays WHERE date LIKE '${today}%'`).all();
         for (const birthday of query) {
             // get the year component of date
-            const year = moment(birthday.date, "DD/MM/YYYY").year();
+            const year = luxon.DateTime.fromFormat(birthday.date, "dd/LL/yyyy").year;
 
             // calculate age (if year is below 1800, set to -1)
-            const age = year < 1800 ? -1 : moment().tz(timezone).year() - year;
+            const age = year < 1800 ? -1 : luxon.DateTime.now().setZone(timezone).year - year;
             const ageString = age !== -1 ? ` (${age})` : "";
 
             const generalChannel = await client.channels.fetch(config.Channels.Birthday);

@@ -46,7 +46,9 @@ export default {
         // numbervalue is made up with this "formula": (base) * (exponent)
         // base is basically what the user puts into "value" (without the L ending)
         // exponent is based on if we're adding or removing XP (except if we're in setmode, then it's always 1)
-        const numberValue = Number.parseInt(value.substring(0, value.length - (levelMode ? 1 : 0)), 10) * (setmode || interaction.options.getSubcommand() === "add" ? 1 : -1);
+        const numberValue =
+            Number.parseInt(value.substring(0, value.length - (levelMode ? 1 : 0)), 10) *
+            (setmode || interaction.options.getSubcommand() === "add" ? 1 : -1);
 
         // check if value is correct
         if (
@@ -80,9 +82,9 @@ export default {
 
         // log
         console.log(
-            `${interaction.user.tag} (${interaction.user.id}) has changed the level information of ${target.tag} (${target.id}). New level: ${XPToLevel(levelInfo.xp)}, xp: ${
-                levelInfo.xp
-            }`
+            `${interaction.user.tag} (${interaction.user.id}) has changed the level information of ${target.tag} (${
+                target.id
+            }). New level: ${XPToLevel(levelInfo.xp)}, xp: ${levelInfo.xp}`
         );
 
         // create the embed

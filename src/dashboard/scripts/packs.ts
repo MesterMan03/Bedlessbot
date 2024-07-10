@@ -362,6 +362,9 @@ select.addEventListener("change", async () => {
     page = 0;
     updateComments();
     maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = true;
+    }
     for (const nextPageButton of nextPageButtons) {
         nextPageButton.disabled = maxPage === 1;
     }

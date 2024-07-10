@@ -357,7 +357,7 @@ async function updateComments() {
     <div>
         <h3>${comment.username}</h3>
         <span>${
-            luxon.DateTime.fromMillis(comment.date).toFormat("yyyy/MM/dd hh:mm") /* MM is short month, mm is 2-digit minutes */
+            luxon.DateTime.fromMillis(comment.date).toLocaleString(luxon.DateTime.DATETIME_SHORT)
         }</span>
     </div>
 </div>

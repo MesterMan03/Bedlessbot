@@ -18,7 +18,7 @@ const cdn = "https://bedless-cdn.mester.info";
 const app = treaty<DashboardApp>(location.origin);
 const packData = (await app.api.packdata.get()).data as PackData;
 
-if(!packData) {
+if (!packData) {
     openModal(`<p class="error">Error: Pack data not found.</p>`);
     throw new Error("Pack data not found");
 }
@@ -94,6 +94,9 @@ if (!packsSectionElement) {
 }
 
 // render all packs
+const commentForm = document.getElementById("commentForm") as HTMLFormElement;
+const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
+
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
     const packElement = document.createElement("div");
@@ -144,9 +147,6 @@ for (const pack of packData.packs) {
     packsSectionElement.appendChild(packElement);
 }
 
-const commentForm = document.getElementById("commentForm") as HTMLFormElement;
-const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
-
 // add login warning or submit button, based on whether the user is logged in or not
 app.api.user.get().then((response) => {
     if (response.status !== 200) {
@@ -164,9 +164,7 @@ app.api.user.get().then((response) => {
     }
 });
 
-const variants = packData.packs
-    .map((pack) => (pack.variant ? pack.variant : pack.id))
-    .filter((variant, idx, arr) => arr.indexOf(variant) === idx);
+const variants = packData.packs.map((pack) => pack.variant ?? pack.id).filter((variant, idx, arr) => arr.indexOf(variant) === idx);
 
 // set up select menu with select options based on variants
 const select = document.createElement("select");
@@ -184,7 +182,7 @@ for (const pack of packData.packs) {
     option.value = pack.id;
     option.innerText = pack.friendly_name;
     select.appendChild(option);
-    (document.getElementById(`variant-${pack.variant ? pack.variant : pack.id}`) as HTMLOptGroupElement)?.appendChild(option);
+    (document.getElementById(`variant-${pack.variant ?? pack.id}`) as HTMLOptGroupElement).appendChild(option);
 }
 
 // add event listener to the comment form
@@ -293,10 +291,86 @@ async function processCommentResponse(code: number) {
 commentElement.addEventListener("input", () => {
     commentElement.setCustomValidity("");
 });
+// pagination for comments
+let page = 0;
+let maxPage = 0;
+const prevPageButtons = document.getElementsByClassName("prevCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
+const nextPageButtons = document.getElementsByClassName("nextCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
+const pageLabels = document.getElementsByClassName("pageLabel") as HTMLCollectionOf<HTMLSpanElement>;
+
+app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
+    maxPage = response.data ?? 1;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = maxPage === 1;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
+});
+
+for (const prevPageButton of prevPageButtons) {
+    prevPageButton.addEventListener("click", previousCommentPage);
+}
+for (const nextPageButton of nextPageButtons) {
+    nextPageButton.addEventListener("click", nextCommentPage);
+}
+
+function previousCommentPage() {
+    if (page === 0) {
+        for (const prevPageButton of prevPageButtons) {
+            prevPageButton.disabled = true;
+        }
+        return;
+    }
+    // disable button if at second page
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = page === 1;
+    }
+    --page;
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = false;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
+    updateComments();
+}
+
+function nextCommentPage() {
+    if (page === maxPage - 1) {
+        for (const nextPageButton of nextPageButtons) {
+            nextPageButton.disabled = true;
+        }
+        return;
+    }
+    // disable button if at second to last page
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = page === maxPage - 2;
+    }
+    ++page;
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = false;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
+    updateComments();
+}
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-select.addEventListener("change", () => {
+select.addEventListener("change", async () => {
+    page = 0;
     updateComments();
+    maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
+    for (const prevPageButton of prevPageButtons) {
+        prevPageButton.disabled = true;
+    }
+    for (const nextPageButton of nextPageButtons) {
+        nextPageButton.disabled = maxPage === 1;
+    }
+    for (const pageLabel of pageLabels) {
+        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
+    }
 });
 
 /**
@@ -306,17 +380,21 @@ async function updateComments() {
     console.log(`Fetching comments for ${select.value}`);
 
     commentsDiv.innerHTML = "Loading...";
-    const comments = (await app.api.comments.get({ query: { packid: select.value, page: 0 } })).data;
+    const comments = (await app.api.comments.get({ query: { packid: select.value, page } })).data;
     commentsDiv.innerHTML = "";
 
     if (comments && comments?.length !== 0) {
         for (const comment of comments) {
             const commentElement = document.createElement("div");
             commentElement.innerHTML = `
-<img src="${comment.avatar}" alt="${comment.username}">
-<h3>${comment.username} </h3>
-<p>${comment.comment}</p>
-  `;
+<div class="commentInfo">
+    <img loading="lazy" src="${comment.avatar}" alt="${comment.username}">
+    <div>
+        <h3>${comment.username}</h3>
+        <span>${luxon.DateTime.fromMillis(comment.date).toLocaleString(luxon.DateTime.DATETIME_SHORT)}</span>
+    </div>
+</div>
+<p>${comment.comment}</p>`;
             commentsDiv.appendChild(commentElement);
         }
     } else if (comments != null) {

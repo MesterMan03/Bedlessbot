@@ -8,7 +8,8 @@ html {
     font-size: 100%; /* 16px */
 }
 
-html, body {
+html,
+body {
     min-height: 100%;
 }
 
@@ -79,9 +80,7 @@ img {
             border-radius: 0.5rem;
             opacity: 0;
             visibility: hidden;
-            transition:
-                opacity 0.25s,
-                visibility 0.25s;
+            transition: opacity 0.25s, visibility 0.25s;
         }
 
         &:hover #xp {
@@ -109,11 +108,7 @@ img {
 
         &::after {
             height: 4rem;
-            background-image: linear-gradient(
-                to top,
-                var(--gold),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--gold), oklch(0 0 0 / 0%));
         }
     }
 
@@ -124,11 +119,7 @@ img {
 
         &::after {
             height: 2rem;
-            background-image: linear-gradient(
-                to top,
-                var(--silver),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--silver), oklch(0 0 0 / 0%));
         }
     }
 
@@ -139,11 +130,7 @@ img {
 
         &::after {
             height: 1rem;
-            background-image: linear-gradient(
-                to top,
-                var(--bronze),
-                oklch(0 0 0 / 0%)
-            );
+            background-image: linear-gradient(to top, var(--bronze), oklch(0 0 0 / 0%));
         }
     }
 }
@@ -205,9 +192,7 @@ img {
             border-radius: 0.5rem;
             opacity: 0;
             visibility: hidden;
-            transition:
-                opacity 0.25s,
-                visibility 0.25s;
+            transition: opacity 0.25s, visibility 0.25s;
         }
 
         &:hover span {
@@ -228,9 +213,7 @@ img {
     border-radius: 0.5rem;
     background-color: var(--accent);
     color: var(--text);
-    transition:
-        opacity 0.25s,
-        visibility 0.25s;
+    transition: opacity 0.25s, visibility 0.25s;
     opacity: 0;
     visibility: hidden;
 }

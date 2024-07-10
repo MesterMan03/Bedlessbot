@@ -165,7 +165,7 @@ app.api.user.get().then((response) => {
 });
 
 const variants = packData.packs
-    .map((pack) => (pack.variant ? pack.variant : pack.id))
+    .map((pack) => (pack.variant ?? pack.id))
     .filter((variant, idx, arr) => arr.indexOf(variant) === idx);
 
 // set up select menu with select options based on variants
@@ -184,7 +184,7 @@ for (const pack of packData.packs) {
     option.value = pack.id;
     option.innerText = pack.friendly_name;
     select.appendChild(option);
-    (document.getElementById(`variant-${pack.variant ? pack.variant : pack.id}`) as HTMLOptGroupElement)?.appendChild(option);
+    (document.getElementById(`variant-${pack.variant ?? pack.id}`) as HTMLOptGroupElement).appendChild(option);
 }
 
 // add event listener to the comment form

@@ -29,7 +29,7 @@ for (const pack of packData.packs) {
             `${pack.id}-${i}`,
             pack.id,
             "testuser",
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque adipiscing commodo elit at imperdiet. Sit amet consectetur adipiscing elit duis tristique sollicitudin. Euismod nisi porta lorem mollis aliquam ut porttitor leo a. Ultricies mi quis hendrerit dolor.",
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque adipiscing commodo elit at imperdiet.\n\nSit amet consectetur adipiscing elit duis tristique sollicitudin. Euismod nisi porta lorem mollis aliquam ut porttitor leo a. Ultricies mi quis hendrerit dolor.",
             Date.now()
         ]);
     }

@@ -131,6 +131,7 @@ main {
         p {
             margin-left: 2rem;
             overflow-wrap: anywhere;
+            white-space: pre-wrap;
         }
     }
 

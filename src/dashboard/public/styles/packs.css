@@ -57,7 +57,6 @@ main {
 }
 
 .comments {
-    width: 24rem;
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -159,20 +158,25 @@ main {
     }
 }
 
-.packs {
-    max-width: calc(100% - 24rem);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+::view-transition-new(root),
+::view-transition-old(root) {
+    animation-duration: 0.5s;
+}
 
-    .pack {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        border: 0.125rem solid var(--primary);
-        border-radius: 0.75rem;
-    }
+.packs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.pack {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 0.125rem solid var(--primary);
+    border-radius: 0.75rem;
 
     .top {
         display: flex;
@@ -205,6 +209,11 @@ main {
         display: flex;
         gap: 0.5rem;
         align-self: stretch;
+        
+        &:nth-child(2) {
+            margin-left: auto;
+            margin-right: auto;
+        }
     }
 }
 
@@ -220,10 +229,11 @@ dialog {
     word-wrap: break-word;
 
     &::backdrop {
-        filter: blur(1rem);
+        background-image: linear-gradient(225deg, #e82e7c, #e8be2b, #2d91ee);
+        opacity: 0.25;
     }
 
-    form {
+    & > form {
         position: absolute;
         bottom: 0.5rem;
         right: 0.5rem;
@@ -235,57 +245,48 @@ dialog {
     }
 }
 
-#togglecomments {
-    display: none;
-    position: fixed;
-    right: 1rem;
-    bottom: 1rem;
-    background-color: var(--accent);
-    color: var(--text);
-    border-radius: 100%;
+#packpopout {
+    top: 4rem;
 
-    padding: 5px;
-    aspect-ratio: 1;
+    width: min(36rem, calc(100% - 4rem));
 
-    img {
-        width: 32px;
-        height: 32px;
+    scrollbar-width: none;
+    ::-webkit-scrollbar {
+        display: none;
+    }
+
+    & > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    & > div > form {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+
+        button {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+
+            img {
+                width: 100%;
+                height: 100%;
+            }
+        }
+    }
+
+    .commentsbutton {
+        display: none;
     }
 }
 
 @media (max-width: 1250px) {
     .packs {
         max-width: 100%;
-    }
-
-    .comments {
-        display: flex;
-
-        max-width: min(24rem, calc(100% - 4rem));
-
-        padding: 1rem;
-        padding-right: 2rem;
-        background-color: var(--background);
-
-        border: 0.125rem solid var(--primary);
-        border-right: none;
-        border-bottom-left-radius: 1rem;
-        border-top-left-radius: 1rem;
-
-        position: absolute;
-        right: 0;
-        bottom: 1rem;
-        top: 5rem;
-
-        transition: transform 0.4s ease-in-out;
-
-        &.hidden {
-            transform: translateX(120%);
-        }
-    }
-
-    #togglecomments {
-        display: block;
+        grid-template-columns: 1fr 1fr;
     }
 }
 

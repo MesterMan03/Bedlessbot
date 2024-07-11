@@ -60,10 +60,7 @@ function getPackIcon(packid: string) {
     return `${cdn}/icons/${pack.icon}`;
 }
 
-const dialogElement = document.querySelector("dialog");
-if (!dialogElement) {
-    throw new Error("Dialog element not found");
-}
+const dialogElement = document.querySelector<HTMLDialogElement>("#notifications");
 /**
  * @description A function used to open the modal to display a status.
  * @param inputText This should be an HTML string. Presumably this is safe HTML as it is hardcoded into the script and not input by the user.
@@ -96,6 +93,7 @@ if (!packsSectionElement) {
 // render all packs
 const commentForm = document.getElementById("commentForm") as HTMLFormElement;
 const commentElement = commentForm.querySelector<HTMLTextAreaElement>("textarea[name=comment]") as HTMLTextAreaElement;
+const packPopout = document.getElementById("packpopout") as HTMLDialogElement;
 
 for (const pack of packData.packs) {
     const icon = getPackIcon(pack.id);
@@ -113,14 +111,12 @@ for (const pack of packData.packs) {
       <div class="details">
         <h2>${pack.friendly_name}</h2>
         <div> ${description}</div>
-      </div>
-    </section>
-    <div class="downloads"></div>
-`;
-    const packDownloadsElement = packElement.querySelector(".downloads");
-    if (!packDownloadsElement) {
-        throw new Error("Pack downloads element not found");
-    }
+        </div>
+      </section>
+      <div class="downloads"></div>
+      <button class="commentsbutton">Open comments</button>
+  `;
+    const packDownloadsElement = packElement.querySelector(".downloads") as HTMLDivElement;
 
     // dinamically load the download buttons
     for (const version of <const>["1.8.9", "1.20.5", "bedrock"]) {
@@ -144,6 +140,29 @@ for (const pack of packData.packs) {
         });
         packDownloadsElement.appendChild(downloadButton);
     }
+
+    // setup comments button
+    const commentsButton = packElement.querySelector(".commentsbutton") as HTMLButtonElement;
+    commentsButton.addEventListener("click", () => {
+        function transition() {
+            packPopout.querySelector("div>.pack")?.remove();
+            packPopout.querySelector("div")?.prepend(packElement.cloneNode(true));
+
+            select.value = pack.id;
+            resetSelectedPack().then(() => {
+                updateComments();
+            });
+
+            packPopout.showModal();
+        }
+
+        if (!document.startViewTransition) {
+            transition();
+        } else {
+            document.startViewTransition(transition);
+        }
+    });
+
     packsSectionElement.appendChild(packElement);
 }
 
@@ -169,6 +188,7 @@ const variants = packData.packs.map((pack) => pack.variant ?? pack.id).filter((v
 // set up select menu with select options based on variants
 const select = document.createElement("select");
 select.name = "packid";
+select.hidden = true;
 commentForm.prepend(select);
 
 for (const variant of variants) {
@@ -213,6 +233,13 @@ commentForm.addEventListener("submit", async (event) => {
         hCaptchaElement.render({ sitekey: "7c279daa-4c7e-4c0a-8814-fca3646e78cc", theme: "dark", size: "invisible", tabindex: 0 });
     }
 
+    const packPopoutOpen = packPopout.open;
+    if (packPopoutOpen) {
+        setTimeout(() => {
+            packPopout.close();
+        }, 1000);
+    }
+
     hCaptchaElement
         .executeAsync()
         .then(({ response }) => {
@@ -239,6 +266,9 @@ commentForm.addEventListener("submit", async (event) => {
             openModal(`<p class="error">Error: CAPTCHA failed due to an unexpected error.</p>`);
         })
         .finally(() => {
+            if (packPopoutOpen) {
+                packPopout.showModal();
+            }
             if (submitButton) {
                 submitButton.disabled = false;
                 submitButton.innerText = "Submit";
@@ -362,7 +392,10 @@ function nextCommentPage() {
 }
 
 const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-select.addEventListener("change", async () => {
+select.addEventListener("change", () => {
+    resetSelectedPack();
+});
+async function resetSelectedPack() {
     page = 0;
     updateComments();
     maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
@@ -375,7 +408,7 @@ select.addEventListener("change", async () => {
     for (const pageLabel of pageLabels) {
         pageLabel.innerHTML = `${page + 1}/${maxPage}`;
     }
-});
+}
 
 /**
  * A function to update the comments section with the comments for the currently selected pack.

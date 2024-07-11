@@ -49,44 +49,51 @@
 
         <main>
             <section class="packs"></section>
-            <section class="comments hidden">
-                <form id="commentForm" autocomplete="off">
-                    <label for="comment">Comment:</label>
-                    <textarea
-                        id="comment"
-                        name="comment"
-                        minlength="32"
-                        maxlength="1024"
-                        rows="10"
-                        cols="40"
-                        placeholder="Your comment here..."></textarea>
-                    <h-captcha id="hcaptcha" auto-render="false"></h-captcha>
-                </form>
 
-                <div class="pageSelect">
-                    <button type="button" class="prevCommentPage" disabled>
-                        &lt;
-                    </button>
-                    <span class="pageLabel">1</span>
-                    <button type="button" class="nextCommentPage">
-                        &gt;
-                    </button>
+            <dialog id="packpopout">
+                <div>
+                    <section class="comments">
+                        <form id="commentForm" autocomplete="off">
+                            <label for="comment">Comment:</label>
+                            <textarea
+                                id="comment"
+                                name="comment"
+                                minlength="32"
+                                maxlength="1024"
+                                rows="10"
+                                cols="40"
+                                placeholder="Your comment here..."></textarea>
+                            <h-captcha id="hcaptcha" auto-render="false"></h-captcha>
+                        </form>
+    
+                        <div class="pageSelect">
+                            <button type="button" class="prevCommentPage" disabled>
+                                &lt;
+                            </button>
+                            <span class="pageLabel">1</span>
+                            <button type="button" class="nextCommentPage">
+                                &gt;
+                            </button>
+                        </div>
+    
+                        <div id="comments"></div>
+    
+                        <div class="pageSelect">
+                            <button type="button" class="prevCommentPage" disabled>
+                                &lt;
+                            </button>
+                            <span class="pageLabel">1</span>
+                            <button type="button" class="nextCommentPage">
+                                &gt;
+                            </button>
+                        </div>
+                    </section>
+                    <form method="dialog">
+                        <button><img src="/images/close.svg" alt="Close"></button>
+                    </form>
                 </div>
-
-                <div id="comments"></div>
-                
-                <div class="pageSelect">
-                    <button type="button" class="prevCommentPage" disabled>
-                        &lt;
-                    </button>
-                    <span class="pageLabel">1</span>
-                    <button type="button" class="nextCommentPage">
-                        &gt;
-                    </button>
-                </div>
-            </section>
-            <button id="togglecomments"><img src="/images/comment.svg" alt="Toggle comments"></button>
-            <dialog>
+            </dialog>
+            <dialog id="notifications">
                 <form method="dialog">
                     <button>Close</button>
                 </form>

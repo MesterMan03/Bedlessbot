@@ -12,12 +12,12 @@
     "[html]": {
         "editor.defaultFormatter": "mohd-akram.vscode-html-format"
     },
-    "sonarlint.connectedMode.project": {
-        "connectionId": "GV",
-        "projectKey": "Bedlessbot"
-    },
     "[xml]": {
         "editor.defaultFormatter": "redhat.vscode-xml"
     },
-    "github-actions.workflows.pinned.workflows": []
+    "github-actions.workflows.pinned.workflows": [],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "GV",
+        "projectKey": "MesterMan03_Bedlessbot_AZCg86R7PeIEOfvPgiR6"
+    }
 }

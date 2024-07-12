@@ -57,6 +57,8 @@ main {
 }
 
 .comments {
+    overflow-y: scroll;
+
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -87,6 +89,8 @@ main {
     }
 
     #comments {
+        overflow-y: scroll;
+
         div.commentInfo {
             display: flex;
             flex-direction: row;
@@ -94,6 +98,10 @@ main {
             white-space: nowrap;
             justify-content: left;
             align-items: center;
+
+            &>div {
+                max-width: calc(100% - 4rem - 0.5rem);
+            }
         }
 
         span {
@@ -113,11 +121,12 @@ main {
             color: var(--primary);
             text-overflow: ellipsis;
             overflow: hidden;
-            max-width: 10rem;
+            cursor: copy;
         }
 
         h3,
         span {
+            max-width: 100%;
             margin: 0;
         }
 
@@ -209,7 +218,7 @@ main {
         display: flex;
         gap: 0.5rem;
         align-self: stretch;
-        
+
         &:nth-child(2) {
             margin-left: auto;
             margin-right: auto;
@@ -224,7 +233,6 @@ dialog {
     border-radius: 1rem;
 
     padding: 1rem;
-    padding-bottom: 4rem;
 
     word-wrap: break-word;
 
@@ -245,23 +253,22 @@ dialog {
     }
 }
 
+#notifications {
+    padding-bottom: 4rem;
+}
+
 #packpopout {
-    top: 4rem;
+    margin-top: 1rem;
 
     width: min(36rem, calc(100% - 4rem));
+    max-height: calc(100% - 4rem);
 
     scrollbar-width: none;
     ::-webkit-scrollbar {
         display: none;
     }
 
-    & > div {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    & > div > form {
+    & > form {
         position: absolute;
         top: 1rem;
         right: 1rem;
@@ -280,6 +287,12 @@ dialog {
 
     .commentsbutton {
         display: none;
+    }
+
+    &[open] {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }
 

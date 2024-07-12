@@ -100,7 +100,7 @@
                 "useValidTypeof": "error"
             }
         },
-        "ignore": ["build", "node_modules"]
+        "ignore": ["node_modules"]
     },
     "javascript": {
         "formatter": {

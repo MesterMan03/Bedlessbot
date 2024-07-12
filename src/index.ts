@@ -64,11 +64,14 @@ const client = new Client({
     intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
 });
 
+const executablePath = process.env["PUPPETEER_EXEC"] ?? undefined;
+console.log(`Launching puppeteer with executable path: ${executablePath}`);
 const browser = await puppeteer
     .launch({
         headless: true,
         userDataDir: join(dirname, "..", "chrome-data"),
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath
     })
     .then((browser) => {
         console.log("Puppeteer launched successfully");

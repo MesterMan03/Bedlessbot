@@ -145,13 +145,11 @@ for (const pack of packData.packs) {
     const commentsButton = packElement.querySelector(".commentsbutton") as HTMLButtonElement;
     commentsButton.addEventListener("click", () => {
         function transition() {
-            packPopout.querySelector("div>.pack")?.remove();
-            packPopout.querySelector("div")?.prepend(packElement.cloneNode(true));
+            packPopout.querySelector(".pack")?.remove();
+            packPopout.prepend(packElement.cloneNode(true));
 
             select.value = pack.id;
-            resetSelectedPack().then(() => {
-                updateComments();
-            });
+            resetSelectedPack();
 
             packPopout.showModal();
         }
@@ -356,11 +354,12 @@ function previousCommentPage() {
         }
         return;
     }
-    // disable button if at second page
+    page -= 1;
+
+    // disable button if at first page
     for (const prevPageButton of prevPageButtons) {
-        prevPageButton.disabled = page === 1;
+        prevPageButton.disabled = page === 0;
     }
-    --page;
     for (const nextPageButton of nextPageButtons) {
         nextPageButton.disabled = false;
     }
@@ -377,11 +376,12 @@ function nextCommentPage() {
         }
         return;
     }
-    // disable button if at second to last page
+    page += 1;
+
+    // disable button if at last page
     for (const nextPageButton of nextPageButtons) {
-        nextPageButton.disabled = page === maxPage - 2;
+        nextPageButton.disabled = page === maxPage - 1;
     }
-    ++page;
     for (const prevPageButton of prevPageButtons) {
         prevPageButton.disabled = false;
     }
@@ -396,15 +396,9 @@ select.addEventListener("change", () => {
     resetSelectedPack();
 });
 async function resetSelectedPack() {
+    maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
     page = 0;
     updateComments();
-    maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
-    for (const prevPageButton of prevPageButtons) {
-        prevPageButton.disabled = true;
-    }
-    for (const nextPageButton of nextPageButtons) {
-        nextPageButton.disabled = maxPage === 1;
-    }
     for (const pageLabel of pageLabels) {
         pageLabel.innerHTML = `${page + 1}/${maxPage}`;
     }
@@ -414,16 +408,23 @@ async function resetSelectedPack() {
  * A function to update the comments section with the comments for the currently selected pack.
  */
 async function updateComments() {
-    console.log(`Fetching comments for ${select.value}`);
+    console.debug(`Fetching comments for ${select.value}, page: ${page}`);
 
-    commentsDiv.innerHTML = "Loading...";
-    const comments = (await app.api.comments.get({ query: { packid: select.value, page } })).data;
-    commentsDiv.innerHTML = "";
+    for (const pageButton of [...prevPageButtons, ...nextPageButtons]) {
+        pageButton.disabled = true;
+    }
 
-    if (comments && comments?.length !== 0) {
-        for (const comment of comments) {
-            const commentElement = document.createElement("div");
-            commentElement.innerHTML = `
+    // render new comments
+    let loading = true;
+    app.api.comments.get({ query: { packid: select.value, page } }).then((res) => {
+        const comments = res.data;
+        loading = false;
+
+        if (comments && comments?.length !== 0) {
+            commentsDiv.innerHTML = "";
+            for (const comment of comments) {
+                const commentElement = document.createElement("div");
+                commentElement.innerHTML = `
 <div class="commentInfo">
     <img loading="lazy" src="${comment.avatar}" alt="${comment.username}">
     <div>
@@ -432,21 +433,46 @@ async function updateComments() {
     </div>
 </div>
 <p>${comment.comment}</p>`;
-            commentsDiv.appendChild(commentElement);
+                commentsDiv.appendChild(commentElement);
+
+                // add onclickevent to h3
+                const usernameElement = commentElement.querySelector("h3") as HTMLHeadingElement;
+                usernameElement.addEventListener("click", () => {
+                    navigator.clipboard.writeText(comment.userid);
+                });
+            }
+        } else if (comments != null) {
+            // we have no comments
+            const noComments = document.createElement("p");
+            noComments.innerText = "No comments yet!";
+            commentsDiv.appendChild(noComments);
+        } else {
+            // something went wrong
+            const error = document.createElement("p");
+            error.innerText = "An error occurred while fetching comments.";
+            commentsDiv.appendChild(error);
         }
-    } else if (comments != null) {
-        // we have no comments
-        const noComments = document.createElement("p");
-        noComments.innerText = "No comments yet!";
-        commentsDiv.appendChild(noComments);
-    } else {
-        // something went wrong
-        const error = document.createElement("p");
-        error.innerText = "An error occurred while fetching comments.";
-        commentsDiv.appendChild(error);
-    }
+
+        if (page > 0) {
+            for (const pageButton of prevPageButtons) {
+                pageButton.disabled = false;
+            }
+        }
+        if (page < maxPage - 1) {
+            for (const pageButton of nextPageButtons) {
+                pageButton.disabled = false;
+            }
+        }
+    });
+
+    // after 200 ms, check if we're still loading and add a "Loading..." text
+    setTimeout(() => {
+        if (loading) {
+            loading = false;
+            commentsDiv.innerHTML = "Loading..." + commentsDiv.innerHTML;
+        }
+    }, 200);
 }
-updateComments();
 
 document.getElementById("togglecomments")?.addEventListener("click", () => {
     console.log("sup");

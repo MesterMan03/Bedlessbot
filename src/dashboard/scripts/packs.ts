@@ -443,14 +443,10 @@ async function updateComments() {
             }
         } else if (comments != null) {
             // we have no comments
-            const noComments = document.createElement("p");
-            noComments.innerText = "No comments yet!";
-            commentsDiv.appendChild(noComments);
+            commentsDiv.innerHTML = `<p>No comments yet!</p>`;
         } else {
             // something went wrong
-            const error = document.createElement("p");
-            error.innerText = "An error occurred while fetching comments.";
-            commentsDiv.appendChild(error);
+            commentsDiv.innerHTML = `<p>An error occurred while fetching comments.</p>`;
         }
 
         if (page > 0) {

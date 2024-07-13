@@ -99,7 +99,7 @@ main {
             justify-content: left;
             align-items: center;
 
-            &>div {
+            & > div {
                 max-width: calc(100% - 4rem - 0.5rem);
             }
         }

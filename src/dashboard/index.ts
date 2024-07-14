@@ -19,7 +19,7 @@ const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const scriptsLocation = "scripts";
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
-const sourceMapOption = Bun.version >= "1.1.17" ? "linked" : "none";
+const sourcemap = Bun.version >= "1.1.17" ? "linked" : "none";
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(dirname, scriptsLocation) }));
 
 // clear the output directory
@@ -31,13 +31,14 @@ await Bun.build({
     minify: true,
     outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
-    sourcemap: sourceMapOption
+    sourcemap
 });
 
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
-const trackingCode = `<!-- Matomo -->
+const trackingCode = `
+<!-- Matomo -->
 <script>
 var _paq = window._paq = window._paq || [];
 /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
@@ -333,6 +334,10 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 return error(400, "Page must be an integer");
             }
 
+            if (!packData.packs.find((pack) => pack.id === packid)) {
+                return error(400, "Pack not found");
+            }
+
             const comments = await api.FetchPackComments(packid, page);
             if (!comments) {
                 return error(400, "Invalid page number");
@@ -356,12 +361,11 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/comments/maxpage",
-        async ({ query: { packid }, error }) => {
+        ({ query: { packid }, error }) => {
             if (!packData.packs.find((pack) => pack.id === packid)) {
                 return error(400, "Pack not found");
             }
-            const maxPage = await api.GetMaxCommentsPage(packid);
-            return maxPage;
+            return api.GetMaxCommentsPage(packid);
         },
         {
             query: t.Object({

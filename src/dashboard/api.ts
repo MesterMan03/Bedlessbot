@@ -15,6 +15,7 @@ import type {
 import data from "./data.json";
 import { verify } from "hcaptcha";
 import webpush from "web-push";
+import { IGetMaxCommentsPage } from "./api-common";
 
 webpush.setVapidDetails(
     process.env["VAPID_SUBJECT"] as string,
@@ -39,14 +40,6 @@ function GetMaxLbPage() {
     const levelCount = db.query<{ row_count: number }, []>("SELECT COUNT(*) AS row_count FROM levels").get()?.row_count ?? 0;
 
     return Math.ceil(Math.max(levelCount, 1) / LbPageSize);
-}
-
-function GetMaxCommentsPage(packid: string) {
-    const commentCount =
-        db.query<{ row_count: number }, [string]>("SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?").get(packid)
-            ?.row_count ?? 0;
-
-    return Math.ceil(Math.max(commentCount, 1) / CommentsPageSize);
 }
 
 let LbCache = new Array<LevelInfo>();
@@ -230,11 +223,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
     }
 
     async FetchPackComments(packid: string, page: number) {
-        if (!allPackIDs.includes(packid)) {
-            throw new Error("Invalid pack ID");
-        }
-
-        if (page >= GetMaxCommentsPage(packid)) {
+        if (page >= this.GetMaxCommentsPage(packid)) {
             return null;
         }
 
@@ -312,11 +301,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
         db.run("DELETE FROM push_subscriptions WHERE userid = ? AND endpoint = ?", [userid, endpoint]);
     }
 
-    async GetMaxCommentsPage(packid: string) {
-        const comments =
-            db.query<{ row_count: number }, [string]>(`SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?`).get(packid)
-                ?.row_count ?? 0;
-
-        return Math.ceil(Math.max(comments, 1) / CommentsPageSize);
+    GetMaxCommentsPage(packid: string) {
+        return IGetMaxCommentsPage(packid, db, CommentsPageSize);
     }
 }

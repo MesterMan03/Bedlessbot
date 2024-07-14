@@ -12,6 +12,7 @@ import { Database } from "bun:sqlite";
 import config from "../config";
 import webpush from "web-push";
 import packData from "./data.json";
+import { IGetMaxCommentsPage } from "./api-common";
 
 // set up test database
 const db = new Database(":memory:");
@@ -166,7 +167,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
     }
 
     async FetchPackComments(packid: string, page: number) {
-        if (page >= 10) {
+        if (page >= this.GetMaxCommentsPage(packid)) {
             return null;
         }
 
@@ -254,11 +255,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
         db.run("DELETE FROM push_subscriptions WHERE userid = ? AND endpoint = ?", [userid, endpoint]);
     }
 
-    async GetMaxCommentsPage(packid: string) {
-        const comments =
-            db.query<{ row_count: number }, [string]>(`SELECT COUNT(*) AS row_count FROM pack_comments WHERE packid = ?`).get(packid)
-                ?.row_count ?? 0;
-
-        return Math.ceil(Math.max(comments, 1) / CommentsPageSize);
+    GetMaxCommentsPage(packid: string) {
+        return IGetMaxCommentsPage(packid, db, CommentsPageSize);
     }
 }

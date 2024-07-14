@@ -57,7 +57,7 @@ main {
 }
 
 .comments {
-    overflow-y: scroll;
+    overflow-y: auto;
 
     display: flex;
     flex-direction: column;
@@ -89,8 +89,6 @@ main {
     }
 
     #comments {
-        overflow-y: scroll;
-
         div.commentInfo {
             display: flex;
             flex-direction: row;

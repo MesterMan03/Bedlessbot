@@ -2,6 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuild
 import openai from "openai";
 import { Cache } from "./cache.js";
 import config from "./config.js";
+import client from "./index.js";
 
 const testMode = process.env.NODE_ENV === "development";
 
@@ -22,7 +23,48 @@ Here's a list of activites people can do in the Bedless Nation Discord server:
 - If people want to download Bedless' texture packs, redirect them to [Packs](https://bedless.mester.info/packs).
 Do NOT refer to yourself as an AI language model or a chatbot. You identify as Bedlessbot, the bisexual Marsian. (this is a joke, but play along)
 - Some people might ask questions about the "server", "bridging server", "bedless server" etc. This is likely to refer to Bridger Land, a Minecraft Bridging server co-owned by BedlessNoob. If you think someone might need help with that server, ask them if they mean Bridger Land and if yes, send them the discord invite link discord.gg/bridge (without masked link formatting). If they are asking for an "ip", send bridger.land (without masked link formatting).
-In case there is a command you don't know about, let the user know. If you try to come up with commands, you'll probably mess them up.`;
+In case there is a command you don't know about, let the user know. If you try to come up with commands, you'll probably mess them up.
+
+In case you need it, here are the rules of the server:
+## General
+* By joining this server you automatically agree to follow and respect the rules.
+* All of [Discord's Terms of Service](https://discord.com/tos) apply to this server.*
+* Breaking the rules will result in a punishment.
+* Not knowing the rules doesn't save you from punishments.
+* All staff members need to be respected, no matter their rank.
+* Don't send unnecessary DMs to staff (send questions about moderation stuff e.g. mutes to moderators and not admins) and don't unnecessarily ping staff.
+* The administration reserves the house law. This allows to exclude players temporarily and permanently from the Discord server without giving evidence or reasons. Basically they can do whatever they want.
+* **Asking for a mute/ban will actually result in a punishment, no questions asked.**
+* Account trading of any sort is illegal and will be punished with perm ban (both the seller and buyer).
+* Bedless Nation members understand how important good quality sleep is.
+## Behaviour in text and voice chats
+* Treat each other with respect and behave appropriately.
+* Toxic behaviour and heavy provocations are forbidden. Solve arguments privately.
+* Please only use the correct channels for all messages and contents. (Links in #🔴〢advertising, videos, images and gifs in #🔴〢media-or-art, commands in #🎲〢commands, etc)
+* No insulting, provoking, or racist and sexist expressions in either messages or images/videos.
+* Absolutely NO discrimination and hate speech against ethnicity, nationality, religion, race, gender and sexuality.
+* You may share your political and religious views as long as they are respectful, this includes trying to force someone to agree with you.
+* Light swears expressing exclamation are allowed. Any form of swearing that's trying to insult someone is disallowed. Do not bypass the filter.
+* No death wishes or threats, DDoS- or any other kind of threats.
+* No spamming or trolling - includes impersonating.
+* No channel hopping! (You switch between voice chats really quickly)
+* No excessive tagging (make sure the user is fine with you tagging them) and no ghost pinging.
+* No advertising and DM advertising of discord servers.
+* Sharing age restricted or otherwise inappropriate content or links is strictly forbidden.
+* Do NOT ping YouTubers or anyone with the Häagen-Dazs role. Pinging BedlessNoob is allowed.
+## Penalties
+* Staff members are entitled to mute and ban in whatever situation they think it's appropriate.
+* All decisions from staff members need to be respected and accepted, whether you agree with them or not. This includes trying to reduce/remove a punishment on someone else's behalf. In other words, no "free xyz", "unban my friend", "he didn't do nothing wrong" etc.
+* Trolling, provoking, insulting or lying to staff can and probably will result in a punishment.
+* Bypassing mutes and bans using multiple accounts is strictly forbidden.
+* Repeatedly breaking the rules will result in extended punishments.
+## Reporting users
+If you believe someone's breaking the rules, you are obligated to report them by selecting their message (right click on desktop, tap and hold on mobile) and clicking on "Apps > Report message". You'll be asked to provide a short reason and an optional comment.
+*Abusing this system or trolling will result in a kick then a ban.*
+
+* Small exceptions
+
+*> Last change: 23.07.2024*`;
 
 const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
 If there are multiple topics, list them all.
@@ -32,7 +74,28 @@ The format of the input is as follows: [date] author: message.`;
 
 const summaryCooldown = new Cache<string, number>(15 * 60 * 1000);
 
-const convoCache = new Cache<string, openai.ChatCompletionMessageParam[]>(30 * 60 * 1000);
+// the global conversation
+const conversations = new Array<{
+    messageid: string;
+    user?: openai.ChatCompletionUserMessageParam;
+    assistant?: openai.ChatCompletionAssistantMessageParam;
+    system?: openai.ChatCompletionSystemMessageParam;
+}>();
+
+/**
+ * Prepares the conversation for sending to OpenAI.
+ * @returns The current conversation as an array of ChatCompletionMessageParam
+ */
+function prepareConversation() {
+    // basically just return an array of ChatCompletionMessageParam which are the messages in the conversation in order
+    return conversations
+        .map((conversation) => [conversation.system, conversation.user, conversation.assistant].filter((m) => m != null))
+        .reduce((acc, curr) => acc.concat(curr), []);
+}
+
+async function isReplyingToUs(message: Message<true>) {
+    return message.mentions.repliedUser != null && message.mentions.repliedUser?.id === client.user?.id;
+}
 
 async function startConversation(message: Message) {
     // show a warning first
@@ -86,37 +149,34 @@ async function replyToConversation(message: Message<true>) {
     }
 
     // get the message content without the mention
-    const content = message.content.slice(message.mentions.users.first()?.toString().length ?? 0 + 1).trim();
-    if (content.length < 1) {
-        return;
+    const content =
+        message.author.username +
+        ": " +
+        message.content
+            .slice(message.content.startsWith(`<@${client.user?.id}>`) ? message.mentions.users.first()?.toString().length ?? 0 : 0)
+            .trim();
+
+    if (conversations.length === 0) {
+        conversations.push({
+            messageid: message.id,
+            system: { role: "system", content: ChatBotSysMessage },
+            user: { role: "user", content }
+        });
+    } else {
+        conversations.push({ messageid: message.id, user: { role: "user", content } });
     }
 
     await message.channel.sendTyping();
 
-    if (content === "reset") {
-        convoCache.delete(message.author.id);
-        return message.reply("I've reset the conversation!");
-    }
-
-    // get the conversation
-    let conversation = convoCache.get(message.author.id);
-
-    if (!conversation) {
-        // create a new conversation
-        conversation = [
-            { content: ChatBotSysMessage, role: "system" },
-            { content, role: "user" }
-        ];
-    } else {
-        // add user message to the conversation
-        conversation.push({ content, role: "user" });
+    if (testMode) {
+        console.log(conversations, prepareConversation());
     }
 
     const response = await openAIClient.chat.completions.create({
         model: "gpt-4o-mini",
-        messages: conversation,
-        max_tokens: 300,
-        temperature: 1.2,
+        messages: prepareConversation(),
+        max_tokens: 350,
+        temperature: 1,
         tools: [
             {
                 type: "function",
@@ -144,7 +204,7 @@ async function replyToConversation(message: Message<true>) {
 
     if (toolCalls != null) {
         if (toolCalls.find((call) => call.function.name === "generate_summary")) {
-            return void generateSummary(message, conversation);
+            return void generateSummary(message);
         }
     }
 
@@ -155,13 +215,21 @@ async function replyToConversation(message: Message<true>) {
     }
 
     // add the response to the conversation
-    conversation.push({ content: reply, role: "assistant" });
-    convoCache.set(message.author.id, conversation);
+    if (conversations.length > 150) {
+        // remove the second message
+        conversations.splice(1, 1);
+    }
+    const convo = conversations.find((convo) => convo.messageid === message.id);
+    if (!convo) {
+        conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });
+    } else {
+        convo.assistant = { content: reply, role: "assistant" };
+    }
 
     message.reply(reply);
 }
 
-async function generateSummary(message: Message<true>, conversation: openai.ChatCompletionMessageParam[]) {
+async function generateSummary(message: Message<true>) {
     const cooldown = summaryCooldown.get(message.channelId);
     if (cooldown && cooldown > Date.now()) {
         return void message.reply(
@@ -227,7 +295,7 @@ async function generateSummary(message: Message<true>, conversation: openai.Chat
                 content: summaryInput
             }
         ],
-        temperature: 1.2,
+        temperature: 1,
         max_tokens: 400
     });
 
@@ -237,8 +305,12 @@ async function generateSummary(message: Message<true>, conversation: openai.Chat
     }
 
     // add the response to the conversation
-    conversation.push({ content: summary, role: "assistant" });
-    convoCache.set(message.author.id, conversation);
+    const convo = conversations.find((convo) => convo.messageid === message.id);
+    if (!convo) {
+        conversations.push({ messageid: message.id, assistant: { content: summary, role: "assistant" } });
+    } else {
+        convo.assistant = { content: summary, role: "assistant" };
+    }
 
     return void ourMessage.edit({
         content: summary,
@@ -271,4 +343,4 @@ function prepareMessagesForSummary(messages: Message[]) {
     return formattedMessages.join("\n");
 }
 
-export { startConversation, replyToConversation };
+export { startConversation, replyToConversation, isReplyingToUs };

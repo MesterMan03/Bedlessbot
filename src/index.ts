@@ -31,7 +31,7 @@ import {
     XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
-import { replyToConversation, startConversation } from "./chatbot";
+import { isReplyingToUs, replyToConversation, startConversation } from "./chatbot";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -135,8 +135,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         if (interaction.isMessageComponent()) {
-            if(interaction.customId.startsWith("chatbot-")) {
-                console.log("wtf");
+            if(interaction.customId.startsWith("chatbot.")) {
                 return;
             }
             const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
@@ -183,7 +182,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // check if message starts with the bots mention and member has admin
-    if (message.content.startsWith(`<@${clientID}>`)) {
+    if (message.content.startsWith(`<@${clientID}>`) || await isReplyingToUs(message)) {
         if (message.member?.permissions.has("Administrator")) {
             // only stop if the command ran successfully
             if (ExecuteAdminCommand(message)) {

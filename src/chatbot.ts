@@ -233,7 +233,7 @@ async function generateSummary(message: Message<true>) {
     const cooldown = summaryCooldown.get(message.channelId);
     if (cooldown && cooldown > Date.now()) {
         return void message.reply(
-            `You can only use this command once per hour. Please wait ${Math.ceil((cooldown - Date.now()) / 1000)} seconds.`
+            `You can only use this command once per minute per channel. Please wait ${Math.ceil((cooldown - Date.now()) / 1000)} seconds.`
         );
     }
 
@@ -272,7 +272,7 @@ async function generateSummary(message: Message<true>) {
         return;
     }
 
-    summaryCooldown.set(message.channelId, Date.now() + 60 * 60 * 1000);
+    summaryCooldown.set(message.channelId, Date.now() + 60 * 1000);
 
     const ourMessage = await message.reply("Generating summary...");
 

@@ -284,7 +284,7 @@ async function generateSummary(message: Message<true>) {
 
     // generate the summary
     const summaryResponse = await openAIClient.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
             {
                 role: "system",

@@ -226,7 +226,7 @@ async function replyToConversation(message: Message<true>) {
         convo.assistant = { content: reply, role: "assistant" };
     }
 
-    message.reply(reply);
+    message.reply({ content: reply, allowedMentions: { users: [] } });
 }
 
 async function generateSummary(message: Message<true>) {
@@ -314,6 +314,7 @@ async function generateSummary(message: Message<true>) {
 
     return void ourMessage.edit({
         content: summary,
+        allowedMentions: { users: [] },
         flags: "SuppressEmbeds"
     });
 }

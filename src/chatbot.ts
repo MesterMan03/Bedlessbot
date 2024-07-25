@@ -314,7 +314,7 @@ async function generateSummary(message: Message<true>) {
 
     return void ourMessage.edit({
         content: summary,
-        allowedMentions: { users: [] },
+        allowedMentions: { parse: [] },
         flags: "SuppressEmbeds"
     });
 }

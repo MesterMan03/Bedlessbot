@@ -51,10 +51,12 @@ const prodConfig = {
         GuideMessage: "0",
         Outcome: "0",
         ToReview: "0",
-        PackComments: "0"
+        PackComments: "0",
+        Questions: "0"
     },
     Roles: {
-        Birthday: "0"
+        Birthday: "0",
+        Chatbot: "0"
     },
     RoleToName: {
         dragclick: "Drag clicker",
@@ -112,10 +114,12 @@ const devConfig = {
         GuideMessage: "0",
         Outcome: "0",
         ToReview: "0",
-        PackComments: "0"
+        PackComments: "0",
+        Questions: "0"
     },
     Roles: {
-        Birthday: "0"
+        Birthday: "0",
+        Chatbot: "0"
     },
     RoleToID: {
         dragclick: "0",

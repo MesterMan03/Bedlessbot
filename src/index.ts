@@ -31,6 +31,7 @@ import {
     XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
+import { replyToConversation, startConversation } from "./chatbot";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -59,7 +60,7 @@ db.run("PRAGMA journal_mode = wal;");
 
 const client = new Client({
     allowedMentions: {
-        parse: ["users"]
+        parse: ["users"],
     },
     intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
 });
@@ -134,6 +135,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         if (interaction.isMessageComponent()) {
+            if(interaction.customId.startsWith("chatbot-")) {
+                console.log("wtf");
+                return;
+            }
             const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
 
             if (!command?.processInteraction) {
@@ -186,6 +191,21 @@ client.on(Events.MessageCreate, async (message) => {
             }
         }
 
+        // start the chatbot
+        const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
+        if (!usedChatbot) {
+            startConversation(message).then((accepted) => {
+                if (!accepted) {
+                    return;
+                }
+
+                message.member?.roles.add(config.Roles.Chatbot);
+                replyToConversation(message);
+            });
+        } else {
+            replyToConversation(message);
+        }
+
         return;
     }
 
@@ -208,6 +228,7 @@ client.on(Events.MessageCreate, async (message) => {
             return;
         }
 
+        //@ts-ignore shut up
         const answer = response.data.answer as string;
 
         message.reply(answer).catch(() => {
@@ -298,6 +319,14 @@ function ExecuteAdminCommand(message: Message) {
         WishBirthdays();
         message.reply("Wished birthdays");
 
+        return true;
+    }
+
+    if (command === "hi") {
+        message.reply({
+            content: `Hi! Latency: ${Math.abs(Date.now() - message.createdTimestamp)}ms. API Latency: ${Math.round(client.ws.ping)}ms`,
+            allowedMentions: { users: [] }
+        });
         return true;
     }
 

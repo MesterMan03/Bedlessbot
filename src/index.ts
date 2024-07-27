@@ -11,6 +11,8 @@ import {
     MessageComponentInteraction,
     REST,
     Routes,
+    ThreadAutoArchiveDuration,
+    type Interaction,
     type RESTPostAPIChatInputApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
@@ -20,6 +22,7 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
+import { isReplyingToUs, replyToConversation, startConversation } from "./chatbot";
 import config from "./config";
 import {
     EndVoiceChat,
@@ -31,7 +34,6 @@ import {
     XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
-import { isReplyingToUs, replyToConversation, startConversation } from "./chatbot";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -60,7 +62,7 @@ db.run("PRAGMA journal_mode = wal;");
 
 const client = new Client({
     allowedMentions: {
-        parse: ["users"],
+        parse: ["users"]
     },
     intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
 });
@@ -113,6 +115,33 @@ try {
     console.error(error);
 }
 
+async function processInteraction(interaction: Interaction) {
+    if (interaction.isChatInputCommand()) {
+        const command = clientCommands.get(interaction.commandName);
+
+        if (!command) {
+            await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
+            return;
+        }
+
+        return await command.execute(interaction);
+    }
+
+    if (interaction.isMessageComponent()) {
+        if (interaction.customId.startsWith("chatbot.")) {
+            return;
+        }
+        const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
+
+        if (!command?.processInteraction) {
+            await interaction.reply({ content: `No command matching ${interaction.customId} was found.`, ephemeral: true });
+            return;
+        }
+
+        return await command.processInteraction(interaction);
+    }
+}
+
 // set up client events and log in
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) {
@@ -123,30 +152,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
-        if (interaction.isChatInputCommand()) {
-            const command = clientCommands.get(interaction.commandName);
-
-            if (!command) {
-                await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
-                return;
-            }
-
-            return await command.execute(interaction);
-        }
-
-        if (interaction.isMessageComponent()) {
-            if(interaction.customId.startsWith("chatbot.")) {
-                return;
-            }
-            const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
-
-            if (!command?.processInteraction) {
-                await interaction.reply({ content: `No command matching ${interaction.customId} was found.`, ephemeral: true });
-                return;
-            }
-
-            return await command.processInteraction(interaction);
-        }
+        await processInteraction(interaction);
     } catch (error) {
         console.error(error);
         if (!interaction.isRepliable()) {
@@ -160,6 +166,46 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 });
+
+function processSelfPing(message: Message<true>) {
+    if (message.member?.permissions.has("Administrator")) {
+        // only stop if the command ran successfully
+        if (ExecuteAdminCommand(message)) {
+            return;
+        }
+    }
+
+    // start the chatbot
+    const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
+    if (!usedChatbot) {
+        startConversation(message).then((accepted) => {
+            if (!accepted) {
+                return;
+            }
+
+            message.member?.roles.add(config.Roles.Chatbot);
+            replyToConversation(message);
+        });
+    } else {
+        replyToConversation(message);
+    }
+}
+
+function processAIRequest(message: Message<true>) {
+    SendRequest({ text: message.content }).then((response) => {
+        if (response.status !== 200) {
+            return;
+        }
+
+        //@ts-ignore shut up
+        const answer = response.data.answer as string;
+
+        message.reply(answer).catch(() => {
+            // the message was probably deleted
+            return;
+        });
+    });
+}
 
 client.on(Events.MessageCreate, async (message) => {
     if (!message.inGuild() || message.guildId !== guildID) {
@@ -177,34 +223,34 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
+    // remove all non-interaction messages in the applications channel
     if (message.channelId === config.Channels.Applications) {
-        return void message.delete();
+        message.delete();
+        return;
+    }
+
+    // if message is in the clutches channel, automatically start a thread
+    if (message.channelId === config.Channels.Clutches) {
+        message
+            .startThread({
+                name: `Clutch suggestion by ${message.author.username}`,
+                autoArchiveDuration: ThreadAutoArchiveDuration.ThreeDays,
+                rateLimitPerUser: 5,
+                reason: "Clutch suggestion"
+            })
+            .then((thread) => {
+                thread.send(
+                    `You can use this thread to discuss the clutch submission of **${message.author.username}**. Remember to keep it civil and respectful.`
+                );
+            });
+        await message.react("<:BigBrain:884161577681580082>").catch(() => {});
+        await message.react("<:Yikes:884161548287877230>").catch(() => {});
+        return;
     }
 
     // check if message starts with the bots mention and member has admin
-    if (message.content.startsWith(`<@${clientID}>`) || await isReplyingToUs(message)) {
-        if (message.member?.permissions.has("Administrator")) {
-            // only stop if the command ran successfully
-            if (ExecuteAdminCommand(message)) {
-                return;
-            }
-        }
-
-        // start the chatbot
-        const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
-        if (!usedChatbot) {
-            startConversation(message).then((accepted) => {
-                if (!accepted) {
-                    return;
-                }
-
-                message.member?.roles.add(config.Roles.Chatbot);
-                replyToConversation(message);
-            });
-        } else {
-            replyToConversation(message);
-        }
-
+    if (message.content.startsWith(`<@${clientID}>`) || (await isReplyingToUs(message))) {
+        processSelfPing(message);
         return;
     }
 
@@ -222,19 +268,7 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // use transformation model to find potential answers to a question
-    SendRequest({ text: message.content }).then((response) => {
-        if (response.status !== 200) {
-            return;
-        }
-
-        //@ts-ignore shut up
-        const answer = response.data.answer as string;
-
-        message.reply(answer).catch(() => {
-            // the message was probably deleted
-            return;
-        });
-    });
+    processAIRequest(message);
 
     // check for blocked channels and no-xp role
     if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) {

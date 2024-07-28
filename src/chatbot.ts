@@ -70,7 +70,7 @@ If you believe someone's breaking the rules, you are obligated to report them by
 
 ---
 
-Finally let's talk about the input format. Messages FROM USERS (not you) will get this special formatting: "username [replying to message id]: message (message id) <message date in yyyy-mm-dd HH:MM:SS format>". You may use these informations to provide better context. However, DO NOT USE THIS FORMAT AS YOUR OUTPUT, just reply with a plain old message WITHOUT the date or message id at the end, or a username at the beginning. NO MATTER WHAT YOU WILL ALWAYS HAVE TO REPLY WITH JUST CONTENT.`
+Finally let's talk about the input format. Messages FROM USERS (not you) will get this special formatting: "username [replying to message id] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". You may use these informations to provide better context. However, DO NOT USE THIS FORMAT AS YOUR OUTPUT, just reply with a plain old message WITHOUT the date or message id at the end, or a username at the beginning. NO MATTER WHAT YOU WILL ALWAYS HAVE TO REPLY WITH JUST CONTENT. EVERYTHING BEFORE THE DOUBLE COLON IS ONLY METADATA AND SHOULD NOT BE USED AS YOUR OUTPUT.`
 
 const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
 If there are multiple topics, list them all.
@@ -159,9 +159,9 @@ async function replyToConversation(message: Message<true>) {
     if (message.reference?.messageId) {
         content += ` [replying to ${message.reference.messageId}]`;
     }
-    content += ": " + message.content;
     content += ` (${message.id})`;
     content += ` <${DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+    content += ": " + message.content;
 
     if (conversations.length === 0) {
         conversations.push({
@@ -218,18 +218,26 @@ async function replyToConversation(message: Message<true>) {
     let reply = chatMessage?.content;
 
     if (!reply) {
-        return void message.reply("__An unexpected error has happened__");
+        message.reply("__An unexpected error has happened__");
+        return;
     }
 
-    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
+    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {ű
+        if(reply == null) {
+            throw new Error("what the fuck? reply is null but it's also not?")
+        }
         // add the response to the conversation
         if (conversations.length > 150) {
             // remove the second message
             conversations.splice(1, 1);
         }
         // enrich the reply with the message id and date
+        const username = reply.split(":")[0];
+        const content = reply.split(":").splice(1).join(":").trim();
+        reply = username;
         reply += ` (${botMessage.id})`;
         reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+        reply += `: ${content}`;
         const convo = conversations.find((convo) => convo.messageid === message.id);
         if (!convo) {
             conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });

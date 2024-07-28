@@ -222,7 +222,7 @@ async function replyToConversation(message: Message<true>) {
         return;
     }
 
-    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {ű
+    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
         if(reply == null) {
             throw new Error("what the fuck? reply is null but it's also not?")
         }

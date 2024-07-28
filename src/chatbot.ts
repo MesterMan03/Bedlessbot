@@ -70,7 +70,10 @@ If you believe someone's breaking the rules, you are obligated to report them by
 
 ---
 
-Finally let's talk about the input format. Messages FROM USERS (not you) will get this special formatting: "username [replying to message id] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". You may use these informations to provide better context. However, DO NOT USE THIS FORMAT AS YOUR OUTPUT, just reply with a plain old message WITHOUT the date or message id at the end, or a username at the beginning. NO MATTER WHAT YOU WILL ALWAYS HAVE TO REPLY WITH JUST CONTENT. EVERYTHING BEFORE THE DOUBLE COLON IS ONLY METADATA AND SHOULD NOT BE USED AS YOUR OUTPUT.`
+Every message you get will start with this format: "username [replying to message id] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata. Use it to provide better context, HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the message content. 
+Example:
+realmester [replying to 123456789] (123456789) 2024-07-23 12:34:56: Hello everyone!
+your output should be "Hi realmester, how are you doing today?"`;
 
 const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
 If there are multiple topics, list them all.
@@ -223,8 +226,8 @@ async function replyToConversation(message: Message<true>) {
     }
 
     message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
-        if(reply == null) {
-            throw new Error("what the fuck? reply is null but it's also not?")
+        if (reply == null) {
+            throw new Error("what the fuck? reply is null but it's also not?");
         }
         // add the response to the conversation
         if (conversations.length > 150) {

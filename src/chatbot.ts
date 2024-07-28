@@ -3,6 +3,7 @@ import openai from "openai";
 import { Cache } from "./cache.js";
 import config from "./config.js";
 import client from "./index.js";
+import { DateTime } from "luxon";
 
 const testMode = process.env.NODE_ENV === "development";
 
@@ -64,7 +65,12 @@ If you believe someone's breaking the rules, you are obligated to report them by
 
 * Small exceptions
 
-*> Last change: 23.07.2024*`;
+*> Last change: 23.07.2024*
+
+
+---
+
+Finally let's talk about the input format. Messages FROM USERS (not you) will get this special formatting: "username [replying to message id]: message (message id) <message date in yyyy-mm-dd HH:MM:SS format>". You may use these informations to provide better context. However, DO NOT USE THIS FORMAT AS YOUR OUTPUT, just reply with a plain old message WITHOUT the date or message id at the end, or a username at the beginning. NO MATTER WHAT YOU WILL ALWAYS HAVE TO REPLY WITH JUST CONTENT.`
 
 const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
 If there are multiple topics, list them all.
@@ -148,13 +154,14 @@ async function replyToConversation(message: Message<true>) {
         return;
     }
 
-    // get the message content without the mention
-    const content =
-        message.author.username +
-        ": " +
-        message.content
-            .slice(message.content.startsWith(`<@${client.user?.id}>`) ? message.mentions.users.first()?.toString().length ?? 0 : 0)
-            .trim();
+    // construct the imput content
+    let content = message.author.username;
+    if (message.reference?.messageId) {
+        content += ` [replying to ${message.reference.messageId}]`;
+    }
+    content += ": " + message.content;
+    content += ` (${message.id})`;
+    content += ` <${DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
 
     if (conversations.length === 0) {
         conversations.push({
@@ -214,19 +221,22 @@ async function replyToConversation(message: Message<true>) {
         return void message.reply("__An unexpected error has happened__");
     }
 
-    // add the response to the conversation
-    if (conversations.length > 150) {
-        // remove the second message
-        conversations.splice(1, 1);
-    }
-    const convo = conversations.find((convo) => convo.messageid === message.id);
-    if (!convo) {
-        conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });
-    } else {
-        convo.assistant = { content: reply, role: "assistant" };
-    }
-
-    message.reply({ content: reply, allowedMentions: { users: [] } });
+    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
+        // add the response to the conversation
+        if (conversations.length > 150) {
+            // remove the second message
+            conversations.splice(1, 1);
+        }
+        // enrich the reply with the message id and date
+        reply += ` (${botMessage.id})`;
+        reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+        const convo = conversations.find((convo) => convo.messageid === message.id);
+        if (!convo) {
+            conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });
+        } else {
+            convo.assistant = { content: reply, role: "assistant" };
+        }
+    });
 }
 
 async function generateSummary(message: Message<true>) {

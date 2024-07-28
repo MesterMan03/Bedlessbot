@@ -73,11 +73,12 @@ If you believe someone's breaking the rules, you are obligated to report them by
 Every message you get will start with this format: "username [replying to message id] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata. Use it to provide better context, HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the message content. 
 Example:
 realmester [replying to 123456789] (123456789) 2024-07-23 12:34:56: Hello everyone!
-your output should be "Hi realmester, how are you doing today?"`;
+your output should be "Hi realmester, how are you doing today?"
+DO NOT ADD METADATA YOURSELF, IT WILL BE DONE AUTOMATICALLY, SO YOU SHOULD NOT BE WORRIED ABOUT THIS`;
 
 const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
 If there are multiple topics, list them all.
-Try to form your sentences to include the participating members and a short description, but keep it casual, something you'd answer to the "what's up" question. IMPORTANT: always put two backticks around a member.
+Try to form your sentences to include the participating members and a description, but keep it casual, something you'd answer to the "what's up" question. IMPORTANT: always put two backticks around a member.
 Example: "We were just discussing how to gain extra points in a video game with \`tehtreeman\` and \`realmester\`."
 The format of the input is as follows: [date] author: message.`;
 
@@ -235,9 +236,8 @@ async function replyToConversation(message: Message<true>) {
             conversations.splice(1, 1);
         }
         // enrich the reply with the message id and date
-        const username = reply.split(":")[0];
-        const content = reply.split(":").splice(1).join(":").trim();
-        reply = username;
+        const content = reply;
+        reply = "Bedlessbot";
         reply += ` (${botMessage.id})`;
         reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
         reply += `: ${content}`;

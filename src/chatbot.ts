@@ -225,25 +225,22 @@ async function replyToConversation(message: Message<true>) {
         return;
     }
 
+    // first check if the AI is a dumbass and put metadata in the beginning
+    if (reply.startsWith("Bedlessbot")) {
+        reply = reply.split(":").splice(3).join(":").trim();
+    }
     message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
-        if (reply == null) {
-            throw new Error("what the fuck? reply is null but it's also not?");
-        }
+        // enrich the reply with the message id and date
+        const originalContent = reply;
+        reply = "Bedlessbot";
+        reply += ` (${botMessage.id})`;
+        reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+        reply += `: ${originalContent}`;
         // add the response to the conversation
         if (conversations.length > 150) {
             // remove the second message
             conversations.splice(1, 1);
         }
-        // enrich the reply with the message id and date
-        let content = reply;
-        // first check if the AI is a dumbass and put metadata in the beginning
-        if (content.startsWith("Bedlessbot")) {
-            content = reply.split(":").splice(1).join(":");
-        }
-        reply = "Bedlessbot";
-        reply += ` (${botMessage.id})`;
-        reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
-        reply += `: ${content}`;
         const convo = conversations.find((convo) => convo.messageid === message.id);
         if (!convo) {
             conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });

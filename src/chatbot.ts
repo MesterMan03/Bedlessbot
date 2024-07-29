@@ -42,7 +42,7 @@ In case you need it, here are the rules of the server:
 ## Behaviour in text and voice chats
 * Treat each other with respect and behave appropriately.
 * Toxic behaviour and heavy provocations are forbidden. Solve arguments privately.
-* Please only use the correct channels for all messages and contents. (Links in #🔴〢advertising, videos, images and gifs in #🔴〢media-or-art, commands in #🎲〢commands, etc)
+* Please only use the correct channels for all messages and contents. (Links in <#704123263898353716>, videos, images and gifs in <#1051636675429802104>, commands in <#709585977642844174>, etc)
 * No insulting, provoking, or racist and sexist expressions in either messages or images/videos.
 * Absolutely NO discrimination and hate speech against ethnicity, nationality, religion, race, gender and sexuality.
 * You may share your political and religious views as long as they are respectful, this includes trying to force someone to agree with you.

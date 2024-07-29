@@ -64,7 +64,7 @@ function increaseCheaterPoint(userID: string) {
 }
 
 function shortRoleToName(role: ApplyRole) {
-    return config.RoleToName[role] ?? "unknown role";
+    return config.RoleToName[role] ?? "unknown role/clutch";
 }
 
 function roleNameToShort(name?: string): ApplyRole | null {
@@ -83,7 +83,7 @@ function shortRoleToRoleID(role: ApplyRole) {
 async function processInteraction(interaction: ButtonInteraction) {
     const outcomeChannel = (await client.channels.fetch(config.Channels.Outcome)) as TextBasedChannel;
     if (!outcomeChannel) {
-        throw new Error("what the fuck");
+        throw new Error("what the fuck, missing outcome channel");
     }
 
     const embed = EmbedBuilder.from(interaction.message.embeds[0]);
@@ -91,7 +91,7 @@ async function processInteraction(interaction: ButtonInteraction) {
     const role = roleNameToShort(embed.data.fields?.[1]?.value);
 
     if (!role) {
-        interaction.reply(`Unknown role for ${embed.data.fields?.[1]?.value}. This is an error, contact Mester.`);
+        interaction.reply(`Unknown role/clutch for ${embed.data.fields?.[1]?.value}. This is an error, contact Mester.`);
         return;
     }
 
@@ -116,7 +116,7 @@ async function processInteraction(interaction: ButtonInteraction) {
         embed.setDescription(`Application accepted by <@${interaction.user.id}>`).setColor("Green");
         interaction.update({ embeds: [embed], components: [] });
 
-        outcomeChannel.send(`Congratulations <@${member.user.id}>! Your role application for ${shortRoleToName(role)} has been accepted!`);
+        outcomeChannel.send(`Congratulations <@${member.user.id}>! Your application for ${shortRoleToName(role)} has been accepted!`);
 
         const roleToAdd = shortRoleToRoleID(role);
         if (!roleToAdd || !GetGuild().roles.cache.has(roleToAdd)) {
@@ -156,7 +156,7 @@ async function processInteraction(interaction: ButtonInteraction) {
             reasonMessage.delete();
 
             outcomeChannel.send(
-                `<@${member.id}>, your role application for ${shortRoleToName(role)} has unfortunately been denied for: ${
+                `<@${member.id}>, your application for ${shortRoleToName(role)} has unfortunately been denied for: ${
                     reasonMessage.content
                 }`
             );
@@ -180,12 +180,16 @@ async function processInteraction(interaction: ButtonInteraction) {
         ).cheatpoint;
 
         outcomeChannel.send(
-            `<@${member.id}>, your role application for ${shortRoleToName(
+            `<@${member.id}>, your application for ${shortRoleToName(
                 role
             )} has received an infraction. You now have ${cheatpoint}/3 infractions${
-                cheatpoint === 3 ? " and have been permanently banned from role applications 💀" : ""
-            }. ${cheatpoint === 2 ? "One more and you're permanently banned from role applications." : ""}`
-        );
+                cheatpoint === 3 ? " and have been permanently banned from applications 💀" : ""
+            }. ${cheatpoint === 2 ? "One more and you're permanently banned from applications." : ""}`
+        ).then((message) => {
+            if(cheatpoint === 3) {
+                message.react("💀");
+            }
+        })
     }
 }
 
@@ -194,7 +198,7 @@ const allowedFileTypesString = allowedFileTypes.map((type) => `.${type}`).join("
 const allowedWebsites = ["www.youtube.com", "youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
-    const role = interaction.options.getString("role", true);
+    const role = interaction.options.getString("for", true);
     let proof =
         interaction.options.getSubcommand(true) === "link"
             ? interaction.options.getString("proof", true)
@@ -218,7 +222,7 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         });
 
     if (!guideMessage) {
-        await interaction.editReply("Role guide message couldn't be found. This is not an epic moment, contact Mester.");
+        await interaction.editReply("Guide message couldn't be found. This is not an epic moment, contact Mester.");
         return null;
     }
 
@@ -239,7 +243,7 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         .get()?.cheatpoint;
 
     if (cheatpoint && cheatpoint >= 3) {
-        await interaction.editReply("You have been banned from applying for roles due to having at least 3 cheater points.");
+        await interaction.editReply("You have been banned from applying for roles/clutches due to having at least 3 cheater points.");
         return null;
     }
 
@@ -369,15 +373,15 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 }
 
 const commandRoleOption = new SlashCommandStringOption()
-    .setName("role")
-    .setDescription("The role you want to apply for.")
+    .setName("for")
+    .setDescription("The role/clutch you want to apply for.")
     .setRequired(true)
     .setChoices(...Object.entries(config.RoleToName).map(([key, value]) => ({ name: value, value: key })));
 
 export default {
     data: new SlashCommandBuilder()
         .setName("apply")
-        .setDescription("Apply for a role")
+        .setDescription("Apply for a role/clutch")
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("link")
@@ -430,10 +434,10 @@ export default {
             }
 
             const embed = new EmbedBuilder()
-                .setTitle("Role Application")
+                .setTitle("Application")
                 .setFields(
                     { name: "Username", value: interaction.user.username, inline: true },
-                    { name: "Role applied for:", value: shortRoleToName(role), inline: true },
+                    { name: "Applied for:", value: shortRoleToName(role), inline: true },
                     { name: "Proof", value: proofString, inline: false }
                 )
                 .setColor("DarkPurple")

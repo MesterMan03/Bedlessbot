@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import { google } from "googleapis";
 import client, { GetGuild, db } from "..";
-import config, { isApplyRole, type ApplyRole } from "../config";
+import config, { isApplyRole, isClutchRole, type ApplyRole } from "../config";
 
 /**
  * A map storing the last time a user used a command.
@@ -156,9 +156,7 @@ async function processInteraction(interaction: ButtonInteraction) {
             reasonMessage.delete();
 
             outcomeChannel.send(
-                `<@${member.id}>, your application for ${shortRoleToName(role)} has unfortunately been denied for: ${
-                    reasonMessage.content
-                }`
+                `<@${member.id}>, your application for ${shortRoleToName(role)} has unfortunately been denied for: ${reasonMessage.content}`
             );
         });
 
@@ -179,17 +177,19 @@ async function processInteraction(interaction: ButtonInteraction) {
             }
         ).cheatpoint;
 
-        outcomeChannel.send(
-            `<@${member.id}>, your application for ${shortRoleToName(
-                role
-            )} has received an infraction. You now have ${cheatpoint}/3 infractions${
-                cheatpoint === 3 ? " and have been permanently banned from applications 💀" : ""
-            }. ${cheatpoint === 2 ? "One more and you're permanently banned from applications." : ""}`
-        ).then((message) => {
-            if(cheatpoint === 3) {
-                message.react("💀");
-            }
-        })
+        outcomeChannel
+            .send(
+                `<@${member.id}>, your application for ${shortRoleToName(
+                    role
+                )} has received an infraction. You now have ${cheatpoint}/3 infractions${
+                    cheatpoint === 3 ? " and have been permanently banned from applications 💀" : ""
+                }. ${cheatpoint === 2 ? "One more and you're permanently banned from applications." : ""}`
+            )
+            .then((message) => {
+                if (cheatpoint === 3) {
+                    message.react("💀");
+                }
+            });
     }
 }
 
@@ -212,13 +212,13 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // check if user has reacted to the guide message with a thumbsup
     const guideMessage = await GetGuild()
-        .channels.fetch(config.Channels.Guide)
+        .channels.fetch(isClutchRole(role) ? config.Channels.ClutchGuide : config.Channels.Guide)
         .then((channel) => {
             if (!channel?.isTextBased()) {
-                return;
+                throw new Error("Guide channel is not a text channel");
             }
 
-            return channel.messages.fetch(config.Channels.GuideMessage);
+            return channel.messages.fetch(isClutchRole(role) ? config.Channels.ClutchGuideMessage : config.Channels.GuideMessage);
         });
 
     if (!guideMessage) {
@@ -324,8 +324,8 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         }
 
         // check if the file is too big
-        if (proof.size > 20 * 1024 * 1024) {
-            await interaction.editReply("File is too big. Max 20MB.");
+        if (proof.size > 50 * 1024 * 1024) {
+            await interaction.editReply("File is too big. Max 50MB.");
             return null;
         }
 
@@ -348,7 +348,7 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // check if user already has this role
     const roleToCheck = shortRoleToRoleID(role);
-    if (roleToCheck && interaction.member.roles.cache.has(roleToCheck)) {
+    if (roleToCheck && interaction.member.roles.cache.has(roleToCheck) && !isClutchRole(role)) {
         await interaction.editReply("You already have this role.");
         return null;
     }
@@ -399,7 +399,7 @@ export default {
                 .addAttachmentOption((option) =>
                     option
                         .setName("proof")
-                        .setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 20MB.")
+                        .setDescription("A file from your device. Allowed file types: mp4, mov, webm, gif, png, jpg, jpeg. Max 50MB.")
                         .setRequired(true)
                 )
         ),

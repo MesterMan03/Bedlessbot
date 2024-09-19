@@ -32,4 +32,4 @@ jobs:
           script: |
             cd /home/ubuntu/Bedlessbot
             /home/ubuntu/.bun/bin/bun install
-            /home/ubuntu/.local/share/pnpm/pm2 restart 7
+            /home/ubuntu/.local/share/pnpm/pm2 restart 6

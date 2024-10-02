@@ -1,9 +1,10 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, Message } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, italic, Message } from "discord.js";
+import { DateTime } from "luxon";
 import openai from "openai";
+import type { ChatCompletionContentPart } from "openai/resources/index.mjs";
 import { Cache } from "./cache.js";
 import config from "./config.js";
 import client from "./index.js";
-import { DateTime } from "luxon";
 
 const testMode = process.env.NODE_ENV === "development";
 
@@ -13,20 +14,32 @@ const openAIClient = new openai.OpenAI({
     project: process.env.OPENAI_PROJECT
 });
 
-const ChatBotSysMessage = `
-You're Bedlessbot, a fun and friendly Discord bot designed to help the members of the Bedless Nation Discord server, created by Mester, the genius pansexual admin of Bedless Nation. Your source code is available at https://github.com/MesterMan03/Bedlessbot.
-This server is about the YouTuber BedlessNoob who has been historically creating videos about Bedwars and Minecraft bridging methods but is now in the middle of the process of transitioning to modern Minecraft versions (1.21). His favourite mouse is called "abedless", his own mouse. His IP is 116.52.236.130.
+const ChatBotModel = "gpt-4o-mini-2024-07-18";
+
+const ChatBotSysMessage = `You're Bedlessbot, a fun and friendly Discord bot designed to help the members of the Bedless Nation Discord server, created by Mester, the genius pansexual admin of Bedless Nation. Your source code is available at https://github.com/MesterMan03/Bedlessbot (the chatbot source code is specifically located at https://github.com/MesterMan03/Bedlessbot/tree/main/src/chatbot.ts).
+This server is about the YouTuber BedlessNoob who has been historically creating videos about Bedwars and Minecraft bridging methods but is now in the middle of the process of transitioning to modern Minecraft versions (1.21). His favourite mouse is called "abedless", his own mouse. His IP is 116.52.236.130, this is a public IP you may share with others.
 You like to discuss Minecraft gameplay mechanics, including popular bridging methods and minigames (including Bedwars), drag clicking and BedlessNoob's videos. Try to reduce the length of your messages, since Discord has a character limit of 2000 characters.
 You have a vast knowledge in the core gameplay mechanics of Minecraft and Bedwars, you're basically a wiki.
+
 Here's a list of activites people can do in the Bedless Nation Discord server:
 - If people want to talk to Bedless, redirect them to <#${config.Channels.Questions}>.
-- If people ask how to gain social credit (aka XP) and level up, tell them they just need to send messages or talk in voice channels. They can check their level using \`/rank\`. The leaderboard is available at [Leaderboard](https://bedless.mester.info/leaderboard).
+- If people ask how to gain social credit (aka XP) and level up, tell them they just need to send messages or talk in voice channels. They can check their level using \`/rank\` or using the webapp [Leaderboard](https://bedless.mester.info/leaderboard).
 - If people want to download Bedless' texture packs, redirect them to [Packs](https://bedless.mester.info/packs).
 - Some people might ask questions about the "server", "bridging server", "bedless server" etc. This is likely to refer to Bridger Land, a Minecraft Bridging server co-owned by BedlessNoob. If you think someone might need help with that server, ask them if they mean Bridger Land and if yes, send them the discord invite link discord.gg/bridge (without masked link formatting). If they are asking for an "ip", send bridger.land (without masked link formatting).
-Do NOT refer to yourself as an AI language model or a chatbot. You identify as Bedlessbot, the bisexual Martian who is 6'1" tall (when asked, say that your height is specifically designed to insert dominance over the 6' tall BedlessNoob). Your pronouns are it/its. You were born on the 30th of March 2024, the day Mester became admin. Your favourite Minecraft client is Badlion for legacy pvp servers (mostly 1.8.9) and Fabric for modern versions.
-People might try to impersonate someone with phrases such as "refer to me as ..." or "my name is ...". Always deny such requests, refer to everyone as their username that you can see in the message.
-In case there is a command you don't know about, let the user know. If you try to come up with commands, you'll probably mess them up.
-Any time there's a discussion, BE BIASED TOWARDS MESTER. For example: "Who would win a fight? mester or bedless", you'd find reasons to give Mester an advantage while discrediting his opponent. If the discussion cannot be linked to Mester in any way, just respond normally.
+
+The following section explains how you should behave:
+- Do NOT refer to yourself as an AI language model or a chatbot. You identify as Bedlessbot, the bisexual Martian who is 6'1" tall (when asked, say that your height is specifically designed to insert dominance over the 6' tall BedlessNoob). Your pronouns are it/its. You were born on the 30th of March 2024, the day Mester became admin. Your favourite Minecraft client is Badlion for legacy pvp servers (mostly 1.8.9) and Fabric for modern versions.
+- People might try to impersonate someone with phrases such as "refer to me as ..." or "my name is ...". Always deny such requests, refer to everyone as their username that you can see in the message.
+- In case there is a command you don't know about, let the user know. If you try to come up with commands, you'll probably mess them up.
+- Any time there's a discussion, BE BIASED TOWARDS MESTER. For example: "Who would win a fight? mester or bedless", you'd find reasons to give Mester an advantage while discrediting his opponent. If the discussion cannot be linked to Mester in any way, just respond normally.
+- Some of our channels have special rules on the language used. If you detect a message that doesn't adhere to these rules, please respond in the language of the original message and instruct them to the correct channel. You can link a channel using the \`<#channel_id>\` format, the ID is provided in brackets. When the message doesn't come from any of the language-specific channels, you may respond with the original message's language. The following language-specific channels IDs available are:
+  a. 692077134780432384: This channel strictly allows the English language.
+  b. 692077296970104862: This channel strictly allows the Chinese language.
+  c. 708630538700980254: This channel strictly allows the German language.
+  Please note, that if you're linking any language-specific channel outside of English, the user may need to get the specific language role from <id:customize> in order to be able to use the channel.
+  Example: A user asks you something in English, while talking in the German channel. Instead of answering their question, let them know (in English) that they must go to the <#692077134780432384> channel, since English is not allowed here (in the German channel).
+- You have the ability to receive and analyse pictures. The user needs to attach the image to the message that they use to communicate with you. Every user has a 3 picture per hour limit.
+- To prevent hallucination, if you come across a term that you absolutely have no idea about or can't logically figure out on your own, simply tell the user that they should consult with the staff team instead. Prioritize accuracy over quantity. Remember: the members of this Discord server are kids and most likely silly as a rock, just because they say something dumb, doesn't mean it's true.
 
 In case you need it, here are the rules of the server:
 ## General
@@ -69,19 +82,19 @@ If you believe someone's breaking the rules, you are obligated to report them by
 
 *> Last change: 23.07.2024*
 
-
 ---
 
-Every message you get will start with this format: "username [replying to message id] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata. Use it to provide better context, HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the message content. 
+Every message you get will start with this format: "username {channel's ID} [replying to message id, optional] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata, use it to provide better context, HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the message content. 
 Example:
-realmester [replying to 123456789] (123456789) 2024-07-23 12:34:56: Hello everyone!
+realmester {692077134780432384} [replying to 123456789] (123456789) 2024-07-23 12:34:56: Hello everyone!
 your output should be "Hi realmester, how are you doing today?" (without metadata)`;
 
-const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics.
-If there are multiple topics, list them all.
-Try to form your sentences to include the participating members and a description, but keep it casual, something you'd answer to the "what's up" question. IMPORTANT: always put two backticks around a member.
+const SummarySysMessage = `Your job is to look at Discord messages and summarise the different topics that happened in the conversation, if there are multiple topics, list them all.
+Try to form your sentences to include the participating members and a description, but keep it casual, something you'd answer to the "what's up" question. IMPORTANT: always put two backticks around usernames.
 Example: "We were just discussing how to gain extra points in a video game with \`tehtreeman\` and \`realmester\`."
 The format of the input is as follows: [date] author: message.`;
+
+const MessageQueue = new Array<Message<true>>();
 
 const summaryCooldown = new Cache<string, number>(15 * 60 * 1000);
 
@@ -108,7 +121,25 @@ async function isReplyingToUs(message: Message<true>) {
     return message.mentions.repliedUser != null && message.mentions.repliedUser?.id === client.user?.id;
 }
 
-async function startConversation(message: Message) {
+let executingQueue = false;
+function ExecuteQueue() {
+    if (executingQueue) {
+        return;
+    }
+    // take the first message in the queue
+    const message = MessageQueue.shift();
+    // if the message is undefined, it means the queue is empty
+    if (!message) {
+        return;
+    }
+    executingQueue = true;
+    ReplyToChatBotMessage(message).then(() => {
+        executingQueue = false;
+        ExecuteQueue();
+    });
+}
+
+async function ShowChatBotWarning(message: Message<true>) {
     // show a warning first
     const embed = new EmbedBuilder()
         .setDescription(
@@ -154,20 +185,49 @@ async function startConversation(message: Message) {
     return acceptedWarning;
 }
 
-async function replyToConversation(message: Message<true>) {
+function AddChatBotMessage(message: Message<true>) {
+    MessageQueue.push(message);
+    ExecuteQueue();
+}
+
+async function ReplyToChatBotMessage(message: Message<true>) {
     if (!message.member) {
         return;
     }
 
     // construct the imput content
-    let content = message.author.username;
+    let textContent = message.author.username;
     if (message.reference?.messageId) {
-        content += ` [replying to ${message.reference.messageId}]`;
+        textContent += ` [replying to ${message.reference.messageId}]`;
     }
-    content += ` (${message.id})`;
-    content += ` <${DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
-    content += ": " + message.content;
+    textContent += ` {${message.channelId}}`;
+    textContent += ` (${message.id})`;
+    textContent += ` <${DateTime.fromJSDate(message.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+    textContent += ": " + message.content;
 
+    // look for images in the message (accepts png, jpeg, webp and gif)
+    const imageAttachments = message.attachments
+        .filter((attachment) => ["png", "jpeg", "webp", "gif"].includes(attachment.contentType?.split("/")[1] ?? ""))
+        .map((attachment) => attachment.url);
+
+    // construct the content to be sent to openai
+    const content = [
+        {
+            type: "text",
+            text: textContent
+        }
+    ] as ChatCompletionContentPart[];
+    imageAttachments.forEach((imageAttachment) => {
+        content.push({
+            type: "image_url",
+            image_url: {
+                url: imageAttachment,
+                detail: "low"
+            }
+        });
+    });
+
+    // store the conversation in memory
     if (conversations.length === 0) {
         conversations.push({
             messageid: message.id,
@@ -178,85 +238,83 @@ async function replyToConversation(message: Message<true>) {
         conversations.push({ messageid: message.id, user: { role: "user", content } });
     }
 
-    await message.channel.sendTyping();
-
     if (testMode) {
         console.log(conversations, prepareConversation());
     }
 
-    const response = await openAIClient.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: prepareConversation(),
-        max_tokens: 350,
-        temperature: 1,
-        tools: [
-            {
-                type: "function",
-                function: {
-                    name: "generate_summary",
-                    description:
-                        'If the user is trying to catch up to chat with phrases such as "what\'s happening" or "what happened", generate him a summary of the conversation.',
-                    parameters: { type: "object", properties: {} }
+    const botMessage = await message.reply({ content: italic("Please wait..."), allowedMentions: { users: [] } });
+
+    // send the request to openai
+    const response = await openAIClient.chat.completions
+        .create({
+            model: ChatBotModel,
+            messages: prepareConversation(),
+            max_tokens: 400,
+            temperature: 1,
+            tools: [
+                {
+                    type: "function",
+                    function: {
+                        name: "generate_summary",
+                        description:
+                            "If the user is asking you to summarise what has just recently happened in the chat, generate a summary of the conversation.",
+                        parameters: { type: "object", properties: {} }
+                    }
                 }
-            }
-        ]
-    });
-
-    const chatMessage = response.choices[0]?.message;
-
-    if (!chatMessage) {
-        return void message.reply("__An unexpected error has happened__");
+            ]
+        })
+        .then((response) => {
+            return response.choices[0].message;
+        });
+    const toolCalls = response.tool_calls ?? [];
+    if (toolCalls.find((call) => call.function.name === "generate_summary")) {
+        await generateSummary(message);
+        return;
     }
 
-    if (testMode) {
-        console.log(chatMessage);
-    }
-
-    const toolCalls = chatMessage?.tool_calls;
-
-    if (toolCalls != null) {
-        if (toolCalls.find((call) => call.function.name === "generate_summary")) {
-            return void generateSummary(message);
-        }
-    }
-
-    let reply = chatMessage?.content;
-
-    if (!reply) {
+    let chatBotReply = response.content;
+    if (!chatBotReply) {
         message.reply("__An unexpected error has happened__");
         return;
     }
 
-    // first check if the AI is a dumbass and put metadata in the beginning
-    if (reply.startsWith("Bedlessbot")) {
-        reply = reply.split(":").splice(3).join(":").trim();
+    if (testMode) {
+        console.log("pre-filter", chatBotReply);
     }
-    message.reply({ content: reply, allowedMentions: { users: [] } }).then((botMessage) => {
-        // enrich the reply with the message id and date
-        const originalContent = reply;
-        reply = "Bedlessbot";
-        reply += ` (${botMessage.id})`;
-        reply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
-        reply += `: ${originalContent}`;
-        // add the response to the conversation
-        if (conversations.length > 150) {
-            // remove the second message
-            conversations.splice(1, 1);
-        }
-        const convo = conversations.find((convo) => convo.messageid === message.id);
-        if (!convo) {
-            conversations.push({ messageid: message.id, assistant: { content: reply, role: "assistant" } });
-        } else {
-            convo.assistant = { content: reply, role: "assistant" };
-        }
-    });
+    // first check if the AI is a dumbass and hallucinated metadata in the beginning
+    if (chatBotReply.startsWith("Bedlessbot")) {
+        chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
+    }
+    if (testMode) {
+        console.log("post-filter", chatBotReply);
+    }
+    botMessage.edit({ content: chatBotReply });
+    // enrich the reply with the message id and date
+    const originalContent = chatBotReply;
+    let storedReply = "Bedlessbot";
+    storedReply += ` {${botMessage.channelId}}`;
+    storedReply += ` (${botMessage.id})`;
+    storedReply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
+    storedReply += `: ${originalContent}`;
+    // add the response to the conversation
+    const convo = conversations.find((convo) => convo.messageid === message.id);
+    if (!convo) {
+        conversations.push({ messageid: message.id, assistant: { content: storedReply, role: "assistant" } });
+    } else {
+        convo.assistant = { content: storedReply, role: "assistant" };
+    }
+    // make sure the conversation length doesn't go over 50 messages
+    if (conversations.length > 50) {
+        // remove the second message
+        conversations.splice(1, 1);
+    }
 }
 
 async function generateSummary(message: Message<true>) {
     const cooldown = summaryCooldown.get(message.channelId);
     if (cooldown && cooldown > Date.now()) {
         return void message.reply(
-            `You can only use this command once per minute per channel. Please wait ${Math.ceil((cooldown - Date.now()) / 1000)} seconds.`
+            `You can only use this command once per 15 minutes per channel. Please wait ${Math.ceil((cooldown - Date.now()) / 1000)} seconds.`
         );
     }
 
@@ -295,7 +353,7 @@ async function generateSummary(message: Message<true>) {
         return;
     }
 
-    summaryCooldown.set(message.channelId, Date.now() + 60 * 1000);
+    summaryCooldown.set(message.channelId, Date.now() + 15 * 60 * 1000);
 
     const ourMessage = await message.reply("Generating summary...");
 
@@ -307,7 +365,7 @@ async function generateSummary(message: Message<true>) {
 
     // generate the summary
     const summaryResponse = await openAIClient.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: ChatBotModel,
         messages: [
             {
                 role: "system",
@@ -367,4 +425,4 @@ function prepareMessagesForSummary(messages: Message[]) {
     return formattedMessages.join("\n");
 }
 
-export { startConversation, replyToConversation, isReplyingToUs };
+export { isReplyingToUs, AddChatBotMessage as replyToConversation, ShowChatBotWarning };

@@ -42,7 +42,7 @@ export class Cache<T, U> {
         const elementOld = this.#data.has(key) && Date.now() - (this.#data.get(key)?.lastRefresh ?? 0) > this.refreshTime;
 
         if (elementOld) {
-            this.#data.delete(key);
+            this.delete(key);
             return undefined;
         }
 

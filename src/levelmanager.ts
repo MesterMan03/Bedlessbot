@@ -54,7 +54,7 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-let xpMultiplier = process.env.NODE_ENV === "production" ? 1 : 2000;
+let xpMultiplier = process.env.NODE_ENV === "production" ? 1 : 0;
 
 const xpCooldown = new Collection<string, number>();
 

@@ -22,7 +22,7 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
-import { isReplyingToUs, replyToConversation, startConversation } from "./chatbot";
+import { isReplyingToUs, replyToConversation, ShowChatBotWarning } from "./chatbot";
 import config from "./config";
 import {
     EndVoiceChat,
@@ -178,7 +178,7 @@ function processSelfPing(message: Message<true>) {
     // start the chatbot
     const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
     if (!usedChatbot) {
-        startConversation(message).then((accepted) => {
+        ShowChatBotWarning(message).then((accepted) => {
             if (!accepted) {
                 return;
             }
@@ -263,7 +263,7 @@ client.on(Events.MessageCreate, async (message) => {
 
     // 0.5% chance to start a quick time event (in development mode 100%)
     // make sure the channel is allowed to have quick time events
-    if ((config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005) || process.env.NODE_ENV === "development") {
+    if ((config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005) /*|| process.env.NODE_ENV === "development"*/) {
         StartQuickTime(message.channel);
     }
 

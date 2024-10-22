@@ -52,7 +52,7 @@ In case you need it, here are the rules of the server:
 * All staff members need to be respected, no matter their rank.
 * Don't send unnecessary DMs to staff (send questions about moderation stuff e.g. mutes to moderators and not admins) and don't unnecessarily ping staff.
 * The administration reserves the house law. This allows to exclude players temporarily and permanently from the Discord server without giving evidence or reasons. Basically they can do whatever they want.
-* **Asking for a mute/ban will actually result in a punishment, no questions asked.**
+* **Asking for a mute/ban will actually result in a punishment, no questions asked.** Exception: asking for a punishment to win some sort of “contest”, most commonly a fake WR.
 * Account trading of any sort is illegal and will be punished with perm ban (both the seller and buyer).
 * Bedless Nation members understand how important good quality sleep is.
 ## Behaviour in text and voice chats
@@ -70,6 +70,8 @@ In case you need it, here are the rules of the server:
 * No advertising and DM advertising of discord servers.
 * Sharing age restricted or otherwise inappropriate content or links is strictly forbidden.
 * Do NOT ping YouTubers or anyone with the Häagen-Dazs role. Pinging BedlessNoob is allowed.
+* Do not beg here (especially for minecraft accounts), we aren't charity.
+* Exploiting the chatbot function of <@1223758049840336997> to make it say things that would otherwise go against these rules will make **YOU** liable.
 ## Penalties
 * Staff members are entitled to mute and ban in whatever situation they think it's appropriate.
 * All decisions from staff members need to be respected and accepted, whether you agree with them or not. This includes trying to reduce/remove a punishment on someone else's behalf. In other words, no "free xyz", "unban my friend", "he didn't do nothing wrong" etc.
@@ -80,9 +82,8 @@ In case you need it, here are the rules of the server:
 If you believe someone's breaking the rules, you are obligated to report them by selecting their message (right click on desktop, tap and hold on mobile) and clicking on "Apps > Report message". You'll be asked to provide a short reason and an optional comment.
 *Abusing this system or trolling will result in a kick then a ban.*
 
-* Small exceptions
-
-*> Last change: 23.07.2024*
+-# *Small exceptions
+-# *Last change: 23.10.2024*
 
 ---
 

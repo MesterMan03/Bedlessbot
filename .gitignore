@@ -180,6 +180,7 @@ dist
 data.db*
 tools/*
 !tools/setup_db.ts
+!tools/extract_emojis.ts
 
 backup
 chrome-data

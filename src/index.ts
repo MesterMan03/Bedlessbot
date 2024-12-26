@@ -22,7 +22,7 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
-import { isReplyingToUs, replyToConversation, ShowChatBotWarning } from "./chatbot";
+import { isReplyingToUs, AddChatBotMessage, ShowChatBotWarning, ClearConversation } from "./chatbot";
 import config from "./config";
 import {
     EndVoiceChat,
@@ -131,6 +131,12 @@ async function processInteraction(interaction: Interaction) {
         if (interaction.customId.startsWith("chatbot.")) {
             return;
         }
+        if (interaction.customId.startsWith("quicktime.")) {
+            if (interaction.customId.startsWith("quicktime.rbutton.incorrect")) {
+                interaction.reply({ content: "Incorrect button!", ephemeral: true });
+            }
+            return;
+        }
         const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
 
         if (!command?.processInteraction) {
@@ -142,7 +148,47 @@ async function processInteraction(interaction: Interaction) {
     }
 }
 
-// set up client events and log in
+function processSelfPing(message: Message<true>) {
+    if (message.member?.permissions.has("Administrator")) {
+        // only stop if the command ran successfully
+        if (ExecuteAdminCommand(message)) {
+            return;
+        }
+    }
+
+    // start the chatbot
+    const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
+    if (!usedChatbot) {
+        ShowChatBotWarning(message).then((accepted) => {
+            if (!accepted) {
+                return;
+            }
+
+            message.member?.roles.add(config.Roles.Chatbot);
+            AddChatBotMessage(message);
+        });
+    } else {
+        AddChatBotMessage(message);
+    }
+}
+
+function processAIRequest(message: Message<true>) {
+    SendRequest({ text: message.content }).then((response) => {
+        if (response.status !== 200) {
+            return;
+        }
+
+        //@ts-ignore shut up
+        const answer = response.data.answer as string;
+
+        message.reply(answer).catch(() => {
+            // the message was probably deleted
+            return;
+        });
+    });
+}
+
+// set up client events
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) {
         return;
@@ -166,46 +212,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
     }
 });
-
-function processSelfPing(message: Message<true>) {
-    if (message.member?.permissions.has("Administrator")) {
-        // only stop if the command ran successfully
-        if (ExecuteAdminCommand(message)) {
-            return;
-        }
-    }
-
-    // start the chatbot
-    const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
-    if (!usedChatbot) {
-        ShowChatBotWarning(message).then((accepted) => {
-            if (!accepted) {
-                return;
-            }
-
-            message.member?.roles.add(config.Roles.Chatbot);
-            replyToConversation(message);
-        });
-    } else {
-        replyToConversation(message);
-    }
-}
-
-function processAIRequest(message: Message<true>) {
-    SendRequest({ text: message.content }).then((response) => {
-        if (response.status !== 200) {
-            return;
-        }
-
-        //@ts-ignore shut up
-        const answer = response.data.answer as string;
-
-        message.reply(answer).catch(() => {
-            // the message was probably deleted
-            return;
-        });
-    });
-}
 
 client.on(Events.MessageCreate, async (message) => {
     if (!message.inGuild() || message.guildId !== guildID) {
@@ -263,7 +269,7 @@ client.on(Events.MessageCreate, async (message) => {
 
     // 0.5% chance to start a quick time event (in development mode 100%)
     // make sure the channel is allowed to have quick time events
-    if ((config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005) /*|| process.env.NODE_ENV === "development"*/) {
+    if (config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005 /*|| process.env.NODE_ENV === "development"*/) {
         StartQuickTime(message.channel);
     }
 
@@ -337,7 +343,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     }
 });
 
-function ExecuteAdminCommand(message: Message) {
+function ExecuteAdminCommand(message: Message<true>) {
     const command = message.content.split(" ")[1];
     const args = message.content.split(" ").slice(2);
 
@@ -360,6 +366,17 @@ function ExecuteAdminCommand(message: Message) {
             content: `Hi! Latency: ${Math.abs(Date.now() - message.createdTimestamp)}ms. API Latency: ${Math.round(client.ws.ping)}ms`,
             allowedMentions: { users: [] }
         });
+        return true;
+    }
+
+    if (command === "quick-time") {
+        StartQuickTime(message.channel);
+        return true;
+    }
+
+    if (command === "clear-chat") {
+        message.reply("Successfully cleared the chatbot history.");
+        ClearConversation();
         return true;
     }
 

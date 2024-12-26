@@ -27,7 +27,6 @@ const devEnvSchema = z.object({
 });
 
 // verify the environment
-
 if (process.env.DEV_DASH === "yes") {
     devEnvSchema.parse(process.env);
 } else {

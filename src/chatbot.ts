@@ -141,6 +141,13 @@ function ExecuteQueue() {
     });
 }
 
+/**
+ * Clears the conversation, useful when the session gets "polluted"
+ */
+function ClearConversation() {
+    conversations.splice(0, conversations.length);
+}
+
 async function ShowChatBotWarning(message: Message<true>) {
     // show a warning first
     const embed = new EmbedBuilder()
@@ -427,4 +434,4 @@ function prepareMessagesForSummary(messages: Message[]) {
     return formattedMessages.join("\n");
 }
 
-export { isReplyingToUs, AddChatBotMessage as replyToConversation, ShowChatBotWarning };
+export { isReplyingToUs, AddChatBotMessage, ShowChatBotWarning, ClearConversation };

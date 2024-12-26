@@ -54,16 +54,17 @@ function GetLeaderboardPos(userid: string) {
     return pos ? pos + 1 : 1;
 }
 
-let xpMultiplier = process.env.NODE_ENV === "production" ? 1 : 0;
+let xpMultiplier = 1;
 
 const xpCooldown = new Collection<string, number>();
 
 /**
- * A function for getting the xp from a message.
+ * A function for awarding XP to a user based on a message. It performs the cooldown check and returns the final xp amount.
+ * The formula is simply a random number between 10 and 15 per message per 5 seconds.
  * @param message The message to extract the xp from.
  * @returns The amount of xp gained from the message.
  */
-async function GetXPFromMessage(message: Message<true>) {
+async function AwardXPFromMessage(message: Message<true>) {
     if (!message.member || message.content.length === 0) {
         return;
     }
@@ -220,7 +221,7 @@ function SetXPMultiplier(multipler: number) {
 
 export {
     GetLeaderboardPos,
-    GetXPFromMessage,
+    AwardXPFromMessage as GetXPFromMessage,
     LevelToXP,
     XPToLevel,
     XPToLevelUp,

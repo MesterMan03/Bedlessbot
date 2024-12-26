@@ -15,13 +15,13 @@
         "lineWidth": 140,
         "attributePosition": "auto",
         "ignore": ["**/package.json"],
-        "include": ["src/**/*.ts", "res/rank/script.js", "src/dashboard/public/styles/*.css"]
+        "include": ["src/**/*.ts", "res/rank/script.js", "src/dashboard/public/styles/*.css", "tools/**/*.ts"]
     },
     "organizeImports": {
         "enabled": false
     },
     "linter": {
-        "include": ["src/**/*.ts", "res/rank/script.js"],
+        "include": ["src/**/*.ts", "res/rank/script.js", "tools/**/*.ts"],
         "enabled": true,
         "rules": {
             "recommended": false,

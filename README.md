@@ -33,9 +33,9 @@ Create a `.env` file by following `.env.example`.
 
 5. **Set up config**:
  
-Finally, set up `src/config.ts`. Use `src/config.ts.example` as a template.
+Finally, set up `src/config.ts`. It's already prefilled with data, so you will have to change the values to your own.
 
-6. (optional) **Set up secret**:
+1. (optional) **Set up secret**:
 
 If you want to use the [machine-learning API](https://github.com/MesterMan03/Bedlessbot-API), you must provide the secret you generated for the API. Create a `secret` file in the root directory and paste the secret in it (it should be a hexadecimal string).
 

@@ -1,3 +1,3 @@
 {
-    "recommendations": ["esbenp.prettier-vscode", "biomejs.biome", "mohd-akram.vscode-html-format"]
+    "recommendations": ["biomejs.biome", "mohd-akram.vscode-html-format"]
 }

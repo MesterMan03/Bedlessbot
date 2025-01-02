@@ -48,7 +48,7 @@ RANDOM_BUTTONS_PREGENERATED.forEach((row) => {
  * Generate a 5x5 grid of ButtonBuilders with random emojis and colors. Randomly pick a unique cell that contains a unique color and label.
  * @returns A tuple containing the grid of buttons, the unique color and the unique label.
  */
-function generateRandomButtons(): [ActionRowBuilder<ButtonBuilder>[], [RandomButtonColor, string]] {
+function generateRandomButtons(): [ActionRowBuilder<ButtonBuilder>[], { color: RandomButtonColor; label: string }] {
     // generate the 5 random emojis
     const buttonEmojis = new Array<string>(10);
     for (let i = 0; i < buttonEmojis.length; i++) {
@@ -94,7 +94,7 @@ function generateRandomButtons(): [ActionRowBuilder<ButtonBuilder>[], [RandomBut
         }
         grid[y] = row;
     }
-    return [grid, [uniqueColor, uniqueLabel]];
+    return [grid, { color: uniqueColor, label: uniqueLabel }];
 }
 
 async function StartQuickTime(channel: GuildTextBasedChannel) {
@@ -176,7 +176,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel) {
         const [grid, unique] = generateRandomButtons();
 
         const message = await channel.send({
-            content: `Quick time event, click the ${unique[0]} ${unique[1]} to win! You have 30 seconds.`,
+            content: `Quick time event, click the ${unique.color} ${unique.label} to win! You have 30 seconds.`,
             components: grid
         });
 

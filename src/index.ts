@@ -27,11 +27,12 @@ import config from "./config";
 import {
     EndVoiceChat,
     GetLevelConfig,
-    GetXPFromMessage,
+    AwardXPToMessage,
     ManageLevelRole,
     SetXPMultiplier,
     StartVoiceChat,
-    XPToLevel
+    XPToLevel,
+    GetXPMultiplier
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 
@@ -281,7 +282,7 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
-    GetXPFromMessage(message);
+    AwardXPToMessage(message);
 });
 
 client.on(Events.GuildMemberAdd, (member) => {
@@ -348,6 +349,11 @@ function ExecuteAdminCommand(message: Message<true>) {
     const args = message.content.split(" ").slice(2);
 
     if (command === "set-xpmul") {
+        if (args.length === 0) {
+            // return the current xp multiplier
+            message.reply(`Current XP multiplier: ${GetXPMultiplier()}`);
+        }
+
         SetXPMultiplier(parseInt(args[0], 10));
         message.reply(`Set XP multiplier to ${args[0]}`);
 

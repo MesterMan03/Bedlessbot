@@ -210,10 +210,10 @@ commentForm.addEventListener("submit", async (event) => {
     // Create a form data object
     const formData = new FormData(commentForm);
 
-    // Validate comment (must be trimmed, at least 32 characters, max 1024 characters)
+    // Validate comment (must be trimmed, at least 1 character, max 1024 characters)
     const comment = (formData.get("comment") as string).trim();
-    if (comment.length < 32 || comment.length > 1024) {
-        commentElement.setCustomValidity("Comment must be at least 32 characters and no more than 1024 characters.");
+    if (comment.length < 1 || comment.length > 1024) {
+        commentElement.setCustomValidity("Comment must be at least 1 character and no more than 1024 characters.");
         commentElement.reportValidity();
         return;
     }

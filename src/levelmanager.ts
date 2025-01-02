@@ -64,7 +64,7 @@ const xpCooldown = new Collection<string, number>();
  * @param message The message to extract the xp from.
  * @returns The amount of xp gained from the message.
  */
-async function AwardXPFromMessage(message: Message<true>) {
+async function AwardXPToMessage(message: Message<true>) {
     if (!message.member || message.content.length === 0) {
         return;
     }
@@ -197,20 +197,18 @@ function EndVoiceChat(vs: VoiceState) {
         return;
     }
 
-    // end timestamp + calculate xp (1 xp per second)
+    // end timestamp + calculate xp
     const storedVoiceState = voiceStates.get(vs.member.id);
     if (!storedVoiceState) {
         return;
     }
 
-    const time = Date.now() - storedVoiceState;
+    const time = Math.floor((Date.now() - storedVoiceState) / 1000);
 
-    // 1 xp for every 5 seconds + 1 xp for every second of talking
-    const xp = Math.floor(time / 1000 / 5);
+    // 1 xp for every 5 seconds
+    const xp = Math.floor(time / 5);
 
-    console.log(
-        `User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time / 1000)} seconds`
-    );
+    console.log(`User ${vs.member.user.tag} (${vs.member.id}) gained ${xp} xp for being in a voice chat for ${Math.floor(time)} seconds`);
 
     AddXPToUser(GetLevelConfig(vs.member.id), xp, vs.member);
 }
@@ -219,9 +217,13 @@ function SetXPMultiplier(multipler: number) {
     xpMultiplier = multipler;
 }
 
+function GetXPMultiplier() {
+    return xpMultiplier;
+}
+
 export {
     GetLeaderboardPos,
-    AwardXPFromMessage as GetXPFromMessage,
+    AwardXPToMessage,
     LevelToXP,
     XPToLevel,
     XPToLevelUp,
@@ -231,5 +233,6 @@ export {
     SetXPMultiplier,
     AddXPToUser,
     ManageLevelRole,
+    GetXPMultiplier,
     type LevelInfo
 };

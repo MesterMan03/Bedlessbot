@@ -19,7 +19,6 @@ const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const scriptsLocation = "scripts";
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
-const sourcemap = Bun.version >= "1.1.17" ? "linked" : "none";
 const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(dirname, scriptsLocation) }));
 
 // clear the output directory
@@ -31,7 +30,7 @@ await Bun.build({
     minify: true,
     outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
-    sourcemap
+    sourcemap: "linked"
 });
 
 // load EdDSA key from base64 secret
@@ -92,6 +91,7 @@ document.addEventListener('DOMContentLoaded', matomoWaitForTracker());
 
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")
+    //@ts-ignore shut up
     .use(jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" }))
     .get(
         "/lbpage",
@@ -251,8 +251,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
                             "/comments",
                             async ({ body, store: { userid }, error }) => {
                                 // validate comment
-                                if (/^(?=.{32,1024}$)([^\s].*\S)?$/s.test(body.comment) === false) {
-                                    return error(422, "Comment must be at least 32 characters and no more than 1024 characters.");
+                                if (/^(?=.{1,1024}$).+$/s.test(body.comment) === false) {
+                                    return error(422, "Comment must be at least 1 character and no more than 1024 characters long.");
                                 }
                                 api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
                                 return "ok";

@@ -4,7 +4,7 @@ import { verify } from "hcaptcha";
 import webpush from "web-push";
 import client, { GenerateSnowflake, db } from "..";
 import config from "../config";
-import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelfunctions";
 import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 import type {
     DashboardAPIInterface,

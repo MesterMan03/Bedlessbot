@@ -32,11 +32,11 @@ import {
     GetXPMultiplier,
     ManageLevelRole,
     SetXPMultiplier,
-    StartVoiceChat,
-    XPToLevel
+    StartVoiceChat
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 import SetupDB from "../tools/setup_db";
+import { XPToLevel } from "./levelfunctions";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 

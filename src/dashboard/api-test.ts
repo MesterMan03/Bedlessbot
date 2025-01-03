@@ -14,7 +14,7 @@ import webpush from "web-push";
 import packData from "./data.json";
 import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 import SetupDB from "../../tools/setup_db";
-import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelfunctions";
 
 // set up test database
 const db = new Database(":memory:");

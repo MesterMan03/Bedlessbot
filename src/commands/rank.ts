@@ -2,7 +2,8 @@ import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "
 import { GetResFolder, browser, db } from "..";
 import { join } from "path";
 import { EmbedBuilder } from "@discordjs/builders";
-import { GetLeaderboardPos, LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import { GetLeaderboardPos, type LevelInfo } from "../levelmanager";
+import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
 
 const htmlFilePath = join(GetResFolder(), "rank", "index.html");
 

@@ -9,7 +9,7 @@ import {
     MessageFlags
 } from "discord.js";
 import client, { db } from "..";
-import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelmanager";
+import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
 
 const pageSize = 10;
 

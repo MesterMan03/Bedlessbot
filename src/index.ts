@@ -1,5 +1,5 @@
 import { fileURLToPath } from "bun";
-import { Database } from "bun:sqlite";
+import { Database, SQLiteError } from "bun:sqlite";
 import {
     ActivityType,
     ChatInputCommandInteraction,
@@ -36,6 +36,7 @@ import {
     XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
+import SetupDB from "../tools/setup_db";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -60,7 +61,14 @@ const foldersPath = path.join(dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 
 const db = new Database(join(dirname, "..", "data.db"));
-db.run("PRAGMA journal_mode = wal;");
+try {
+    SetupDB(db);
+} catch (error) {
+    // ignore everything except SQLiteError
+    if (!(error instanceof SQLiteError)) {
+        throw error;
+    }
+}
 
 const client = new Client({
     allowedMentions: {

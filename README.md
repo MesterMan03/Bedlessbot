@@ -22,7 +22,7 @@ bun install
 3. **Set up the database**:
 
 ```bash
-bun run tools/setup_db.ts
+bun run tools/setup_db.ts data.db
 ```
 
 This will create an empty `data.db` SQLite database file in the root directory with the correct tables set up.

@@ -12,16 +12,13 @@ import { Database } from "bun:sqlite";
 import config from "../config";
 import webpush from "web-push";
 import packData from "./data.json";
-import { IGetMaxCommentsPage } from "./api-common";
+import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
+import SetupDB from "../../tools/setup_db";
+import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
 
 // set up test database
 const db = new Database(":memory:");
-db.run("PRAGMA journal_mode = wal;");
-db.run("CREATE TABLE pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
-db.run("CREATE INDEX idx_comment_date_desc ON pack_comments (date DESC);");
-db.run("CREATE TABLE pending_pack_comments (id TEXT PRIMARY KEY, packid TEXT, userid TEXT, comment TEXT, date INTEGER);");
-db.run("CREATE TABLE dash_users (userid TEXT PRIMARY KEY, username TEXT, avatar TEXT, access_token TEXT, refresh_token TEXT);");
-db.run("CREATE TABLE push_subscriptions (userid TEXT, endpoint TEXT PRIMARY KEY, expiration INTEGER, auth TEXT, p256dh TEXT);");
+SetupDB(db);
 
 // fill pack comments with test data
 for (const pack of packData.packs) {
@@ -36,14 +33,16 @@ for (const pack of packData.packs) {
     }
 }
 
+// fill level data with test data
+for(let i = 0; i < CONSTANTS.LbPageSize * 10; i++) {
+    db.run("INSERT INTO levels (userid, xp) VALUES (?, ?)", [`testuser${i}`, Math.floor(Math.random() * i * 100) + 1]);
+}
+
 webpush.setVapidDetails(
     process.env["VAPID_SUBJECT"] as string,
     process.env["VAPID_PUBLIC_KEY"] as string,
     process.env["VAPID_PRIVATE_KEY"] as string
 );
-
-const LbPageSize = 20;
-const CommentsPageSize = 10;
 
 export default class DashboardAPITest implements DashboardAPIInterface {
     GenerateRandomName(): string {
@@ -62,32 +61,50 @@ export default class DashboardAPITest implements DashboardAPIInterface {
     }
 
     async FetchLbPage(pageOrId: number | string) {
-        // when an ID is supplied, always return the eight page
-        const page = typeof pageOrId === "number" ? pageOrId : 8;
-
-        if (page >= 10) {
+        if (typeof pageOrId === "number" && pageOrId >= 10) {
             return null;
         }
 
-        const levels = Array.from(
-            { length: LbPageSize },
-            (_, i) =>
-                ({
-                    pos: i + page * LbPageSize + 1,
-                    level: Math.floor(Math.random() * 100),
-                    xp: Math.floor(Math.random() * 1000),
-                    userid: Math.random().toString(10).substring(2),
+        let page = typeof pageOrId === "number" ? pageOrId : -1;
+        if (typeof pageOrId === "string") {
+            // check if the user id is found in the leaderboard
+            const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(pageOrId);
+            if (!levelInfo) {
+                return null;
+            }
+
+            // find position in the leaderboard
+            const position = GetLeaderboardPos(pageOrId, db);
+            page = Math.floor(position / CONSTANTS.LbPageSize);
+        }
+
+        const levels = db
+            .query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${page * CONSTANTS.LbPageSize}`)
+            .all();
+
+        const data = await Promise.all(
+            levels.map(async (levelInfo) => {
+                const level = XPToLevel(levelInfo.xp);
+                const progress = levelInfo.xp - LevelToXP(level);
+
+                // rounded to 2 decimal places
+                const progressPercent = Math.round((progress / XPToLevelUp(level)) * 10000) / 100;
+
+                return {
+                    pos: levels.indexOf(levelInfo) + page * CONSTANTS.LbPageSize + 1,
+                    level,
+                    xp: levelInfo.xp,
+                    userid: levelInfo.userid,
                     avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-                    // username is a random string between 3 and 32 characters
-                    username: this.GenerateRandomName(),
-                    progress: [Math.floor(Math.random() * 1000), Math.floor(Math.random() * 100)]
-                }) satisfies DashboardLbEntry
+                    username: levelInfo.userid,
+                    progress: [progress, progressPercent]
+                } satisfies DashboardLbEntry;
+            })
         );
 
-        return new Promise<typeof levels>((res) => {
-            setTimeout(() => {
-                res(levels);
-            }, 1000); // add an artifical delay
+        // artifical delay
+        return new Promise<typeof data>((res) => {
+            setTimeout(() => res(data), 500);
         });
     }
 
@@ -173,8 +190,8 @@ export default class DashboardAPITest implements DashboardAPIInterface {
 
         const comments = db
             .query<DashboardPackComment, [string]>(
-                `SELECT * FROM pack_comments WHERE packid = ? ORDER BY date DESC LIMIT ${CommentsPageSize} OFFSET ${
-                    page * CommentsPageSize
+                `SELECT * FROM pack_comments WHERE packid = ? ORDER BY date DESC LIMIT ${CONSTANTS.CommentsPageSize} OFFSET ${
+                    page * CONSTANTS.CommentsPageSize
                 }`
             )
             .all(packid);
@@ -256,6 +273,6 @@ export default class DashboardAPITest implements DashboardAPIInterface {
     }
 
     GetMaxCommentsPage(packid: string) {
-        return IGetMaxCommentsPage(packid, db, CommentsPageSize);
+        return IGetMaxCommentsPage(packid, db, CONSTANTS.CommentsPageSize);
     }
 }

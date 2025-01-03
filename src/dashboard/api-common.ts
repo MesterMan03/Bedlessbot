@@ -8,4 +8,16 @@ function IGetMaxCommentsPage(packid: string, db: Database, pageSize: number) {
     return Math.ceil(Math.max(comments, 1) / pageSize);
 }
 
-export { IGetMaxCommentsPage };
+function GetLeaderboardPos(userid: string, db: Database) {
+    const pos = db
+        .query<{ pos: number }, [string]>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = ?)`)
+        .get(userid)?.pos;
+    return pos ? pos + 1 : 1;
+}
+
+const CONSTANTS = {
+    LbPageSize: 20,
+    CommentsPageSize: 10
+};
+
+export { IGetMaxCommentsPage, GetLeaderboardPos, CONSTANTS };

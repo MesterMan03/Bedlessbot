@@ -15,16 +15,13 @@ import type {
 import data from "./data.json";
 import { verify } from "hcaptcha";
 import webpush from "web-push";
-import { IGetMaxCommentsPage } from "./api-common";
+import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 
 webpush.setVapidDetails(
     process.env["VAPID_SUBJECT"] as string,
     process.env["VAPID_PUBLIC_KEY"] as string,
     process.env["VAPID_PRIVATE_KEY"] as string
 );
-
-const LbPageSize = 20;
-const CommentsPageSize = 10;
 
 const allPackIDs = data.packs.map((pack) => pack.id);
 
@@ -39,18 +36,7 @@ const scopes = [OAuth2Scopes.Identify, OAuth2Scopes.RoleConnectionsWrite];
 function GetMaxLbPage() {
     const levelCount = db.query<{ row_count: number }, []>("SELECT COUNT(*) AS row_count FROM levels").get()?.row_count ?? 0;
 
-    return Math.ceil(Math.max(levelCount, 1) / LbPageSize);
-}
-
-let LbCache = new Array<LevelInfo>();
-let lastLbCacheRefresh = 0;
-
-function UpdateLbCache() {
-    if (Date.now() - lastLbCacheRefresh < 30 * 1000) {
-        return;
-    }
-    LbCache = db.query<LevelInfo, []>("SELECT * FROM levels ORDER BY xp DESC").all();
-    lastLbCacheRefresh = Date.now();
+    return Math.ceil(Math.max(levelCount, 1) / CONSTANTS.LbPageSize);
 }
 
 export default class DashboardAPI implements DashboardAPIInterface {
@@ -67,13 +53,15 @@ export default class DashboardAPI implements DashboardAPIInterface {
                 return null;
             }
 
-            // update cache and find position
-            UpdateLbCache();
-            page = Math.floor(LbCache.findIndex((entry) => entry.userid === pageOrId) / LbPageSize);
+            // find position in the leaderboard
+            const position = GetLeaderboardPos(pageOrId, db);
+            page = Math.floor(position / CONSTANTS.LbPageSize);
         }
 
         const levels = db
-            .query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${LbPageSize} OFFSET ${page * LbPageSize}`)
+            .query<LevelInfo, []>(
+                `SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${page * CONSTANTS.LbPageSize}`
+            )
             .all();
 
         return Promise.all(
@@ -87,7 +75,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
                 const progressPercent = Math.round((progress / XPToLevelUp(level)) * 10000) / 100;
 
                 return {
-                    pos: levels.indexOf(levelInfo) + page * LbPageSize + 1,
+                    pos: levels.indexOf(levelInfo) + page * CONSTANTS.LbPageSize + 1,
                     level,
                     xp: levelInfo.xp,
                     userid: levelInfo.userid,
@@ -229,8 +217,8 @@ export default class DashboardAPI implements DashboardAPIInterface {
 
         const comments = db
             .query<DashboardPackComment, [string]>(
-                `SELECT * FROM pack_comments WHERE packid = ? ORDER BY date DESC LIMIT ${CommentsPageSize} OFFSET ${
-                    page * CommentsPageSize
+                `SELECT * FROM pack_comments WHERE packid = ? ORDER BY date DESC LIMIT ${CONSTANTS.CommentsPageSize} OFFSET ${
+                    page * CONSTANTS.CommentsPageSize
                 }`
             )
             .all(packid);
@@ -302,6 +290,6 @@ export default class DashboardAPI implements DashboardAPIInterface {
     }
 
     GetMaxCommentsPage(packid: string) {
-        return IGetMaxCommentsPage(packid, db, CommentsPageSize);
+        return IGetMaxCommentsPage(packid, db, CONSTANTS.CommentsPageSize);
     }
 }

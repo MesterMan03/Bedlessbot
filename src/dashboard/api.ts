@@ -169,7 +169,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
 
         // send a review modal to mods
         const reviewChannel = await client.channels.fetch(config.Channels.PackComments);
-        if (!reviewChannel?.isTextBased()) {
+        if (!reviewChannel?.isTextBased() || reviewChannel.isDMBased()) {
             throw new Error("Review channel is not a text channel or does not exist.");
         }
 

@@ -22,17 +22,17 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
 import { WishBirthdays, cronjob } from "./birthdaymanager";
-import { isReplyingToUs, AddChatBotMessage, ShowChatBotWarning, ClearConversation } from "./chatbot";
+import { AddChatBotMessage, ClearConversation, ShowChatBotWarning, isReplyingToUs } from "./chatbot";
 import config from "./config";
 import {
+    AwardXPToMessage,
     EndVoiceChat,
     GetLevelConfig,
-    AwardXPToMessage,
+    GetXPMultiplier,
     ManageLevelRole,
     SetXPMultiplier,
     StartVoiceChat,
-    XPToLevel,
-    GetXPMultiplier
+    XPToLevel
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
 
@@ -341,6 +341,27 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
             return;
         }
         EndVoiceChat(newState);
+    }
+});
+
+client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
+    // check if the new member has the BridgerLand role and the old member doesn't
+    if (newMember.roles.cache.has(config.Roles.BridgerLand) && !oldMember.roles.cache.has(config.Roles.BridgerLand)) {
+        // alert the member that they should join BridgerLand instead
+        newMember
+            .send(
+                `If you're here for anything related to BridgerLand, please join the [BridgerLand Discord server](https://discord.gg/bridge) instead.`
+            )
+            .catch(() => {
+                // if we cannot send a DM, use a public channel
+                const channel = client.channels.cache.get(config.Channels.Birthday);
+                if (!channel?.isTextBased() || channel.isDMBased()) {
+                    return;
+                }
+                channel.send(
+                    `<@${newMember.id}> If you're here for anything related to BridgerLand, please join the [BridgerLand Discord server](https://discord.gg/bridge) instead.`
+                );
+            });
     }
 });
 

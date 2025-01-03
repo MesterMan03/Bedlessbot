@@ -80,9 +80,9 @@ function shortRoleToRoleID(role: ApplyRole) {
     return config.RoleToID[role];
 }
 
-async function processInteraction(interaction: ButtonInteraction) {
-    const outcomeChannel = (await client.channels.fetch(config.Channels.Outcome)) as TextBasedChannel;
-    if (!outcomeChannel) {
+async function processInteraction(interaction: ButtonInteraction<"cached">) {
+    const outcomeChannel = await client.channels.fetch(config.Channels.Outcome);
+    if (!outcomeChannel || outcomeChannel.isDMBased() || !outcomeChannel.isTextBased()) {
         throw new Error("what the fuck, missing outcome channel");
     }
 
@@ -429,7 +429,7 @@ export default {
             interaction.editReply("Your application has been submitted for review.");
 
             const reviewChannel = (await client.channels.fetch(config.Channels.ToReview)) as TextBasedChannel;
-            if (!reviewChannel) {
+            if (!reviewChannel || reviewChannel.isDMBased() || !reviewChannel.isTextBased()) {
                 throw new Error("No review channel");
             }
 

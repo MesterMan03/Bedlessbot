@@ -174,7 +174,7 @@ async function AlertMember(member: GuildMember, newlevel: number, newRole: strin
     }
 
     const levelupChannel = await client.channels.fetch(config.Channels.Levelup);
-    if (!levelupChannel?.isTextBased()) {
+    if (!levelupChannel?.isTextBased() || levelupChannel.isDMBased()) {
         return;
     }
 

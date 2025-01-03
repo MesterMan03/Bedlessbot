@@ -50,7 +50,7 @@ async function WishBirthdays() {
             const ageString = age !== -1 ? ` (${age})` : "";
 
             const generalChannel = await client.channels.fetch(config.Channels.Birthday);
-            if (!generalChannel?.isTextBased()) {
+            if (!generalChannel?.isTextBased() || generalChannel.isDMBased()) {
                 return;
             }
 

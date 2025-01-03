@@ -32,7 +32,7 @@
     "@hcaptcha/vanilla-hcaptcha": "^1.1.0-alpha2",
     "@twemoji/api": "^15.1.0",
     "discord-oauth2": "^2.12.1",
-    "discord.js": "^14.15.3",
+    "discord.js": "^14.17.2",
     "dompurify": "^3.1.6",
     "elysia": "^1.0.27",
     "elysia-rate-limit": "^4.1.0",

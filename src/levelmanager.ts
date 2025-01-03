@@ -15,18 +15,18 @@ function LevelToXP(level: number) {
     return Math.round(a * level * (2 * Math.pow(level, 2) + b * level + c));
 }
 
-function XPToLevel(fx: number) {
+function XPToLevel(xp: number) {
     // Define a tolerance level for comparing f(x) and fx
     const tolerance = 0.0001;
 
     // Perform a binary search to find the approximate value of x
     let lowerBound = 0;
-    let upperBound = fx / a; // Rough estimation of upper bound
+    let upperBound = xp / a; // Rough estimation of upper bound
     let mid = (lowerBound + upperBound) / 2;
     while (upperBound - lowerBound > tolerance) {
-        if (LevelToXP(mid) > fx) {
+        if (LevelToXP(mid) > xp) {
             upperBound = mid;
-        } else if (LevelToXP(mid) < fx) {
+        } else if (LevelToXP(mid) < xp) {
             lowerBound = mid;
         } else {
             return Math.floor(mid);
@@ -46,7 +46,11 @@ function XPToLevel(fx: number) {
 function XPToLevelUp(level: number) {
     return LevelToXP(level + 1) - LevelToXP(level);
 }
-
+/**
+ * Get the leaderboard position of a user based on their ID
+ * @param userid The ID of the user to get the leaderboard position for.
+ * @returns The position of the user in the leaderboard.
+ */
 function GetLeaderboardPos(userid: string) {
     const pos = db
         .query<{ pos: number }, []>(`SELECT COUNT(*) as pos FROM levels WHERE xp > (SELECT xp FROM levels WHERE userid = '${userid}')`)
@@ -79,30 +83,31 @@ async function AwardXPToMessage(message: Message<true>) {
     const levelInfo = GetLevelConfig(message.author.id);
 
     // xp is random number between 10 and 15
-    const xp = Math.floor((Math.random() * 6 + 10) * xpMultiplier);
-    AddXPToUser(levelInfo, xp, message.member);
-
-    return xp;
+    const xp = Math.floor(Math.random() * 6 + 10);
+    return AddXPToUser(levelInfo, xp, message.member);
 }
 
 /**
  * A function for adding xp to the user (and automatically leveling them up if they've reached the new level).
  * @param levelInfo The level config of the user.
- * @param xp The xp to add - not sanitised, so make sure it's a whole number.
+ * @param xp The xp to add - the xp will be multiplied by the xp multiplier.
+ * @returns The final xp amount given to the user.
  */
 async function AddXPToUser(levelInfo: LevelInfo, xp: number, member: GuildMember) {
     // make sure to not apply xp multiplier to a SPECIAL user
-    xp = member.id === "876476587808284702" ? Math.floor(xp / xpMultiplier) : Math.floor(xp);
+    const finalXp = member.id === "876476587808284702" ? xp : Math.floor(xp * xpMultiplier);
 
     // update the user's xp
-    db.run(`UPDATE levels SET xp = xp + ${xp} WHERE userid = '${levelInfo.userid}'`);
+    db.run(`UPDATE levels SET xp = xp + ${finalXp} WHERE userid = '${levelInfo.userid}'`);
 
-    const newLevel = XPToLevel(levelInfo.xp + xp);
+    const newLevel = XPToLevel(levelInfo.xp + finalXp);
     if (newLevel > XPToLevel(levelInfo.xp) && newLevel !== 0) {
         // We leveled up!
         const newRole = await ManageLevelRole(member, newLevel);
         AlertMember(member, newLevel, newRole);
     }
+
+    return xp;
 }
 
 /**

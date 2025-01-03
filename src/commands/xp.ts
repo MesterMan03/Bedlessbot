@@ -1,6 +1,6 @@
 import { db } from "../index.js";
 import { GetLevelConfig, LevelToXP, XPToLevel } from "../levelmanager.js";
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, MessageFlags } from "discord.js";
 import { AddRankFieldEmbeds } from "./rank.js";
 
 export default {
@@ -31,7 +31,7 @@ export default {
         .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const target = interaction.options.getUser("member", true);
         const value = interaction.options.getString("value", true);

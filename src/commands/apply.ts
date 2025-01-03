@@ -6,6 +6,7 @@ import {
     ButtonStyle,
     ChatInputCommandInteraction,
     EmbedBuilder,
+    MessageFlags,
     SlashCommandBuilder,
     SlashCommandStringOption,
     type TextBasedChannel
@@ -414,7 +415,7 @@ export default {
                 return await interaction.reply("This command can only be used in the server.");
             }
 
-            await interaction.deferReply({ ephemeral: false });
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             const values = await validateCommand(interaction);
             if (!values) {

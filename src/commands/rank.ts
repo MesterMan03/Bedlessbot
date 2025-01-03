@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { GetResFolder, browser, db } from "..";
 import { join } from "path";
 import { EmbedBuilder } from "@discordjs/builders";
@@ -20,10 +20,7 @@ export default {
             return "Puppeteer is not available, cannot render rank card.";
         }
 
-        let user = interaction.options.getUser("member");
-        if (!user) {
-            user = interaction.user;
-        }
+        const user = interaction.options.getUser("member") ?? interaction.user;
 
         // get level info
         const levelInfo = db.query<LevelInfo, []>(`SELECT * FROM levels WHERE userid = '${user.id}'`).get();
@@ -41,10 +38,10 @@ export default {
             // add the fields
             AddRankFieldEmbeds(embed, levelInfo);
 
-            return void interaction.reply({ embeds: [embed], ephemeral: true });
+            return void interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
-        await interaction.deferReply({ ephemeral: false });
+        await interaction.deferReply();
 
         const userLevel = XPToLevel(levelInfo.xp);
         const relativexp = levelInfo.xp - LevelToXP(userLevel);

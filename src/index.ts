@@ -9,6 +9,7 @@ import {
     Guild,
     Message,
     MessageComponentInteraction,
+    MessageFlags,
     REST,
     Routes,
     ThreadAutoArchiveDuration,
@@ -121,7 +122,10 @@ async function processInteraction(interaction: Interaction) {
         const command = clientCommands.get(interaction.commandName);
 
         if (!command) {
-            await interaction.reply({ content: `No command matching ${interaction.commandName} was found.`, ephemeral: true });
+            await interaction.reply({
+                content: `No command matching ${interaction.commandName} was found.`,
+                flags: MessageFlags.Ephemeral
+            });
             return;
         }
 
@@ -134,14 +138,17 @@ async function processInteraction(interaction: Interaction) {
         }
         if (interaction.customId.startsWith("quicktime.")) {
             if (interaction.customId.startsWith("quicktime.rbutton.incorrect")) {
-                interaction.reply({ content: "Incorrect button!", ephemeral: true });
+                interaction.reply({ content: "Incorrect button!", flags: MessageFlags.Ephemeral });
             }
             return;
         }
         const command = clientCommands.find((cmd) => cmd.interactions?.includes(interaction.customId));
 
         if (!command?.processInteraction) {
-            await interaction.reply({ content: `No command matching ${interaction.customId} was found.`, ephemeral: true });
+            await interaction.reply({
+                content: `No command matching ${interaction.customId} was found.`,
+                flags: MessageFlags.Ephemeral
+            });
             return;
         }
 
@@ -207,9 +214,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
 
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: "There was an error while executing this command!", ephemeral: true });
+            await interaction.followUp({ content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral });
         } else {
-            await interaction.reply({ content: "There was an error while executing this command!", ephemeral: true });
+            await interaction.reply({ content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral });
         }
     }
 });
@@ -361,6 +368,17 @@ client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
                 channel.send(
                     `<@${newMember.id}> If you're here for anything related to BridgerLand, please join the [BridgerLand Discord server](https://discord.gg/bridge) instead.`
                 );
+            })
+            .finally(() => {
+                // after 5 minutes, check if the user still has the role and remove it
+                setTimeout(
+                    () => {
+                        if (newMember.roles.cache.has(config.Roles.BridgerLand)) {
+                            newMember.roles.remove(config.Roles.BridgerLand);
+                        }
+                    },
+                    5 * 60 * 1000
+                );
             });
     }
 });
@@ -373,10 +391,16 @@ function ExecuteAdminCommand(message: Message<true>) {
         if (args.length === 0) {
             // return the current xp multiplier
             message.reply(`Current XP multiplier: ${GetXPMultiplier()}`);
+            return true;
         }
 
-        SetXPMultiplier(parseInt(args[0], 10));
-        message.reply(`Set XP multiplier to ${args[0]}`);
+        const mult = parseInt(args[0], 10);
+        if (Number.isNaN(mult)) {
+            message.reply("Invalid XP multiplier");
+            return true;
+        }
+        SetXPMultiplier(mult);
+        message.reply(`Set XP multiplier to ${mult}`);
 
         return true;
     }
@@ -397,7 +421,7 @@ function ExecuteAdminCommand(message: Message<true>) {
     }
 
     if (command === "quick-time") {
-        StartQuickTime(message.channel);
+        StartQuickTime(message.channel, args[0]);
         return true;
     }
 

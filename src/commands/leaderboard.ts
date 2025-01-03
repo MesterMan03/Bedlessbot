@@ -5,7 +5,8 @@ import {
     type Interaction,
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    MessageFlags
 } from "discord.js";
 import client, { db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelmanager";
@@ -20,7 +21,7 @@ export default {
 
     async execute(interaction: ChatInputCommandInteraction) {
         // defer the interaction, since caching might take some time
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         // validate page
         const page = (interaction.options.getInteger("page") ?? 1) - 1;
@@ -83,7 +84,7 @@ async function processInteraction(interaction: Interaction) {
 
     // check if the leaderboard isn't loading already
     if (embed.footer) {
-        return await interaction.reply({ content: "The leaderboard is already loading.", ephemeral: true });
+        return await interaction.reply({ content: "The leaderboard is already loading.", flags: MessageFlags.Ephemeral });
     }
 
     await interaction.deferUpdate();
@@ -133,7 +134,7 @@ async function processInteraction(interaction: Interaction) {
         .all();
 
     if (levels.length === 0) {
-        return void interaction.followUp({ content: "No levels found.", ephemeral: true });
+        return void interaction.followUp({ content: "No levels found.", flags: MessageFlags.Ephemeral });
     }
 
     const newEmbed = await ReadLevels(levels, page, maxPage);

@@ -165,19 +165,16 @@ for (const pack of packData.packs) {
 }
 
 // add login warning or submit button, based on whether the user is logged in or not
+const loginButton = document.getElementById("loginbutton") as HTMLButtonElement;
+loginButton.addEventListener("click", () => {
+    window.location.href = "/api/auth?redirect=/packs.html";
+});
+
 app.api.user.get().then((response) => {
     if (response.status !== 200) {
-        const warning = document.createElement("a");
-        warning.innerText = "You must be logged in to comment!";
-        warning.href = "/api/auth?redirect=/packs.html";
-
-        commentForm.append(warning);
+        commentForm.style.display = "none";
     } else {
-        const button = document.createElement("button");
-        button.innerText = "Submit";
-        button.type = "submit";
-
-        commentForm.append(button);
+        loginButton.style.display = "none";
     }
 });
 

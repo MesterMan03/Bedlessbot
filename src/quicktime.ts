@@ -225,8 +225,8 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
                 }
             }
 
-            // reveal a letter if there are at least 2 unrevealed letters
-            if (unrevealedIndices.length >= 2) {
+            // reveal a letter if there are more than 2 unrevealed letters
+            if (unrevealedIndices.length > 2) {
                 const randomIndex = unrevealedIndices[Math.floor(Math.random() * unrevealedIndices.length)];
                 revealedLetters.add(randomIndex);
 

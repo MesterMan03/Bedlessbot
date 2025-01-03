@@ -34,7 +34,7 @@ for (const pack of packData.packs) {
 }
 
 // fill level data with test data
-for(let i = 0; i < CONSTANTS.LbPageSize * 10; i++) {
+for (let i = 0; i < CONSTANTS.LbPageSize * 10; i++) {
     db.run("INSERT INTO levels (userid, xp) VALUES (?, ?)", [`testuser${i}`, Math.floor(Math.random() * i * 100) + 1]);
 }
 
@@ -65,22 +65,25 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             return null;
         }
 
-        let page = typeof pageOrId === "number" ? pageOrId : -1;
-        if (typeof pageOrId === "string") {
-            // check if the user id is found in the leaderboard
-            const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(pageOrId);
-            if (!levelInfo) {
+        let query: string | undefined;
+        if (typeof pageOrId === "number") {
+            query = `SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${pageOrId * CONSTANTS.LbPageSize}`;
+        } else {
+            const userid = pageOrId;
+            if (!userid) {
                 return null;
             }
-
-            // find position in the leaderboard
-            const position = GetLeaderboardPos(pageOrId, db);
-            page = Math.floor(position / CONSTANTS.LbPageSize);
+            query = `SELECT * FROM levels WHERE userid = '${userid}'`;
         }
 
-        const levels = db
-            .query<LevelInfo, []>(`SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${page * CONSTANTS.LbPageSize}`)
-            .all();
+        const levels = db.query<LevelInfo, []>(query).all();
+        const pos = (levelInfo: LevelInfo) => {
+            if (typeof pageOrId === "number") {
+                return levels.indexOf(levelInfo) + pageOrId * CONSTANTS.LbPageSize + 1;
+            } else {
+                return GetLeaderboardPos(levelInfo.userid, db);
+            }
+        };
 
         const data = await Promise.all(
             levels.map(async (levelInfo) => {
@@ -91,7 +94,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                 const progressPercent = Math.round((progress / XPToLevelUp(level)) * 10000) / 100;
 
                 return {
-                    pos: levels.indexOf(levelInfo) + page * CONSTANTS.LbPageSize + 1,
+                    pos: pos(levelInfo),
                     level,
                     xp: levelInfo.xp,
                     userid: levelInfo.userid,

@@ -4,6 +4,17 @@ import { XPToLevel, XPToLevelUp } from "../../levelfunctions";
 
 const app = treaty<DashboardApp>(location.origin);
 
+const allowedDomains = ["cdn.discordapp.com"];
+
+function isValidURL(url: string): boolean {
+    try {
+        const parsedURL = new URL(url);
+        return allowedDomains.includes(parsedURL.hostname);
+    } catch (e) {
+        return false;
+    }
+}
+
 interface UserValues {
     userImage: string;
     leaderboard: number;
@@ -27,8 +38,13 @@ function setUserValues(values: UserValues) {
 
     const { userImage, leaderboard, username, level, totalXP, currentXP, maxXP } = values;
 
-    userImageElem.src = userImage;
-    userImageElem.alt = username;
+    if (isValidURL(userImage)) {
+        userImageElem.src = userImage;
+        userImageElem.alt = username;
+    } else {
+        console.error("Invalid user image URL");
+        userImageElem.alt = "Invalid user image URL";
+    }
 
     // add ellipsis for username
     const finalUsername = username.length > 13 ? username.slice(0, 13) + "..." : username;

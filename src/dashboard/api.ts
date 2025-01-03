@@ -45,7 +45,7 @@ async function findIdFromNameOrId(nameOrId: string) {
     if (isUserId) {
         // check if the user id is found in the leaderboard
         const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(nameOrId);
-        if (!levelInfo) {
+        if (levelInfo) {
             return nameOrId;
         }
     } else {
@@ -100,7 +100,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
                     xp: levelInfo.xp,
                     userid: levelInfo.userid,
                     avatar: user
-                        ? user.displayAvatarURL({ forceStatic: false, size: 64 })
+                        ? user.displayAvatarURL({ forceStatic: false, size: typeof pageOrId === "number" ? 64 : 256 })
                         : "https://cdn.discordapp.com/embed/avatars/0.png",
                     username: user ? user.username : "unknown",
                     progress: [progress, progressPercent]

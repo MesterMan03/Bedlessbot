@@ -239,7 +239,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
                 message.edit(`${messageContent}\nThe word is: ${displayWord}`);
                 multiplier -= 0.1;
             }
-        }, 5000);
+        }, 7500);
 
         // set up the message collector
         const filter = (m: Message) => m.content === randomWord;

@@ -97,7 +97,7 @@ function generateRandomButtons(): [ActionRowBuilder<ButtonBuilder>[], { color: R
 function shuffleWord(word: string) {
     const letters = word.split("");
     for (let i = letters.length - 1; i > 0; i--) {
-        const j = Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1)) * (i + 1)); // Use crypto for better randomness
+        const j = Math.floor(Math.random() * (i + 1));
         [letters[i], letters[j]] = [letters[j], letters[i]]; // Swap elements
     }
     return letters.join("");

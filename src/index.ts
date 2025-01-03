@@ -196,6 +196,81 @@ function processAIRequest(message: Message<true>) {
     });
 }
 
+function ExecuteAdminCommand(message: Message<true>) {
+    const command = message.content.split(" ")[1];
+    const args = message.content.split(" ").slice(2);
+
+    if (command === "set-xpmul") {
+        if (args.length === 0) {
+            // return the current xp multiplier
+            message.reply(`Current XP multiplier: ${GetXPMultiplier()}`);
+            return true;
+        }
+
+        const mult = parseFloat(args[0]);
+        if (Number.isNaN(mult) || !Number.isFinite(mult)) {
+            message.reply("Invalid XP multiplier");
+            return true;
+        }
+        SetXPMultiplier(mult);
+        message.reply(`Set XP multiplier to ${mult}`);
+
+        return true;
+    }
+
+    if (command === "wish-birthdays") {
+        WishBirthdays();
+        message.reply("Wished birthdays");
+
+        return true;
+    }
+
+    if (command === "hi") {
+        message.reply({
+            content: `Hi! API Latency: ${Math.round(client.ws.ping)}ms`,
+            allowedMentions: { repliedUser: false }
+        });
+        return true;
+    }
+
+    if (command === "quick-time") {
+        StartQuickTime(message.channel, args[0]);
+        return true;
+    }
+
+    if (command === "clear-chat") {
+        message.reply("Successfully cleared the chatbot history.");
+        ClearConversation();
+        return true;
+    }
+
+    return false;
+}
+
+function GetResFolder() {
+    return join(dirname, "..", "res");
+}
+
+function GetGuild() {
+    return client.guilds.cache.get(guildID) as Guild;
+}
+
+function shutdown(reason?: string) {
+    if (reason) {
+        console.error(`Shutting down client: ${reason}`);
+    }
+    browser?.close();
+    client.destroy();
+    db.close();
+    cronjob.stop();
+    process.exit(0);
+}
+
+function GenerateSnowflake() {
+    // use 2024-01-01 as the epoch
+    return snowflake.getUniqueID().toString();
+}
+
 // set up client events
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.inCachedGuild()) {
@@ -382,81 +457,6 @@ client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
             });
     }
 });
-
-function ExecuteAdminCommand(message: Message<true>) {
-    const command = message.content.split(" ")[1];
-    const args = message.content.split(" ").slice(2);
-
-    if (command === "set-xpmul") {
-        if (args.length === 0) {
-            // return the current xp multiplier
-            message.reply(`Current XP multiplier: ${GetXPMultiplier()}`);
-            return true;
-        }
-
-        const mult = parseInt(args[0], 10);
-        if (Number.isNaN(mult)) {
-            message.reply("Invalid XP multiplier");
-            return true;
-        }
-        SetXPMultiplier(mult);
-        message.reply(`Set XP multiplier to ${mult}`);
-
-        return true;
-    }
-
-    if (command === "wish-birthdays") {
-        WishBirthdays();
-        message.reply("Wished birthdays");
-
-        return true;
-    }
-
-    if (command === "hi") {
-        message.reply({
-            content: `Hi! Latency: ${Math.abs(Date.now() - message.createdTimestamp)}ms. API Latency: ${Math.round(client.ws.ping)}ms`,
-            allowedMentions: { users: [] }
-        });
-        return true;
-    }
-
-    if (command === "quick-time") {
-        StartQuickTime(message.channel, args[0]);
-        return true;
-    }
-
-    if (command === "clear-chat") {
-        message.reply("Successfully cleared the chatbot history.");
-        ClearConversation();
-        return true;
-    }
-
-    return false;
-}
-
-function GetResFolder() {
-    return join(dirname, "..", "res");
-}
-
-function GetGuild() {
-    return client.guilds.cache.get(guildID) as Guild;
-}
-
-function shutdown(reason?: string) {
-    if (reason) {
-        console.error(`Shutting down client: ${reason}`);
-    }
-    browser?.close();
-    client.destroy();
-    db.close();
-    cronjob.stop();
-    process.exit(0);
-}
-
-function GenerateSnowflake() {
-    // use 2024-01-01 as the epoch
-    return snowflake.getUniqueID().toString();
-}
 
 process.on("uncaughtException", (err) => {
     console.error(err);

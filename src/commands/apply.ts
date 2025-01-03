@@ -7,12 +7,16 @@ import {
     ChatInputCommandInteraction,
     EmbedBuilder,
     MessageFlags,
+    MessageMentions,
+    ModalBuilder,
     SlashCommandBuilder,
     SlashCommandStringOption,
+    TextInputBuilder,
+    TextInputStyle,
     type TextBasedChannel
 } from "discord.js";
 import { google } from "googleapis";
-import client, { GetGuild, db } from "..";
+import client, { GenerateSnowflake, GetGuild, db } from "..";
 import config, { isApplyRole, isClutchRole, type ApplyRole } from "../config";
 
 /**
@@ -88,7 +92,8 @@ async function processInteraction(interaction: ButtonInteraction<"cached">) {
     }
 
     const embed = EmbedBuilder.from(interaction.message.embeds[0]);
-    const userid = embed.data.footer?.text;
+    // use MessageMentions.UsersPattern to extract the user ID from the "User" field (the id group contains the id)
+    const userid = embed.data.fields?.[0]?.value.match(MessageMentions.UsersPattern)?.groups?.id;
     const role = roleNameToShort(embed.data.fields?.[1]?.value);
 
     if (!role) {
@@ -102,7 +107,7 @@ async function processInteraction(interaction: ButtonInteraction<"cached">) {
     }
 
     const member = await GetGuild()
-        .members.fetch(userid)
+        .members.fetch({ user: userid, force: true })
         .catch(() => {
             // user was likely banned or left
             return null;
@@ -131,39 +136,41 @@ async function processInteraction(interaction: ButtonInteraction<"cached">) {
     }
 
     if (interaction.customId === "ap-deny") {
-        await interaction.deferUpdate();
-
         // ask for reason
-        const reasonMessage = await interaction.followUp(
-            "Please provide a reason for denying this application in the next 60 seconds (max 500 words). Alternatively, send `cancel` to cancel."
-        );
-
-        const reasonCollector = reasonMessage.channel.createMessageCollector({
-            filter: (m) => m.author.id === interaction.user.id && m.content.length <= 500,
-            time: 60000,
-            max: 1
-        });
-
-        reasonCollector.on("collect", async (reasonMessage) => {
-            reasonCollector.stop();
-
-            if (reasonMessage.content.toLowerCase() === "cancel") {
-                return;
-            }
-
-            embed.setDescription(`Application denied by <@${interaction.user.id}>`).setColor("Red");
-            embed.addFields({ name: "Reason for denial", value: reasonMessage.content });
-            interaction.message.edit({ embeds: [embed], components: [] });
-            reasonMessage.delete();
-
-            outcomeChannel.send(
-                `<@${member.id}>, your application for ${shortRoleToName(role)} has unfortunately been denied for: ${reasonMessage.content}`
+        const modalId = `ap-deny-modal-${GenerateSnowflake()}`;
+        const reasonModal = new ModalBuilder()
+            .setTitle("Reason for denial")
+            .setCustomId(modalId)
+            .setComponents(
+                new ActionRowBuilder<TextInputBuilder>().setComponents(
+                    new TextInputBuilder()
+                        .setCustomId("reason")
+                        .setMaxLength(1024)
+                        .setMinLength(1)
+                        .setRequired(true)
+                        .setLabel("Reason")
+                        .setPlaceholder("Provide a reason for denying this application.")
+                        .setStyle(TextInputStyle.Paragraph)
+                )
             );
-        });
 
-        reasonCollector.on("end", () => {
-            reasonMessage.delete();
-        });
+        await interaction.showModal(reasonModal);
+        interaction
+            .awaitModalSubmit({ filter: (i) => i.user.id === interaction.user.id && i.customId === modalId, time: 120_000 })
+            .then(async (modal) => {
+                const reason = modal.fields.getTextInputValue("reason");
+                if (!reason) {
+                    return;
+                }
+                embed.setDescription(`Application denied by <@${interaction.user.id}>`).setColor("Red");
+                embed.addFields({ name: "Reason for denial", value: reason });
+                modal.deferUpdate();
+                interaction.message.edit({ embeds: [embed], components: [] });
+
+                outcomeChannel.send(
+                    `<@${member.id}>, your application for ${shortRoleToName(role)} has unfortunately been denied for: ${reason}`
+                );
+            });
     }
 
     if (interaction.customId === "ap-infraction") {
@@ -200,10 +207,18 @@ const allowedWebsites = ["www.youtube.com", "youtube.com", "youtu.be", "imgur.co
 
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("for", true);
+    /**
+     * The raw proof, either the link or an attachment.
+     * By the end of this function, it becomes a unique identifier for the proof (either the raw link or the file's sha256 hash).
+     */
     let proof =
         interaction.options.getSubcommand(true) === "link"
             ? interaction.options.getString("proof", true)
             : interaction.options.getAttachment("proof", true);
+    /**
+     * The string representation of the proof.
+     * This is used to display the proof in the embed. It is either the raw link or the file's url.
+     */
     let proofString = "";
     const isLink = interaction.options.getSubcommand(true) === "link";
 
@@ -337,7 +352,6 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         const fileHashString = Buffer.from(fileHashRaw).toString("hex");
 
         proofString = proof.url;
-
         proof = fileHashString;
     }
 
@@ -356,13 +370,14 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
 
     // check if user is on cooldown
     if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
-        const time = cooldowns.get(interaction.user.id);
-        if (!time) {
-            return;
+        const cooldown = cooldowns.get(interaction.user.id);
+        if (!cooldown) {
+            return null;
         }
-        if (Date.now() / 1000 < time + 60) {
+        const now = Date.now() / 1000;
+        if (now - cooldown < 60) {
             await interaction.editReply(
-                `You're on cooldown. Please wait ${Math.ceil(time + 60 - Date.now() / 1000)} seconds before running this command again.`
+                `You're on cooldown. Please wait ${Math.ceil(cooldown - now + 60)} seconds before running this command again.`
             );
             return null;
         }
@@ -417,12 +432,12 @@ export default {
 
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-            const values = await validateCommand(interaction);
-            if (!values) {
+            const validated = await validateCommand(interaction);
+            if (!validated) {
                 return;
             }
 
-            const { role, proof, proofString, isLink } = values;
+            const { role, proof, proofString, isLink } = validated;
 
             // insert proof into database
             db.query(`INSERT OR IGNORE INTO proofs (proof, userid) VALUES ($proof, '${interaction.user.id}')`).run({ $proof: proof });
@@ -437,12 +452,11 @@ export default {
             const embed = new EmbedBuilder()
                 .setTitle("Application")
                 .setFields(
-                    { name: "Username", value: interaction.user.username, inline: true },
+                    { name: "User", value: interaction.user.toString(), inline: true },
                     { name: "Applied for:", value: shortRoleToName(role), inline: true },
                     { name: "Proof", value: proofString, inline: false }
                 )
-                .setColor("DarkPurple")
-                .setFooter({ text: interaction.user.id });
+                .setColor("DarkPurple");
 
             const components = [
                 new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -457,7 +471,11 @@ export default {
                 )
             ];
 
-            reviewChannel.send({ embeds: [embed], components, files: !isLink ? [proofString] : [] });
+            reviewChannel.send({ embeds: [embed], components, files: !isLink ? [proofString] : [] }).then((message) => {
+                if (isLink) {
+                    message.reply({ content: proofString, allowedMentions: { repliedUser: false } });
+                }
+            });
         } catch (error) {
             console.log(error);
         }

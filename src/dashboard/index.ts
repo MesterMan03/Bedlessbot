@@ -485,8 +485,10 @@ const app = new Elysia()
 
             const rewriter = new HTMLRewriter();
 
-            // add tracking code for production (except if the user agent is exactly "internal")
-            if (process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal") {
+            // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
+            const addTracking =
+                process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
+            if (addTracking) {
                 rewriter.on("head", {
                     element(el) {
                         el.append(trackingCode, { html: true });

@@ -309,14 +309,16 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
+    if (message.author.bot) {
+        // award XP and end
+        AwardXPToMessage(message);
+        return;
+    }
+
     // this is sorta just a joke thing
     // if bedless sends a youtube notification, react with Hungarian flag
     if (message.channelId === "692075656921481310") {
         message.react("🇭🇺");
-        return;
-    }
-
-    if (message.author.bot) {
         return;
     }
 

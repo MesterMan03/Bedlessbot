@@ -267,8 +267,7 @@ function DetectLanguage(message: Message<true>): boolean {
         return false;
     }
 
-    const languages = francAll(message.cleanContent, { minLength: 1, only: ["eng", "deu", "cmn"] });
-    console.log(languages);
+    const languages = francAll(message.cleanContent, { minLength: 15, only: ["eng", "deu", "cmn"] });
     const mostProbable = languages[0];
     // ignore languages with a probability below 0.9
     if (mostProbable[1] < 0.9 || mostProbable[0] === "und") {

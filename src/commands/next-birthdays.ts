@@ -42,7 +42,7 @@ export default {
         const embedFields = new Array<{ date: string; text: string }>();
 
         // turn the dates into (day, month name, year) format
-        birthdays.map((birthday) => {
+        birthdays.forEach((birthday) => {
             let date = luxon.DateTime.fromFormat(birthday.date, "dd/LL/yyyy");
             const year = date.year;
             const dateNum = DateToNumber(date.toFormat("dd/LL"));

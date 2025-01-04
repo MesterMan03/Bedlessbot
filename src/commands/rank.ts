@@ -4,7 +4,7 @@ import { browser, db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
 import { GetLeaderboardPos, type LevelInfo } from "../levelmanager";
 
-const rankPath = `${process.env.NODE_ENV === "production" ? "https://bedless.mester.info" : "http://localhost:8146"}/rank.html`;
+const rankPath = `${process.env.NODE_ENV === "production" ? "https://bedless.mester.info" : "http://localhost:8146"}/rank`;
 
 export default {
     data: new SlashCommandBuilder()

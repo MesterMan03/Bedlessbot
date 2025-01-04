@@ -266,7 +266,7 @@ export default class DashboardAPI implements DashboardAPIInterface {
             throw new Error("User not found");
         }
 
-        return { username: user.username, avatar: user.avatar } satisfies DashboardUser;
+        return { username: user.username, avatar: user.avatar, userid: user.userid } satisfies DashboardUser;
     }
 
     SendPushNotification(userid: string, notification: NotificationData) {

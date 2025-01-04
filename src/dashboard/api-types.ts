@@ -53,6 +53,7 @@ interface DashboardFinalPackComment extends DashboardPackComment {
 interface DashboardUser {
     username: string;
     avatar: string;
+    userid: string;
 }
 
 interface PackData {
@@ -103,8 +104,9 @@ const DashboardFinalPackCommentSchema = t.Object({
 
 const DashboardUserSchema = t.Object(
     {
-        username: t.String({ description: "Username of the user" }),
-        avatar: t.String({ description: "Full Discord CDN link to the user's avatar" })
+        username: t.String({ description: "Username" }),
+        avatar: t.String({ description: "Full Discord CDN link to the user's avatar" }),
+        userid: t.String({ description: "User ID" })
     },
     { description: "The user object" }
 );

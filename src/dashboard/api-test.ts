@@ -205,7 +205,8 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                     () =>
                         ({
                             username: this.GenerateRandomName(),
-                            avatar: "https://cdn.discordapp.com/embed/avatars/0.png"
+                            avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+                            userid: comment.userid
                         }) satisfies DashboardUser
                 );
 
@@ -227,7 +228,8 @@ export default class DashboardAPITest implements DashboardAPIInterface {
 
         return {
             username: user.username,
-            avatar: user.avatar
+            avatar: user.avatar,
+            userid: user.userid
         } satisfies DashboardUser;
     }
 

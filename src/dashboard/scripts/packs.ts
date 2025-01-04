@@ -6,6 +6,7 @@ import type { VanillaHCaptchaWebComponent } from "@hcaptcha/vanilla-hcaptcha";
 import { subscribeToPushNotifications } from "./loadworker";
 import * as luxon from "luxon";
 import * as marked from "marked";
+import { user } from "./auth";
 
 const cdn = "https://bedless-cdn.mester.info";
 
@@ -163,14 +164,14 @@ for (const pack of packData.packs) {
 // add login warning or submit button, based on whether the user is logged in or not
 const loginButton = document.getElementById("loginbutton") as HTMLButtonElement;
 loginButton.addEventListener("click", () => {
-    window.location.href = "/api/auth?redirect=/packs.html";
+    window.location.href = "/api/auth?redirect=/packs";
 });
 
-app.api.user.get().then((response) => {
-    if (response.status !== 200) {
-        commentForm.style.display = "none";
-    } else {
+user.then((user) => {
+    if (user) {
         loginButton.style.display = "none";
+    } else {
+        commentForm.style.display = "none";
     }
 });
 

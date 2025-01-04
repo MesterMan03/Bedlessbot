@@ -3,6 +3,7 @@ import type { DashboardApp } from "..";
 import "./loadworker";
 import type { DashboardLbEntry } from "../api-types";
 import { XPToLevelUp } from "../../levelfunctions";
+import { user } from "./auth";
 
 const app = treaty<DashboardApp>(location.origin);
 
@@ -127,6 +128,44 @@ document.addEventListener("click", function (event) {
     }
 });
 
+function showRankCard(user: DashboardLbEntry) {
+    const dialogElement = document.createElement("dialog");
+    dialogElement.classList.add("rank-dialog");
+    const iframe = document.createElement("iframe");
+    iframe.width = "1200";
+    iframe.height = "300";
+
+    const rankInput = new URLSearchParams();
+    rankInput.set("leaderboard", user.pos.toString());
+    rankInput.set("username", user.username);
+    rankInput.set("level", user.level.toString());
+    rankInput.set("total", user.xp.toString());
+    rankInput.set("current", user.progress.toString());
+    rankInput.set("max", XPToLevelUp(user.level).toString());
+    rankInput.set("avatar", user.avatar);
+    iframe.src = "/rank.html?" + rankInput.toString();
+    dialogElement.append(iframe);
+    document.body.append(dialogElement);
+    dialogElement.showModal();
+
+    function close() {
+        dialogElement.close();
+        dialogElement.remove();
+        document.removeEventListener("click", close);
+        document.removeEventListener("touchstart", close);
+    }
+
+    document.addEventListener("click", close);
+    document.addEventListener("touchstart", close);
+}
+
+function shakeElement(element: HTMLElement) {
+    element.classList.add("shake");
+    element.addEventListener("animationend", () => {
+        element.classList.remove("shake");
+    });
+}
+
 // set up nameorid input
 const nameoridInput = document.getElementById("nameorid") as HTMLInputElement;
 let loadingUserQuery = false;
@@ -162,36 +201,10 @@ nameoridInput.addEventListener("keydown", async (event) => {
     const user = rank.data[0];
     console.log(user);
 
-    // create a dialoge element
-    const dialogElement = document.createElement("dialog");
-    dialogElement.classList.add("rank-dialog");
-    const iframe = document.createElement("iframe");
-    iframe.width = "1200";
-    iframe.height = "300";
-
-    const rankInput = new URLSearchParams();
-    rankInput.set("leaderboard", user.pos.toString());
-    rankInput.set("username", user.username);
-    rankInput.set("level", user.level.toString());
-    rankInput.set("total", user.xp.toString());
-    rankInput.set("current", user.progress.toString());
-    rankInput.set("max", XPToLevelUp(user.level).toString());
-    rankInput.set("avatar", user.avatar);
-    iframe.src = "/rank.html?" + rankInput.toString();
-    dialogElement.append(iframe);
-    document.body.append(dialogElement);
-    dialogElement.showModal();
-
-    function close() {
-        dialogElement.close();
-        dialogElement.remove();
-        document.removeEventListener("click", close);
-        document.removeEventListener("touchstart", close);
-    }
-
-    document.addEventListener("click", close);
-    document.addEventListener("touchstart", close);
+    showRankCard(user);
 });
+
+// rewrite input if it contains illegal characters
 nameoridInput.addEventListener("input", (event) => {
     if (loadingUserQuery) {
         event.preventDefault();
@@ -200,12 +213,21 @@ nameoridInput.addEventListener("input", (event) => {
     nameoridInput.value = nameoridInput.value.replace(/[^a-zA-Z0-9_.]/g, "");
 });
 
-function shakeElement(element: HTMLElement) {
-    element.classList.add("shake");
-    element.addEventListener("animationend", () => {
-        element.classList.remove("shake");
-    });
-}
+// setup showme button
+const showmeButton = document.getElementById("showme") as HTMLButtonElement;
+user.then((user) => {
+    if (user) {
+        showmeButton.addEventListener("click", () => {
+            // fill nameorid input with the userid, then send Enter
+            nameoridInput.value = user.userid;
+            nameoridInput.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+        });
+    } else {
+        showmeButton.addEventListener("click", () => {
+            location.href = "/api/auth?redirect=/leaderboard";
+        });
+    }
+});
 
 let pageCursor = 0;
 

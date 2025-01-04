@@ -1,5 +1,3 @@
-// periodic-sync.d.ts
-
 interface PeriodicSyncRegistration extends SyncRegistration {
     minInterval: number;
 }

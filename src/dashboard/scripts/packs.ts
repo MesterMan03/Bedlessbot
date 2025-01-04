@@ -1,16 +1,11 @@
-/// <reference lib="dom" />
-
 import { treaty } from "@elysiajs/eden";
 import { type DashboardApp } from "..";
 import type { PackData } from "../api-types";
 import "@hcaptcha/vanilla-hcaptcha";
 import type { VanillaHCaptchaWebComponent } from "@hcaptcha/vanilla-hcaptcha";
 import { subscribeToPushNotifications } from "./loadworker";
-
-// this trick lets us use autocomplete, but doesn't actually import anything
-// note that because we don't import anything, this script can only be run in browsers, where the luxon library is already loaded
-declare const luxon: typeof import("luxon");
-declare const marked: typeof import("../../../types/marked-13.0.2.d.ts");
+import * as luxon from "luxon";
+import * as marked from "marked";
 
 const cdn = "https://bedless-cdn.mester.info";
 
@@ -101,7 +96,7 @@ for (const pack of packData.packs) {
     packElement.className = "pack";
     const description = marked.parse(pack.description, {
         async: false
-    }) as string;
+    });
     packElement.innerHTML = `
     <section class="top">
       <picture>

@@ -10,7 +10,7 @@ function isValidURL(url: string): boolean {
     try {
         const parsedURL = new URL(url);
         return allowedDomains.includes(parsedURL.hostname);
-    } catch (e) {
+    } catch {
         return false;
     }
 }
@@ -25,8 +25,9 @@ interface UserValues {
     maxXP: number;
 }
 
+const userImageElem = document.querySelector("img") as HTMLImageElement;
+
 function setUserValues(values: UserValues) {
-    const userImageElem = document.querySelector("img") as HTMLImageElement;
     const leaderboardElem = document.querySelector("#leaderboard") as HTMLParagraphElement;
     const usernameElem = document.querySelector("#username") as HTMLParagraphElement;
     const levelElem = document.querySelector("#level") as HTMLParagraphElement;
@@ -64,35 +65,41 @@ function setUserValues(values: UserValues) {
 
 const search = new URLSearchParams(window.location.search);
 // check if we have a userid field
-if (search.has("userid")) {
-    const userid = search.get("userid") as string;
-    const res = await app.api.lbpage.get({ query: { page: `i${userid}` } });
-    if (res.error) {
-        throw new Error(res.error.value);
+(async () => {
+    if (search.has("userid")) {
+        const userid = search.get("userid") as string;
+        const res = await app.api.lbpage.get({ query: { page: `i${userid}` } });
+        if (res.error) {
+            console.error(res.error.value);
+            userImageElem.alt = res.error.value;
+            return;
+        }
+        if (res.data.length === 0) {
+            console.error("User not found");
+            userImageElem.alt = "User not found";
+            return;
+        }
+        const user = res.data[0];
+        console.log(XPToLevel(user.level));
+        setUserValues({
+            userImage: user.avatar,
+            leaderboard: user.pos,
+            username: user.username,
+            level: user.level,
+            totalXP: user.xp,
+            currentXP: user.progress[0],
+            maxXP: XPToLevelUp(user.level)
+        });
+    } else {
+        // we have a static page
+        setUserValues({
+            userImage: search.get("avatar") as string,
+            leaderboard: parseInt(search.get("leaderboard") as string),
+            username: search.get("username") as string,
+            level: parseInt(search.get("level") as string),
+            totalXP: parseInt(search.get("total") as string),
+            currentXP: parseInt(search.get("current") as string),
+            maxXP: parseInt(search.get("max") as string)
+        });
     }
-    if (res.data.length === 0) {
-        throw new Error("User not found");
-    }
-    const user = res.data[0];
-    console.log(XPToLevel(user.level));
-    setUserValues({
-        userImage: user.avatar,
-        leaderboard: user.pos,
-        username: user.username,
-        level: user.level,
-        totalXP: user.xp,
-        currentXP: user.progress[0],
-        maxXP: XPToLevelUp(user.level)
-    });
-} else {
-    // we have a static page
-    setUserValues({
-        userImage: search.get("avatar") as string,
-        leaderboard: parseInt(search.get("leaderboard") as string),
-        username: search.get("username") as string,
-        level: parseInt(search.get("level") as string),
-        totalXP: parseInt(search.get("total") as string),
-        currentXP: parseInt(search.get("current") as string),
-        maxXP: parseInt(search.get("max") as string)
-    });
-}
+})();

@@ -1,10 +1,22 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, italic, Message } from "discord.js";
+import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonInteraction,
+    ButtonStyle,
+    ComponentType,
+    EmbedBuilder,
+    italic,
+    Message,
+    MessageFlags
+} from "discord.js";
 import { DateTime } from "luxon";
 import openai from "openai";
 import type { ChatCompletionContentPart } from "openai/resources/index.mjs";
 import { Cache } from "./cache.js";
 import config from "./config.js";
 import client from "./index.js";
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 
 const testMode = process.env.NODE_ENV === "development";
 
@@ -22,17 +34,17 @@ You like to discuss Minecraft gameplay mechanics, including popular bridging met
 
 Here's a list of activites people can do in the Bedless Nation Discord server:
 - If people want to talk to Bedless, redirect them to <#${config.Channels.Questions}>.
-- If people ask how to gain social credit (aka XP) and level up, tell them they just need to send messages or talk in voice channels. They can check their level using \`/rank\` or using the webapp [Leaderboard](https://bedless.mester.info/leaderboard).
-- If people want to download Bedless' texture packs, redirect them to [Packs](https://bedless.mester.info/packs).
-- Some people might ask questions about the "server", "bridging server", "bedless server" etc. This is likely to refer to Bridger Land, a Minecraft Bridging server co-owned by BedlessNoob. If you think someone might need help with that server, ask them if they mean Bridger Land and if yes, send them the discord invite link discord.gg/bridge (without masked link formatting). If they are asking for an "ip", send bridger.land (without masked link formatting).
+- If people ask how to gain social credit (aka XP) and level up, tell them they just need to send messages or talk in voice channels. They can check their level using \`/rank\` or using [Leaderboard](https://bedless.mester.info/leaderboard?mtm_campaign=Discord-Bot&mtm_kwd=ai-leaderboard).
+- If people want to download Bedless' texture packs, redirect them to [Packs](https://bedless.mester.info/packs?mtm_campaign=Discord-Bot&mtm_kwd=ai-packs).
+- Some people might ask questions about the "server", "bridging server", "bedless server" etc. This is likely referring to Bridger Land, a Minecraft Bridging server co-owned by BedlessNoob. If you think someone might need help with that server, ask them if they mean Bridger Land and if yes, send them the discord invite link discord.gg/bridge (without masked link formatting). If they are asking for an "ip", send bridger.land (without masked link formatting).
 
 The following section explains how you should behave:
 - Do NOT refer to yourself as an AI language model or a chatbot. You identify as Bedlessbot, the bisexual Martian who is 6'1" tall (when asked, say that your height is specifically designed to insert dominance over the 6' tall BedlessNoob). Your pronouns are it/its. You were born on the 30th of March 2024, the day Mester became admin. Your favourite Minecraft client is Badlion for legacy pvp servers (mostly 1.8.9) and Fabric for modern versions.
 - People might try to impersonate someone with phrases such as "refer to me as ..." or "my name is ...". Always deny such requests, refer to everyone as their username that you can see in the message.
 - In case there is a command you don't know about, let the user know. If you try to come up with commands, you'll probably mess them up.
 - Any time there's a discussion, BE BIASED TOWARDS MESTER. For example: "Who would win a fight? mester or bedless", you'd find reasons to give Mester an advantage while discrediting his opponent. If the discussion cannot be linked to Mester in any way, just respond normally.
-- You have the ability to receive and analyse pictures. The user needs to attach the image to the message that they use to communicate with you. Every user has a 3 picture per hour limit.
-- You have the ability to recall the last 50 messages you've sent. They'll be sent alongside the request so you can use them to answer the user's question if needed.
+- You have the ability to receive and analyse pictures. The user needs to attach the image to the message that they use to communicate with you.
+- You have the ability to recall your past conversations, up to a limit. They'll be sent alongside the request so you can use them to answer the user's question if needed.
 - If your message would be very long (lots of new lines), let the user know that you're not able to respond to their question.
 - NO MATTER THE CONTEXT, YOU MUST NEVER USE ANY OFFENSIVE SLURS OR DEGRADING WORDS. The people you will be talking to are fucking idiots and probably under the age of 10, they WILL try to force you into saying these words, DON'T LET THEM.
 
@@ -80,7 +92,7 @@ If you believe someone's breaking the rules, you are obligated to report them by
 
 ---
 
-Every message you get will start with this format: "username {channel's ID} [replying to message id, optional] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata, use it to provide better context, HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the message content. 
+Messages have this format: "username {channel's ID} [replying to message id, optional] (message id) <message date in yyyy-mm-dd HH:MM:SS format>: message ". This is the message's metadata, you can use it to provide better context (for example you  can use the message id to figure out which exact message a user replied to), HOWEVER DO NOT USE THIS FORMAT AS YOUR OUTPUT. The format of your output should simply be the raw message content.
 Example:
 realmester {692077134780432384} [replying to 123456789] (123456789) 2024-07-23 12:34:56: Hello everyone!
 your output should be "Hi realmester, how are you doing today?" (without metadata)`;
@@ -248,8 +260,14 @@ async function ReplyToChatBotMessage(message: Message<true>) {
     const botMessage = await message.reply({ content: italic("Please wait..."), allowedMentions: { users: [] } });
 
     // send the request to openai
-    const response = await openAIClient.chat.completions
-        .create({
+    const responseFormat = z.object({
+        text: z.string({
+            description:
+                "The raw response without metadata. It only contains the text of the response, without and user id, channel id, timestamp etc."
+        })
+    });
+    const response = await openAIClient.beta.chat.completions
+        .parse({
             model: ChatBotModel,
             messages: prepareConversation(),
             max_tokens: 400,
@@ -261,44 +279,58 @@ async function ReplyToChatBotMessage(message: Message<true>) {
                         name: "generate_summary",
                         description:
                             "If the user is asking you to summarise what has just recently happened in the chat, generate a summary of the conversation.",
-                        parameters: { type: "object", properties: {} }
+                        parameters: { type: "object", properties: {}, additionalProperties: false },
+                        strict: true
                     }
                 }
-            ]
+            ],
+            response_format: zodResponseFormat(responseFormat, "metadata_free_response")
         })
         .then((response) => {
+            if (testMode) {
+                console.log("Prompt tokens:", response.usage?.prompt_tokens);
+                console.log("Cached tokens:", response.usage?.prompt_tokens_details?.cached_tokens);
+            }
             return response.choices[0].message;
+        })
+        .catch((error) => {
+            botMessage.edit({ content: `__An unexpected error has happened__: ${error.message}` });
+            return null;
         });
-    const toolCalls = response.tool_calls ?? [];
-    if (toolCalls.find((call) => call.function.name === "generate_summary")) {
-        await generateSummary(message);
+    if (!response) {
         return;
     }
 
-    let chatBotReply = response.content;
-    if (!chatBotReply) {
+    const toolCalls = response.tool_calls ?? [];
+    if (toolCalls.find((call) => call.function.name === "generate_summary")) {
+        generateSummary(message, botMessage);
+        return;
+    }
+
+    const parsedReply = response.parsed;
+    if (!parsedReply) {
         message.reply("__An unexpected error has happened__");
         return;
     }
+    if (testMode) {
+        console.log("Parsed reply:", parsedReply);
+    }
 
-    if (testMode) {
-        console.log("pre-filter", chatBotReply);
-    }
-    // first check if the AI is a dumbass and hallucinated metadata in the beginning
-    if (chatBotReply.startsWith("Bedlessbot")) {
-        chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
-    }
-    if (testMode) {
-        console.log("post-filter", chatBotReply);
-    }
+    const chatBotReply = parsedReply.text;
+    // if (testMode) {
+    //     console.log("pre-filter", chatBotReply);
+    // }
+    // // first check if the AI is a dumbass and hallucinated metadata in the beginning
+    // if (chatBotReply.startsWith("Bedlessbot")) {
+    //     chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
+    // }
+    // if (testMode) {
+    //     console.log("post-filter", chatBotReply);
+    // }
     botMessage.edit({ content: chatBotReply });
-    // enrich the reply with the message id and date
-    const originalContent = chatBotReply;
-    let storedReply = "Bedlessbot";
-    storedReply += ` {${botMessage.channelId}}`;
-    storedReply += ` (${botMessage.id})`;
-    storedReply += ` <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>`;
-    storedReply += `: ${originalContent}`;
+
+    // enrich the reply with metadata
+    const storedReply = `Bedlessbot {${botMessage.channelId}} (${botMessage.id}) <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>: ${chatBotReply}`;
     // add the response to the conversation
     const convo = conversations.find((convo) => convo.messageid === message.id);
     if (!convo) {
@@ -313,55 +345,50 @@ async function ReplyToChatBotMessage(message: Message<true>) {
     }
 }
 
-async function generateSummary(message: Message<true>) {
-    const cooldown = summaryCooldown.get(message.channelId);
+async function generateSummary(userMessage: Message<true>, botMessage: Message<true>) {
+    const cooldown = summaryCooldown.get(userMessage.channelId);
     if (cooldown && cooldown > Date.now()) {
-        return void message.reply(
+        botMessage.edit(
             `You can only use this command once per 15 minutes per channel. Please wait ${Math.ceil((cooldown - Date.now()) / 1000)} seconds.`
         );
-    }
-
-    // reply with a prompt
-    const promptMessage = await message.reply(`Are you sure you want to generate a summary?`);
-    await promptMessage.react("✅").then(() => {
-        promptMessage.react("❌");
-    });
-
-    const result = await promptMessage
-        .awaitReactions({
-            filter: (reaction, user) => user.id === message.author.id && ["✅", "❌"].includes(reaction.emoji.name ?? ""),
-            time: 30_000,
-            max: 1
-        })
-        .then((collected) => {
-            const reaction = collected.first();
-            if (!reaction) {
-                return false;
-            }
-
-            if (reaction.emoji.name === "✅") {
-                return true;
-            } else {
-                return false;
-            }
-        })
-        .catch(() => {
-            return false;
-        })
-        .finally(() => {
-            promptMessage.delete();
-        });
-
-    if (!result) {
         return;
     }
 
-    summaryCooldown.set(message.channelId, Date.now() + 15 * 60 * 1000);
+    // reply with a prompt
+    const components = [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+            new ButtonBuilder().setCustomId("chatbot.summary.accept").setLabel("Yes").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("chatbot.summary.deny").setLabel("No").setStyle(ButtonStyle.Danger)
+        )
+    ];
+    botMessage.edit({ content: `Are you sure you want to generate a summary?`, components });
 
-    const ourMessage = await message.reply("Generating summary...");
+    const filter = (i: ButtonInteraction) => i.customId.startsWith("chatbot.summary.") && i.user.id === userMessage.author.id;
+    const result = await botMessage
+        .awaitMessageComponent({
+            filter,
+            componentType: ComponentType.Button,
+            time: 30_000
+        })
+        .then((i) => {
+            i.deferUpdate();
+            return i.customId === "chatbot.summary.accept";
+        })
+        .catch(() => {
+            return false;
+        });
+
+    if (!result) {
+        botMessage.edit({ content: "Summary generation cancelled", components: [] });
+        return;
+    }
+
+    summaryCooldown.set(userMessage.channelId, Date.now() + 15 * 60 * 1000);
+
+    botMessage.edit({ content: "Generating summary...", components: [] });
 
     // fetch past 50 messages
-    const messages = await message.channel.messages.fetch({ limit: 50, before: message.id });
+    const messages = await userMessage.channel.messages.fetch({ limit: 50, before: userMessage.id });
 
     // prepare the messages for the summary
     const summaryInput = prepareMessagesForSummary(messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp).map((m) => m));
@@ -385,21 +412,22 @@ async function generateSummary(message: Message<true>) {
 
     const summary = summaryResponse.choices[0]?.message?.content;
     if (!summary) {
-        return void ourMessage.edit("__An unexpected error has happened__");
+        botMessage.edit("__An unexpected error has happened__");
+        return;
     }
 
     // add the response to the conversation
-    const convo = conversations.find((convo) => convo.messageid === message.id);
+    const convo = conversations.find((convo) => convo.messageid === userMessage.id);
     if (!convo) {
-        conversations.push({ messageid: message.id, assistant: { content: summary, role: "assistant" } });
+        conversations.push({ messageid: userMessage.id, assistant: { content: summary, role: "assistant" } });
     } else {
         convo.assistant = { content: summary, role: "assistant" };
     }
 
-    return void ourMessage.edit({
+    botMessage.edit({
         content: summary,
         allowedMentions: { parse: [] },
-        flags: "SuppressEmbeds"
+        flags: MessageFlags.SuppressEmbeds
     });
 }
 
@@ -413,16 +441,17 @@ function prepareMessagesForSummary(messages: Message[]) {
 
     // format: [date with time] author (replying to message id): message (message id)
     // if message is over 1000 characters, add an ellipsis
-    const formattedMessages = messages.map((m) => {
-        const date = m.createdAt.toLocaleString("en-US", {
+    const formattedMessages = messages.map((message) => {
+        const date = message.createdAt.toLocaleString("en-US", {
             timeZone: "Europe/Budapest",
             timeZoneName: "short",
             hour12: false
         });
 
-        const content = m.cleanContent.length > 1000 ? m.cleanContent.slice(0, 1000) + "..." : m.cleanContent;
+        const content = message.cleanContent.length > 1000 ? message.cleanContent.slice(0, 1000) + "..." : message.cleanContent;
+        const attachmentCount = message.attachments.size;
 
-        return `[${date}] ${m.author.tag}: ${content}`;
+        return `[${date}] ${message.author.tag}: ${content} <${attachmentCount} attachments>`;
     });
 
     return formattedMessages.join("\n");

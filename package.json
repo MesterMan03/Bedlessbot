@@ -42,7 +42,7 @@
     "marked": "^15.0.5",
     "node-cron": "^3.0.3",
     "nodejs-snowflake": "^2.0.1",
-    "openai": "^4.67.1",
+    "openai": "4.77.3",
     "ordinal": "^1.0.3",
     "puppeteer": "^22.13.0",
     "sharp": "^0.33.4",

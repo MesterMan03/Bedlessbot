@@ -256,54 +256,6 @@ function ExecuteAdminCommand(message: Message<true>) {
     return false;
 }
 
-/**
- * Detect the language of a message and automatically redirect the user if it's in the wrong channel.
- * @param message The message to detect and redirect.
- * @returns false if the message is safe, true if action was taken.
- */
-function DetectLanguage(message: Message<true>): boolean {
-    // first check if the message is inside one of the language-regulated channels
-    if (!Object.values(config.Channels.Language).some((channelID) => message.channelId === channelID)) {
-        return false;
-    }
-
-    const languages = francAll(message.cleanContent, { minLength: 15, only: ["eng", "deu", "cmn"] });
-    const mostProbable = languages[0];
-    // ignore languages with a probability below 0.9
-    if (mostProbable[1] < 0.9 || mostProbable[0] === "und") {
-        return false;
-    }
-
-    const language = mostProbable[0];
-    const correctChannel =
-        (language === "eng" && message.channelId === config.Channels.Language.English) ||
-        (language === "deu" && message.channelId === config.Channels.Language.German) ||
-        (language === "cmn" && message.channelId === config.Channels.Language.Chinese) ||
-        // special case, since lots of Chinese people use English words in their messages
-        (language === "eng" && message.channelId === config.Channels.Language.Chinese);
-    if (correctChannel) {
-        return false;
-    }
-
-    let redirectMessage = "";
-    switch (language) {
-        case "eng":
-            redirectMessage = `English isn't allowed here, please use <#${config.Channels.Language.English}>.`;
-            break;
-        case "deu":
-            redirectMessage = `Deutsch ist hier nicht erlaubt, bitte benutze <#${config.Channels.Language.German}>.`;
-            break;
-        case "cmn":
-            redirectMessage = `你必须去 <#${config.Channels.Language.Chinese}> 使用中文。`;
-            break;
-    }
-    if (redirectMessage.length === 0) {
-        return false;
-    }
-    message.reply(redirectMessage);
-    return true;
-}
-
 function GetResFolder() {
     return join(dirname, "..", "res");
 }
@@ -396,11 +348,6 @@ client.on(Events.MessageCreate, async (message) => {
             });
         await message.react("<:BigBrain:884161577681580082>").catch(() => {});
         await message.react("<:Yikes:884161548287877230>").catch(() => {});
-        return;
-    }
-
-    // detect the language and redirect the user if it's not allowed
-    if (DetectLanguage(message)) {
         return;
     }
 

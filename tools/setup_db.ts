@@ -1,7 +1,6 @@
 import { Database } from "bun:sqlite";
 
 export default function SetupDB(db: Database) {
-    console.log(db);
     // journal mode
     db.run("PRAGMA journal_mode = wal;");
 

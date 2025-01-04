@@ -1,8 +1,11 @@
 import DiscordOauth2 from "discord-oauth2";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, OAuth2Scopes } from "discord.js";
+import { verify } from "hcaptcha";
+import webpush from "web-push";
 import client, { GenerateSnowflake, db } from "..";
 import config from "../config";
-import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelfunctions";
+import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 import type {
     DashboardAPIInterface,
     DashboardFinalPackComment,
@@ -13,9 +16,6 @@ import type {
     PushSubscriptionData
 } from "./api-types";
 import data from "./data.json";
-import { verify } from "hcaptcha";
-import webpush from "web-push";
-import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 
 webpush.setVapidDetails(
     process.env["VAPID_SUBJECT"] as string,
@@ -39,30 +39,50 @@ function GetMaxLbPage() {
     return Math.ceil(Math.max(levelCount, 1) / CONSTANTS.LbPageSize);
 }
 
+async function findIdFromNameOrId(nameOrId: string) {
+    // step 1 - check if it's a user id (17-20 numbers)
+    const isUserId = /^\d{17,20}$/.test(nameOrId);
+    if (isUserId) {
+        // check if the user id is found in the leaderboard
+        const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(nameOrId);
+        if (levelInfo) {
+            return nameOrId;
+        }
+    } else {
+        // step 2 - attempt to find the user id from the user cache
+        const user1 = client.users.cache.find((user) => user.username === nameOrId);
+        if (user1) {
+            return user1.id;
+        }
+    }
+    return null;
+}
+
 export default class DashboardAPI implements DashboardAPIInterface {
     async FetchLbPage(pageOrId: number | string) {
         if (typeof pageOrId === "number" && pageOrId >= GetMaxLbPage()) {
             return null;
         }
 
-        let page = typeof pageOrId === "number" ? pageOrId : -1;
-        if (typeof pageOrId === "string") {
-            // check if the user id is found in the leaderboard
-            const levelInfo = db.query<LevelInfo, [string]>("SELECT * FROM levels WHERE userid = ?").get(pageOrId);
-            if (!levelInfo) {
+        let query: string | undefined;
+        if (typeof pageOrId === "number") {
+            query = `SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${pageOrId * CONSTANTS.LbPageSize}`;
+        } else {
+            const userid = await findIdFromNameOrId(pageOrId);
+            if (!userid) {
                 return null;
             }
-
-            // find position in the leaderboard
-            const position = GetLeaderboardPos(pageOrId, db);
-            page = Math.floor(position / CONSTANTS.LbPageSize);
+            query = `SELECT * FROM levels WHERE userid = '${userid}'`;
         }
 
-        const levels = db
-            .query<LevelInfo, []>(
-                `SELECT * FROM levels ORDER BY xp DESC LIMIT ${CONSTANTS.LbPageSize} OFFSET ${page * CONSTANTS.LbPageSize}`
-            )
-            .all();
+        const levels = db.query<LevelInfo, []>(query).all();
+        const pos = (levelInfo: LevelInfo) => {
+            if (typeof pageOrId === "number") {
+                return levels.indexOf(levelInfo) + pageOrId * CONSTANTS.LbPageSize + 1;
+            } else {
+                return GetLeaderboardPos(levelInfo.userid, db);
+            }
+        };
 
         return Promise.all(
             levels.map(async (levelInfo) => {
@@ -75,12 +95,12 @@ export default class DashboardAPI implements DashboardAPIInterface {
                 const progressPercent = Math.round((progress / XPToLevelUp(level)) * 10000) / 100;
 
                 return {
-                    pos: levels.indexOf(levelInfo) + page * CONSTANTS.LbPageSize + 1,
+                    pos: pos(levelInfo),
                     level,
                     xp: levelInfo.xp,
                     userid: levelInfo.userid,
                     avatar: user
-                        ? user.displayAvatarURL({ forceStatic: false, size: 64 })
+                        ? user.displayAvatarURL({ forceStatic: false, size: typeof pageOrId === "number" ? 64 : 256 })
                         : "https://cdn.discordapp.com/embed/avatars/0.png",
                     username: user ? user.username : "unknown",
                     progress: [progress, progressPercent]

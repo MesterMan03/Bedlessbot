@@ -2,6 +2,7 @@ import { treaty } from "@elysiajs/eden";
 import type { DashboardApp } from "..";
 import "./loadworker";
 import type { DashboardLbEntry } from "../api-types";
+import { XPToLevelUp } from "../../levelfunctions";
 
 const app = treaty<DashboardApp>(location.origin);
 
@@ -123,6 +124,86 @@ document.addEventListener("click", function (event) {
         showToast();
     }
 });
+
+// set up nameorid input
+const nameoridInput = document.getElementById("nameorid") as HTMLInputElement;
+let loadingUserQuery = false;
+nameoridInput.addEventListener("keydown", async (event) => {
+    if (event.key !== "Enter") {
+        return;
+    }
+    if (loadingUserQuery) {
+        return;
+    }
+
+    // sanitise input
+    const nameOrId = nameoridInput.value;
+    if (nameOrId.length < 1 || nameOrId.length > 20) {
+        shakeElement(nameoridInput);
+        return;
+    }
+
+    // do a search
+    nameoridInput.value = "Loading...";
+    loadingUserQuery = true;
+    const rank = await app.api.lbpage.get({ query: { page: `i${nameOrId}` } });
+    loadingUserQuery = false;
+    nameoridInput.value = nameOrId;
+    if (rank.error) {
+        shakeElement(nameoridInput);
+        return;
+    }
+    if (rank.data.length === 0) {
+        shakeElement(nameoridInput);
+        return;
+    }
+    const user = rank.data[0];
+    console.log(user);
+
+    // create a dialoge element
+    const dialogElement = document.createElement("dialog");
+    dialogElement.classList.add("rank-dialog");
+    const iframe = document.createElement("iframe");
+    iframe.width = "1200";
+    iframe.height = "300";
+
+    const rankInput = new URLSearchParams();
+    rankInput.set("leaderboard", user.pos.toString());
+    rankInput.set("username", user.username);
+    rankInput.set("level", user.level.toString());
+    rankInput.set("total", user.xp.toString());
+    rankInput.set("current", user.progress.toString());
+    rankInput.set("max", XPToLevelUp(user.level).toString());
+    rankInput.set("avatar", user.avatar);
+    iframe.src = "/rank.html?" + rankInput.toString();
+    dialogElement.append(iframe);
+    document.body.append(dialogElement);
+    dialogElement.showModal();
+
+    function close() {
+        dialogElement.close();
+        dialogElement.remove();
+        document.removeEventListener("click", close);
+        document.removeEventListener("touchstart", close);
+    }
+
+    document.addEventListener("click", close);
+    document.addEventListener("touchstart", close);
+});
+nameoridInput.addEventListener("input", (event) => {
+    if (loadingUserQuery) {
+        event.preventDefault();
+        return;
+    }
+    nameoridInput.value = nameoridInput.value.replace(/[^a-zA-Z0-9_.]/g, "");
+});
+
+function shakeElement(element: HTMLElement) {
+    element.classList.add("shake");
+    element.addEventListener("animationend", () => {
+        element.classList.remove("shake");
+    });
+}
 
 let pageCursor = 0;
 

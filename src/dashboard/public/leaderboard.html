@@ -73,13 +73,13 @@
         <header>
             <ul>
                 <li>
-                    <a href="/"><h1>Home</h1></a>
-                </li>
-                <li class="active">
-                    <a href="/leaderboard"><h1>Leaderboard</h1></a>
+                    <a href="/"><p>Home</p></a>
                 </li>
                 <li>
-                    <a href="/packs"><h1>Packs</h1></a>
+                    <a href="/leaderboard"><p>Leaderboard</p></a>
+                </li>
+                <li class="active">
+                    <a href="/packs"><p>Packs</p></a>
                 </li>
             </ul>
         </header>
@@ -102,6 +102,7 @@
                     <span id="xp"></span>
                 </div>
             </div>
+            <input type="text" maxlength="20" id="nameorid" name="nameorid" placeholder="Username or ID" autocomplete="off">
             <section class="listings"></section>
             <p id="loading-indicator">Loading...</p>
         </main>

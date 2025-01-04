@@ -23,7 +23,7 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 0.5rem;
     width: 88dvw;
     max-width: 64rem;
     margin: 0 auto;
@@ -135,6 +135,68 @@ img {
     }
 }
 
+/* Shake animation */
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    50% {
+        transform: translateX(5px);
+    }
+    75% {
+        transform: translateX(-5px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* Shake effect and red border on invalid input */
+.shake {
+    animation: shake 0.3s cubic-bezier(0.15, 0.25, 0.35, 0.75) forwards;
+}
+
+/* nameorid */
+#nameorid {
+    /* Remove default browser styles */
+    border: none;
+    outline: none;
+    margin-left: auto;
+
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+
+    background-color: oklch(from var(--accent) l c h / 50%);
+    color: var(--text);
+    font-size: 1.125rem;
+
+    /* change placeholder color (65% of text color) */
+    &::placeholder {
+        color: oklch(from var(--text) l c h / 65%);
+    }
+
+    transition: background-color 0.3s ease;
+}
+
+.rank-dialog {
+    width: 600px;
+    height: 150px;
+    padding: 0;
+    border: none;
+
+    & > iframe {
+        border: none;
+        overflow: hidden;
+        transform: scale(0.5);
+        transform-origin: left top;
+    }
+
+    overflow: hidden;
+}
+
 /* Listings */
 .listings {
     width: 100%;
@@ -216,4 +278,51 @@ img {
     transition: opacity 0.25s, visibility 0.25s;
     opacity: 0;
     visibility: hidden;
+}
+
+/* Mobile layout */
+@media (max-width: 650px) {
+    /* Make the rank card smaller */
+    .rank-dialog {
+        width: 420px;
+        height: 105px;
+        & > iframe {
+            transform: scale(0.35);
+        }
+    }
+
+    /* Make the top 3 vertical instead of horizontal */
+    .podium {
+        flex-direction: column;
+        align-items: flex-start;
+
+        & > div {
+            width: 100%;
+            min-width: 100% !important;
+            max-width: 100% !important;
+
+            text-align: left !important;
+
+            & > h2 {
+                justify-content: flex-start !important;
+                margin-right: auto !important;
+            }
+
+            &::after {
+                background-image: none !important;
+                height: 0 !important;
+            }
+        }
+    }
+
+    #first {
+        order: 1;
+    }
+    #second {
+        order: 2;
+    }
+
+    #third {
+        order: 3;
+    }
 }

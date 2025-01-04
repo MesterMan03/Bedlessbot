@@ -19,27 +19,21 @@ cd Bedlessbot
 bun install
 ```
 
-3. **Set up the database**:
-
-```bash
-bun run tools/setup_db.ts data.db
-```
-
 This will create an empty `data.db` SQLite database file in the root directory with the correct tables set up.
 
-4. **Set up .env**:
+3. **Set up .env**:
 
 Create a `.env` file by following `.env.example`.
 
-5. **Set up config**:
+4. **Set up config**:
  
 Finally, set up `src/config.ts`. It's already prefilled with data, so you will have to change the values to your own.
 
-1. (optional) **Set up secret**:
+5. (optional) **Set up secret**:
 
 If you want to use the [machine-learning API](https://github.com/MesterMan03/Bedlessbot-API), you must provide the secret you generated for the API. Create a `secret` file in the root directory and paste the secret in it (it should be a hexadecimal string).
 
-7. (optional) **Set up test.localhost domain**:
+6. (optional) **Set up test.localhost domain**:
 
 For hCaptcha to work, you cannot use localhost. To fix this, you can set up a domain in your hosts file. Add the following line to your hosts file:
 

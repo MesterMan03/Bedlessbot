@@ -16,9 +16,15 @@ header {
 
             a {
                 text-decoration: none;
-                color: var(--text);
                 position: relative;
                 transition: color 0.25s ease-in-out;
+
+                p {
+                    color: var(--text);
+                    font-size: 1.75rem;
+                    font-weight: bold;
+                    margin: 0.7rem 0;
+                }
 
                 &:hover {
                     color: var(--accent);
@@ -28,9 +34,9 @@ header {
                     content: "";
                     position: absolute;
                     left: 0;
-                    bottom: -2px; /* Adjust based on your preference */
+                    bottom: -2px;
                     width: 0;
-                    height: 2px; /* Adjust based on your preferred underline thickness */
+                    height: 2px;
                     background-color: var(--accent);
                     transition: width 0.25s ease-in-out;
                 }

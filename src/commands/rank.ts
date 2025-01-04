@@ -1,10 +1,10 @@
-import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
-import { GetResFolder, browser, db } from "..";
-import { join } from "path";
-import { EmbedBuilder } from "@discordjs/builders";
-import { GetLeaderboardPos, LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelmanager";
+import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "@discordjs/builders";
+import { ButtonStyle, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { browser, db } from "..";
+import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
+import { GetLeaderboardPos, type LevelInfo } from "../levelmanager";
 
-const htmlFilePath = join(GetResFolder(), "rank", "index.html");
+const rankPath = `${process.env.NODE_ENV === "production" ? "https://bedless.mester.info" : "http://localhost:8146"}/rank.html`;
 
 export default {
     data: new SlashCommandBuilder()
@@ -51,8 +51,7 @@ export default {
         const page = await browser.newPage();
         await page.setViewport({ width: 1200, height: 300 });
 
-        const destination = new URL(htmlFilePath, "file:");
-
+        const destination = new URL(rankPath);
         destination.searchParams.append("avatar", avatar);
         destination.searchParams.append("leaderboard", lbPos.toString());
         destination.searchParams.append("username", user.username);
@@ -61,9 +60,18 @@ export default {
         destination.searchParams.append("current", relativexp.toString());
         destination.searchParams.append("max", XPToLevelUp(userLevel).toString());
 
+        // create the screenshot
         await page.goto(destination.toString(), { waitUntil: "networkidle0" });
-
         const buffer = await page.screenshot({ type: "png" });
+        
+        // Create the "View in Browser" button
+        const browserURL = new URL(rankPath);
+        browserURL.searchParams.append("userid", user.id);
+        const components = [
+            new ActionRowBuilder<ButtonBuilder>().setComponents(
+                new ButtonBuilder().setURL(browserURL.toString()).setLabel("View in Browser").setStyle(ButtonStyle.Link)
+            )
+        ];
 
         interaction
             .editReply({
@@ -72,7 +80,8 @@ export default {
                         attachment: buffer,
                         name: "rank.png"
                     }
-                ]
+                ],
+                components
             })
             .then(() => {
                 page.close();

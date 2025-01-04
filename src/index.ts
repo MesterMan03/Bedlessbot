@@ -279,7 +279,9 @@ function DetectLanguage(message: Message<true>): boolean {
     const correctChannel =
         (language === "eng" && message.channelId === config.Channels.Language.English) ||
         (language === "deu" && message.channelId === config.Channels.Language.German) ||
-        (language === "cmn" && message.channelId === config.Channels.Language.Chinese);
+        (language === "cmn" && message.channelId === config.Channels.Language.Chinese) ||
+        // special case, since lots of Chinese people use English words in their messages
+        (language === "eng" && message.channelId === config.Channels.Language.Chinese);
     if (correctChannel) {
         return false;
     }

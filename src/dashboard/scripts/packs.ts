@@ -24,6 +24,7 @@ if (!packData) {
  * @param version The version of the pack to download.
  */
 function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
+    window._paq?.push(["trackEvent", "Packs", "DownloadPack", packid, version]);
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
         throw new Error("Pack not found");
@@ -97,20 +98,19 @@ for (const pack of packData.packs) {
     const description = marked.parse(pack.description, {
         async: false
     });
-    packElement.innerHTML = `
-    <section class="top">
-      <picture>
+    packElement.innerHTML = `<section class="top">
+    <picture>
         <source srcset="${icon}.webp" type="image/webp">
         <img loading="lazy" src="${icon}.png" alt="${pack.friendly_name}">
-      </picture>
-      <div class="details">
+    </picture>
+        <div class="details">
         <h2>${pack.friendly_name}</h2>
         <div> ${description}</div>
-        </div>
-      </section>
-      <div class="downloads"></div>
-      <button class="commentsbutton">Open comments</button>
-  `;
+    </div>
+</section>
+<div class="downloads"></div>
+<button class="commentsbutton">Open comments</button>
+`;
     const packDownloadsElement = packElement.querySelector(".downloads") as HTMLDivElement;
 
     // dinamically load the download buttons
@@ -139,6 +139,7 @@ for (const pack of packData.packs) {
     // setup comments button
     const commentsButton = packElement.querySelector(".commentsbutton") as HTMLButtonElement;
     commentsButton.addEventListener("click", () => {
+        window._paq?.push(["trackEvent", "Packs", "OpenComments", pack.id]);
         function transition() {
             packPopout.querySelector(".pack")?.remove();
             packPopout.prepend(packElement.cloneNode(true));
@@ -463,7 +464,6 @@ async function updateComments() {
 }
 
 document.getElementById("togglecomments")?.addEventListener("click", () => {
-    console.log("sup");
     document.querySelector<HTMLDivElement>("section.comments")?.classList.toggle("hidden");
 });
 

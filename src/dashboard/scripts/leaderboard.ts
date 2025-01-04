@@ -30,25 +30,27 @@ function showToast() {
     }, 2000);
 }
 
-async function loadUsers(pageCursor: number) {
+async function loadUsers(page: number) {
     const loadingIndicator = document.querySelector<HTMLParagraphElement>("#loading-indicator");
     if (!loadingIndicator) {
         throw new Error("Loading indicator not found");
     }
 
     loadingIndicator.style.display = "initial";
+
     // jump to bottom of page
     scrollTo(0, document.body.scrollHeight);
 
-    const request = await app.api.lbpage.get({ query: { page: pageCursor } });
+    window._paq?.push(["trackEvent", "Leaderboard", "LoadPage", page]);
+    const request = await app.api.lbpage.get({ query: { page } });
     if (request.error) {
         loadingIndicator.style.display = "none";
         return request.error.status as number;
     }
 
-    const page = request.data;
+    const pageData = request.data;
 
-    for (const user of page) {
+    for (const user of pageData) {
         renderUser(user);
     }
 

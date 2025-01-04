@@ -13,6 +13,15 @@ function DateToNumber(date: string) {
     return dateObj.month * 31 + dateObj.day;
 }
 
+function FixBirthdayDatenums() {
+    const birthdays = db.query<Birthday, []>(`SELECT * FROM birthdays`).all();
+    for (const birthday of birthdays) {
+        const date = luxon.DateTime.fromFormat(birthday.date, "dd/LL/yyyy");
+        const dateNum = DateToNumber(date.toFormat("dd/LL"));
+        db.run(`UPDATE birthdays SET datenum = ? WHERE userid = ?`, [dateNum, birthday.userid]);
+    }
+}
+
 interface Birthday {
     userid: string;
     date: string;
@@ -75,4 +84,4 @@ async function WishBirthdays() {
 // set up cronjob that runs every day at 8:00 in the Europe/London timezone
 const cronjob = cron.schedule("0 8 * * *", WishBirthdays, { timezone });
 
-export { DateToNumber, cronjob, type Birthday, timezone, WishBirthdays };
+export { DateToNumber, cronjob as wishBirthdaysCronjob, type Birthday, timezone as birthdayTimezone, WishBirthdays, FixBirthdayDatenums };

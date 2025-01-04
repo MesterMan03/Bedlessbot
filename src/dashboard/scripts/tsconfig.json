@@ -24,6 +24,6 @@
         "noUnusedParameters": true,
         "noPropertyAccessFromIndexSignature": true
     },
-    "include": ["../../../types/periodic-sync.d.ts", "../../../types/marked-13.0.2.d.ts", "../../../types/view-transitions.d.ts", "**/*.ts"],
+    "include": ["**/*.ts"],
     "exclude": ["node_modules"]
 }

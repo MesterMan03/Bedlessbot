@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { db } from "..";
-import { DateToNumber, timezone, type Birthday } from "../birthdaymanager";
+import { DateToNumber, birthdayTimezone, type Birthday } from "../birthdaymanager";
 import * as luxon from "luxon";
 
 const cooldowns = new Map<string, number>();
@@ -15,7 +15,7 @@ export default {
         cooldowns.set(interaction.user.id, Date.now());
 
         // calculate today's date in orderable format
-        const now = luxon.DateTime.now().setZone(timezone);
+        const now = luxon.DateTime.now().setZone(birthdayTimezone);
         const today = now.toFormat("dd/LL");
         const thisYear = now.year;
         const todayNum = DateToNumber(today);

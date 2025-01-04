@@ -15,7 +15,7 @@
         "lineWidth": 140,
         "attributePosition": "auto",
         "ignore": ["**/package.json"],
-        "include": ["src/**/*.ts", "src/dashboard/public/styles/*.css", "tools/**/*.ts", "types/**/*.ts"]
+        "include": ["src/**/*.ts", "src/dashboard/public/styles/*.css", "tools/**/*.ts"]
     },
     "organizeImports": {
         "enabled": true
@@ -100,7 +100,7 @@
                 "useValidTypeof": "error"
             }
         },
-        "ignore": ["node_modules"]
+        "ignore": ["node_modules", "src/dashboard/scripts/types/**/*.d.ts"]
     },
     "javascript": {
         "formatter": {

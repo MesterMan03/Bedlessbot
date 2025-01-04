@@ -22,7 +22,7 @@ import * as path from "path";
 import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
-import { WishBirthdays, cronjob } from "./birthdaymanager";
+import { FixBirthdayDatenums, WishBirthdays, wishBirthdaysCronjob } from "./birthdaymanager";
 import { AddChatBotMessage, ClearConversation, ShowChatBotWarning, isReplyingToUs } from "./chatbot";
 import config from "./config";
 import {
@@ -233,6 +233,13 @@ function ExecuteAdminCommand(message: Message<true>) {
         return true;
     }
 
+    if (command === "fix-birthday-datenums") {
+        FixBirthdayDatenums();
+        message.reply("Fixed birthday datenums");
+
+        return true;
+    }
+
     if (command === "hi") {
         message.reply({
             content: `Hi! API Latency: ${Math.round(client.ws.ping)}ms`,
@@ -270,7 +277,7 @@ function shutdown(reason?: string) {
     browser?.close();
     client.destroy();
     db.close();
-    cronjob.stop();
+    wishBirthdaysCronjob.stop();
     process.exit(0);
 }
 

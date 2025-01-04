@@ -68,6 +68,11 @@ const prodConfig = {
         Clutches: "1266484023103066172",
         ClutchGuide: "1266159233913847888",
         ClutchGuideMessage: "1266161168695820372",
+        Language: {
+            English: "692077134780432384",
+            German: "708630538700980254",
+            Chinese: "692077296970104862"
+        }
     },
     Roles: {
         Birthday: "715495353159254018",
@@ -147,6 +152,11 @@ const devConfig = {
         Clutches: "1266732639059185739",
         ClutchGuide: "1224111389321203834",
         ClutchGuideMessage: "1225827434679504896",
+        Language: {
+            English: "1074393964788060178",
+            German: "1074393964788060178",
+            Chinese: "1074393964788060178"
+        }
     },
     Roles: {
         Birthday: "1074393964016324691",

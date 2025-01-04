@@ -37,6 +37,7 @@ import {
 import { StartQuickTime } from "./quicktime";
 import SetupDB from "../tools/setup_db";
 import { XPToLevel } from "./levelfunctions";
+import { francAll } from "franc-min";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -255,6 +256,49 @@ function ExecuteAdminCommand(message: Message<true>) {
     return false;
 }
 
+/**
+ * Detect the language of a message and automatically redirect the user if it's in the wrong channel.
+ * @param message The message to detect and redirect.
+ * @returns false if the message is safe, true if action was taken.
+ */
+function DetectLanguage(message: Message<true>): boolean {
+    // first check if the message is inside one of the language-regulated channels
+    if (!Object.values(config.Channels.Language).some((channelID) => message.channelId === channelID)) {
+        return false;
+    }
+
+    const languages = francAll(message.cleanContent);
+    const mostProbable = languages[0];
+    // ignore languages with a probability below 0.9
+    if (mostProbable[1] < 0.9) {
+        return false;
+    }
+
+    const language = mostProbable[0];
+    const correctChannel =
+        (language === "eng" && message.channelId === config.Channels.Language.English) ||
+        (language === "deu" && message.channelId === config.Channels.Language.German) ||
+        (language === "cmn" && message.channelId === config.Channels.Language.Chinese);
+    if (correctChannel) {
+        return false;
+    }
+
+    let redirectMessage = "";
+    switch (language) {
+        case "eng":
+            redirectMessage = `English isn't allowed here, please use <#${config.Channels.Language.English}>.`;
+            break;
+        case "deu":
+            redirectMessage = `Deutsch ist hier nicht erlaubt, bitte benutze <#${config.Channels.Language.German}>.`;
+            break;
+        case "cmn":
+            redirectMessage = `你必须去 <#${config.Channels.Language.Chinese}> 使用中文。`;
+            break;
+    }
+    message.reply(redirectMessage);
+    return true;
+}
+
 function GetResFolder() {
     return join(dirname, "..", "res");
 }
@@ -309,9 +353,12 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
-    if (message.author.bot) {
-        // award XP and end
+    // check for blocked channels and no-xp role
+    if (!(config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole))) {
         AwardXPToMessage(message);
+    }
+
+    if (message.author.bot) {
         return;
     }
 
@@ -347,6 +394,11 @@ client.on(Events.MessageCreate, async (message) => {
         return;
     }
 
+    // detect the language and redirect the user if it's not allowed
+    if (DetectLanguage(message)) {
+        return;
+    }
+
     // check if message starts with the bots mention and member has admin
     if (message.content.startsWith(`<@${clientID}>`) || (await isReplyingToUs(message))) {
         processSelfPing(message);
@@ -368,13 +420,6 @@ client.on(Events.MessageCreate, async (message) => {
 
     // use transformation model to find potential answers to a question
     processAIRequest(message);
-
-    // check for blocked channels and no-xp role
-    if (config.NoXPChannels.includes(message.channelId) || message.member?.roles.cache.has(config.NoXPRole)) {
-        return;
-    }
-
-    AwardXPToMessage(message);
 });
 
 client.on(Events.GuildMemberAdd, (member) => {

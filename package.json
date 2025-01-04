@@ -36,6 +36,7 @@
     "dompurify": "^3.1.6",
     "elysia": "^1.0.27",
     "elysia-rate-limit": "^4.1.0",
+    "franc-min": "^6.2.0",
     "googleapis": "^134.0.0",
     "hcaptcha": "^0.1.1",
     "luxon": "^3.4.4",

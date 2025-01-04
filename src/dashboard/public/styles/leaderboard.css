@@ -182,19 +182,25 @@ img {
 }
 
 .rank-dialog {
-    width: 600px;
-    height: 150px;
+    --scale: 0.5;
+    width: calc(1200px * var(--scale));
+    height: calc(300px * var(--scale));
     padding: 0;
     border: none;
 
     & > iframe {
         border: none;
         overflow: hidden;
-        transform: scale(0.5);
+        transform: scale(var(--scale));
         transform-origin: left top;
     }
 
     overflow: hidden;
+
+    &::backdrop {
+        background-image: linear-gradient(225deg, #e82e7c, #e8be2b, #2d91ee);
+        opacity: 0.15;
+    }
 }
 
 /* Listings */
@@ -282,17 +288,25 @@ img {
 
 /* Mobile layout */
 @media (max-width: 650px) {
+    body {
+        padding: 0.25rem;
+    }
+
+    main {
+        margin: 0;
+        padding: 0 0.5rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
     /* Make the rank card smaller */
     .rank-dialog {
-        width: 420px;
-        height: 105px;
-        & > iframe {
-            transform: scale(0.35);
-        }
+        --scale: calc(1/3)
     }
 
     /* Make the top 3 vertical instead of horizontal */
     .podium {
+        width: 100%;
         flex-direction: column;
         align-items: flex-start;
 
@@ -317,12 +331,21 @@ img {
 
     #first {
         order: 1;
+        &::before {
+            color: var(--gold) !important;
+        }
     }
     #second {
         order: 2;
+        &::before {
+            color: var(--silver) !important;
+        }
     }
 
     #third {
         order: 3;
+        &::before {
+            color: var(--bronze) !important;
+        }
     }
 }

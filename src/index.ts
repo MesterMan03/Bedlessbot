@@ -37,7 +37,6 @@ import {
 import { StartQuickTime } from "./quicktime";
 import SetupDB from "../tools/setup_db";
 import { XPToLevel } from "./levelfunctions";
-import { francAll } from "franc";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 

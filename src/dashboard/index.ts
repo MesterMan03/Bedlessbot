@@ -485,8 +485,8 @@ const app = new Elysia()
 
             const rewriter = new HTMLRewriter();
 
-            // add Matomo tracker script to every html response
-            if (process.env.NODE_ENV === "production") {
+            // add tracking code for production (except if the user agent is exactly "internal")
+            if (process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal") {
                 rewriter.on("head", {
                     element(el) {
                         el.append(trackingCode, { html: true });

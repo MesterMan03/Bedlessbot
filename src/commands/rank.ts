@@ -50,6 +50,7 @@ export default {
 
         const page = await browser.newPage();
         await page.setViewport({ width: 1200, height: 300 });
+        await page.setUserAgent("internal");
 
         const destination = new URL(rankPath);
         destination.searchParams.append("avatar", avatar);

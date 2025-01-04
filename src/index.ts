@@ -37,7 +37,7 @@ import {
 import { StartQuickTime } from "./quicktime";
 import SetupDB from "../tools/setup_db";
 import { XPToLevel } from "./levelfunctions";
-import { francAll } from "franc-min";
+import { francAll } from "franc";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -267,10 +267,11 @@ function DetectLanguage(message: Message<true>): boolean {
         return false;
     }
 
-    const languages = francAll(message.cleanContent);
+    const languages = francAll(message.cleanContent, { minLength: 1, only: ["eng", "deu", "cmn"] });
+    console.log(languages);
     const mostProbable = languages[0];
     // ignore languages with a probability below 0.9
-    if (mostProbable[1] < 0.9) {
+    if (mostProbable[1] < 0.9 || mostProbable[0] === "und") {
         return false;
     }
 
@@ -294,6 +295,9 @@ function DetectLanguage(message: Message<true>): boolean {
         case "cmn":
             redirectMessage = `你必须去 <#${config.Channels.Language.Chinese}> 使用中文。`;
             break;
+    }
+    if (redirectMessage.length === 0) {
+        return false;
     }
     message.reply(redirectMessage);
     return true;

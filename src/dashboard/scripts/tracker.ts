@@ -1,29 +1,27 @@
 import { user } from "./auth";
 
 const _paq = (window._paq = window._paq || []);
+_paq.push(["requireCookieConsent"]);
+_paq.push(["setDocumentTitle", location.hostname + "/" + document.title]);
+_paq.push(["setCookieDomain", "*.bedless.mester.info"]);
+_paq.push(["setDomains", ["*.bedless.mester.info"]]);
+_paq.push(["enableHeartBeatTimer"]);
+_paq.push(["trackPageView"]);
+_paq.push(["enableLinkTracking"]);
 /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-(async function () {
-    const userId = await user.then((user) => user?.userid);
-    const u = "//matomo.gedankenversichert.com/";
-    _paq.push(["setTrackerUrl", u + "matomo.php"]);
-    _paq.push(["setSiteId", "1"]);
-    _paq.push(["requireCookieConsent"]);
-    _paq.push(["setDocumentTitle", location.hostname + "/" + document.title]);
-    _paq.push(["setCookieDomain", "*.bedless.mester.info"]);
-    _paq.push(["setDomains", ["*.bedless.mester.info"]]);
-    _paq.push(["enableLinkTracking"]);
-    _paq.push(["enableHeartBeatTimer"]);
-    _paq.push(["trackPageView"]);
-    if (userId) {
-        _paq.push(["setUserId", userId]);
-    }
-    const d = document,
-        g = d.createElement("script"),
-        s = d.getElementsByTagName("script")[0];
-    g.async = true;
-    g.src = u + "matomo.js";
-    s.parentNode?.insertBefore(g, s);
-})();
+const userId = await user.then((user) => user?.userid);
+const u = "//matomo.gedankenversichert.com/";
+_paq.push(["setTrackerUrl", u + "matomo.php"]);
+_paq.push(["setSiteId", "1"]);
+if (userId) {
+    _paq.push(["setUserId", userId]);
+}
+const d = document,
+    g = d.createElement("script"),
+    s = d.getElementsByTagName("script")[0];
+g.async = true;
+g.src = u + "matomo.js";
+s.parentNode?.insertBefore(g, s);
 
 let waitForTrackerCount = 0;
 function matomoWaitForTracker() {

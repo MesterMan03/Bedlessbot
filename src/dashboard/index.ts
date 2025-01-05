@@ -51,23 +51,74 @@ await Bun.build({
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
-const trackingCode = `
+const trackingCode = (userid?: string) => `
+<!-- Matomo -->
+<script>
+    var _paq = window._paq = window._paq || [];
+    /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+    _paq.push(['requireCookieConsent']);
+    _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+    _paq.push(["setCookieDomain", "*.bedless.mester.info"]);
+    _paq.push(["setDomains", ["*.bedless.mester.info"]]);
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    _paq.push(['enableHeartBeatTimer']);
+    ${userid ? `_paq.push(["setUserId", "${userid}"]);` : ""}
+    (function() {
+        var u="//matomo.gedankenversichert.com/";
+        _paq.push(['setTrackerUrl', u+'matomo.php']);
+        _paq.push(['setSiteId', '1']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    })();
+</script>
+
 <!-- Matomo Image Tracker-->
 <noscript>
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript>
-<!-- End Matomo Image Tracker -->
+<!-- End Matomo Code -->
 
 <!-- Start cookieyes banner --> 
 <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js" defer></script>
 <!-- End cookieyes banner -->
 
-<script src="/scripts/tracker.js" type="module"></script>`;
+<!-- Matomo Cookie Consent -->
+<script>
+var waitForTrackerCount = 0;
+function matomoWaitForTracker() {
+  if (typeof _paq === 'undefined') {
+    if (waitForTrackerCount < 40) {
+      setTimeout(matomoWaitForTracker, 250);
+      waitForTrackerCount++;
+      return;
+    }
+  } else {
+    document.addEventListener("cookieyes_consent_update", function (eventData) {
+        const data = eventData.detail;
+        consentSet(data);
+    });   
+  }
+}
+function consentSet(data) {
+   if (data.accepted.includes("analytics")) {
+       _paq.push(['setCookieConsentGiven']);
+       _paq.push(['setConsentGiven']);
+   } else {
+       _paq.push(['forgetCookieConsentGiven']);
+       _paq.push(['forgetConsentGiven']);
+   }
+}
+document.addEventListener('DOMContentLoaded', matomoWaitForTracker());
+</script>
+<!-- End Matomo Cookie Consent -->`;
+
+//@ts-ignore shut up
+const jwtPlugin = jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" });
 
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")
-    //@ts-ignore shut up
-    .use(jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" }))
+    .use(jwtPlugin)
     .get(
         "/lbpage",
         async ({ query: { page: pageOrId }, error }) => {
@@ -395,6 +446,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
     });
 
 const app = new Elysia()
+    .state("userid", "")
+    .use(jwtPlugin)
     .use(staticPlugin({ assets: join(dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
@@ -412,7 +465,6 @@ const app = new Elysia()
         // if path is empty (or ends with /), look for index.html
         if (url.pathname.endsWith("/") || url.pathname === "") {
             const file = Bun.file(join(dirname, "public", url.pathname, "index.html"));
-
             if (!(await file.exists())) {
                 return new Response("Not found", { status: 404 });
             }
@@ -429,7 +481,7 @@ const app = new Elysia()
             return new Response(file);
         }
     })
-    .onAfterHandle({ as: "global" }, async ({ response, request }) => {
+    .onAfterHandle({ as: "global" }, async ({ response, request, jwt, cookie: { auth } }) => {
         if (!(response instanceof Response && request instanceof Request)) {
             return;
         }
@@ -453,12 +505,19 @@ const app = new Elysia()
             const rewriter = new HTMLRewriter();
 
             // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
-            const addTracking =
-                process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
+            const addTracking = request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
             if (addTracking) {
+                // try to parse the jwt token
+                let userid: string | undefined;
+                const token = auth.value;
+                if (token) {
+                    const validToken = await jwt.verify(token);
+                    userid = validToken ? (validToken["userid"] as string) : undefined;
+                }
+
                 rewriter.on("head", {
                     element(el) {
-                        el.append(trackingCode, { html: true });
+                        el.append(trackingCode(userid), { html: true });
                     }
                 });
             }

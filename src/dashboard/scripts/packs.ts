@@ -19,13 +19,20 @@ if (!packData) {
     throw new Error("Pack data not found");
 }
 
+type PackVersion = "1.8.9" | "1.20.5" | "bedrock";
+enum PackVersionNumber {
+    "1.8.9" = 189,
+    "1.20.5" = 1205,
+    bedrock = -1
+}
+
 /**
  * A function to download a pack.
  * @param packid The packid to download.
  * @param version The version of the pack to download.
  */
-function downloadPack(packid: string, version: "1.8.9" | "1.20.5" | "bedrock") {
-    window._paq?.push(["trackEvent", "Packs", "DownloadPack", packid, version]);
+function downloadPack(packid: string, version: PackVersion) {
+    window._paq?.push(["trackEvent", "Packs", "DownloadPack", packid, PackVersionNumber[version]]);
     const pack = packData.packs.find((pack) => pack.id === packid);
     if (!pack) {
         throw new Error("Pack not found");

@@ -31,8 +31,7 @@ await Bun.build({
     outdir: join(dirname, "public", scriptsLocation),
     splitting: true,
     sourcemap: "linked",
-    banner: 
-`/** 
+    banner: `/** 
  * Copyright 2025 MesterMan03
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,65 +52,17 @@ await Bun.build({
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
 
 const trackingCode = `
-<!-- Matomo -->
-<script>
-    var _paq = window._paq = window._paq || [];
-    /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-    _paq.push(['requireCookieConsent']);
-    _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
-    _paq.push(["setCookieDomain", "*.bedless.mester.info"]);
-    _paq.push(["setDomains", ["*.bedless.mester.info"]]);
-    _paq.push(['trackPageView']);
-    _paq.push(['enableLinkTracking']);
-    _paq.push(['enableHeartBeatTimer']);
-    (function() {
-        var u="//matomo.gedankenversichert.com/";
-        _paq.push(['setTrackerUrl', u+'matomo.php']);
-        _paq.push(['setSiteId', '1']);
-        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-    })();
-</script>
-
 <!-- Matomo Image Tracker-->
 <noscript>
 <img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript>
-<!-- End Matomo Code -->
+<!-- End Matomo Image Tracker -->
 
 <!-- Start cookieyes banner --> 
 <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/2e1c45417fe84b7659b04f52/script.js" defer></script>
 <!-- End cookieyes banner -->
 
-<!-- Matomo Cookie Consent -->
-<script>
-var waitForTrackerCount = 0;
-function matomoWaitForTracker() {
-  if (typeof _paq === 'undefined') {
-    if (waitForTrackerCount < 40) {
-      setTimeout(matomoWaitForTracker, 250);
-      waitForTrackerCount++;
-      return;
-    }
-  } else {
-    document.addEventListener("cookieyes_consent_update", function (eventData) {
-        const data = eventData.detail;
-        consentSet(data);
-    });   
-  }
-}
-function consentSet(data) {
-   if (data.accepted.includes("analytics")) {
-       _paq.push(['setCookieConsentGiven']);
-       _paq.push(['setConsentGiven']);
-   } else {
-       _paq.push(['forgetCookieConsentGiven']);
-       _paq.push(['forgetConsentGiven']);
-   }
-}
-document.addEventListener('DOMContentLoaded', matomoWaitForTracker());
-</script>
-<!-- End Matomo Cookie Consent -->`;
+<script src="/scripts/tracker.js" type="module"></script>`;
 
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")

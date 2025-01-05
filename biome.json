@@ -100,7 +100,7 @@
                 "useValidTypeof": "error"
             }
         },
-        "ignore": ["node_modules", "src/dashboard/scripts/types/**/*.d.ts"]
+        "ignore": ["node_modules", "src/dashboard/scripts/types/**/*.d.ts", "src/dashboard/scripts/tracker.ts"]
     },
     "javascript": {
         "formatter": {

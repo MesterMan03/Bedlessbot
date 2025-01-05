@@ -3,13 +3,6 @@ import { type DashboardApp } from "..";
 
 const app = treaty<DashboardApp>(location.origin);
 
-const user = app.api.user.get().then((userRes) => {
-    if (userRes.status === 200 && userRes.data) {
-        const user = userRes.data;
-        window._paq?.push(["setUserId", user.userid]);
-        return user;
-    }
-    return null;
-});
+const user = app.api.user.get().then((userRes) => userRes.data);
 
 export { user };

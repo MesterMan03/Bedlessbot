@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import type { NotificationData } from "../api-types";
+import type { NotificationData } from "../../api-types";
 
 declare const self: ServiceWorkerGlobalScope;
 

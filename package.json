@@ -4,13 +4,17 @@
   "type": "module",
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "@dicebear/core": "^9.2.2",
+    "@dicebear/pixel-art": "^9.2.2",
     "@types/dompurify": "^3.0.5",
     "@types/luxon": "^3.4.2",
     "@types/node-cron": "^3.0.11",
+    "@types/uglify-js": "^3.17.5",
     "@types/web-push": "^3.6.3",
     "bun-types": "1.1.43-canary.20250104T140550",
     "csv-parser": "^3.0.0",
-    "csv-writer": "^1.6.0"
+    "csv-writer": "^1.6.0",
+    "lorem-ipsum": "^2.0.8"
   },
   "scripts": {
     "dev": "NODE_ENV=development bun run src/index.ts",
@@ -47,6 +51,7 @@
     "puppeteer": "^22.13.0",
     "sharp": "^0.33.4",
     "svg-captcha": "^1.4.0",
+    "uglify-js": "^3.19.3",
     "web-push": "^3.6.7",
     "word-list": "^4.1.0",
     "zod": "^3.23.8"

@@ -1,12 +1,11 @@
 import { treaty } from "@elysiajs/eden";
-import { type DashboardApp } from "..";
-import type { PackData } from "../api-types";
+import { type DashboardApp } from "../..";
+import type { PackData } from "../../api-types";
 import "@hcaptcha/vanilla-hcaptcha";
 import type { VanillaHCaptchaWebComponent } from "@hcaptcha/vanilla-hcaptcha";
-import { subscribeToPushNotifications } from "./loadworker";
-import * as luxon from "luxon";
 import * as marked from "marked";
-import { user } from "./auth";
+import { GetUser } from "./auth";
+import { subscribeToPushNotifications } from "./loadworker";
 
 const cdn = "https://bedless-cdn.mester.info";
 
@@ -20,7 +19,7 @@ if (!packData) {
 }
 
 const PackVersions = <const>["1.8.9", "1.20.5", "bedrock"];
-type PackVersion = typeof PackVersions[number];
+type PackVersion = (typeof PackVersions)[number];
 
 /**
  * A function to download a pack.
@@ -146,10 +145,12 @@ for (const pack of packData.packs) {
         window._paq?.push(["trackEvent", "Packs", "OpenComments", pack.id]);
         function transition() {
             packPopout.querySelector(".pack")?.remove();
-            packPopout.prepend(packElement.cloneNode(true));
+            const clonedPackElement = packElement.cloneNode(true) as HTMLDivElement;
+            clonedPackElement.querySelector(".downloads")?.remove();
+            packPopout.prepend(clonedPackElement);
 
-            select.value = pack.id;
-            resetSelectedPack();
+            // set the selected pack, which will update the comments section
+            setSelectedPack(pack.id);
 
             packPopout.showModal();
         }
@@ -170,35 +171,15 @@ loginButton.addEventListener("click", () => {
     window.location.href = "/api/auth?redirect=/packs";
 });
 
-user.then((user) => {
+GetUser().then((user) => {
     if (user) {
         loginButton.style.display = "none";
+        const commentField = document.getElementById("comment") as HTMLTextAreaElement;
+        commentField.placeholder = `Commenting as ${user.username}`;
     } else {
         commentForm.style.display = "none";
     }
 });
-
-const variants = packData.packs.map((pack) => pack.variant ?? pack.id).filter((variant, idx, arr) => arr.indexOf(variant) === idx);
-
-// set up select menu with select options based on variants
-const select = document.createElement("select");
-select.name = "packid";
-select.hidden = true;
-commentForm.prepend(select);
-
-for (const variant of variants) {
-    const optgroup = document.createElement("optgroup");
-    optgroup.label = variant;
-    optgroup.id = `variant-${variant}`;
-    select.appendChild(optgroup);
-}
-for (const pack of packData.packs) {
-    const option = document.createElement("option");
-    option.value = pack.id;
-    option.innerText = pack.friendly_name;
-    select.appendChild(option);
-    (document.getElementById(`variant-${pack.variant ?? pack.id}`) as HTMLOptGroupElement).appendChild(option);
-}
 
 // Add event listener to the comment form
 commentForm.addEventListener("submit", async (event) => {
@@ -241,7 +222,7 @@ commentForm.addEventListener("submit", async (event) => {
             // Send the comment to the server
             app.api.comments
                 .post({
-                    packid: formData.get("packid") as string,
+                    packid: selectedPack,
                     comment,
                     "h-captcha-response": response
                 })
@@ -320,22 +301,19 @@ async function processCommentResponse(code: number) {
 commentElement.addEventListener("input", () => {
     commentElement.setCustomValidity("");
 });
-// pagination for comments
+
+/*
+ * Everything that has to do with the comments section
+ */
+
+//#region comments
+const commentsDiv = document.getElementById("comments") as HTMLDivElement;
+let selectedPack = "";
 let page = 0;
 let maxPage = 0;
 const prevPageButtons = document.getElementsByClassName("prevCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
 const nextPageButtons = document.getElementsByClassName("nextCommentPage") as HTMLCollectionOf<HTMLButtonElement>;
 const pageLabels = document.getElementsByClassName("pageLabel") as HTMLCollectionOf<HTMLSpanElement>;
-
-app.api.comments.maxpage.get({ query: { packid: select.value } }).then((response) => {
-    maxPage = response.data ?? 1;
-    for (const nextPageButton of nextPageButtons) {
-        nextPageButton.disabled = maxPage === 1;
-    }
-    for (const pageLabel of pageLabels) {
-        pageLabel.innerHTML = `${page + 1}/${maxPage}`;
-    }
-});
 
 for (const prevPageButton of prevPageButtons) {
     prevPageButton.addEventListener("click", previousCommentPage);
@@ -388,12 +366,18 @@ function nextCommentPage() {
     updateComments();
 }
 
-const commentsDiv = document.getElementById("comments") as HTMLDivElement;
-select.addEventListener("change", () => {
-    resetSelectedPack();
-});
-async function resetSelectedPack() {
-    maxPage = (await app.api.comments.maxpage.get({ query: { packid: select.value } })).data ?? 1;
+/**
+ * Select the pack with the given ID and update the comments section.
+ * @param packid The ID of the pack to set as the selected pack.
+ */
+async function setSelectedPack(packid: string) {
+    selectedPack = packid;
+    maxPage = (await app.api.comments.maxpage.get({ query: { packid } })).data ?? 1;
+    // hide all pagination buttons if maxPage is 1
+    const pageSelect = document.querySelectorAll<HTMLDivElement>(".pageSelect");
+    for (const pageSelectElement of pageSelect) {
+        pageSelectElement.classList.toggle("hidden", maxPage === 1);
+    }
     page = 0;
     updateComments();
     for (const pageLabel of pageLabels) {
@@ -401,11 +385,17 @@ async function resetSelectedPack() {
     }
 }
 
+const dateFormatter = new Intl.DateTimeFormat(navigator.language, {
+    dateStyle: "long",
+    timeStyle: "medium",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+});
+
 /**
  * A function to update the comments section with the comments for the currently selected pack.
  */
 async function updateComments() {
-    console.debug(`Fetching comments for ${select.value}, page: ${page}`);
+    console.debug(`Fetching comments for ${selectedPack}, page: ${page}`);
 
     for (const pageButton of [...prevPageButtons, ...nextPageButtons]) {
         pageButton.disabled = true;
@@ -413,7 +403,7 @@ async function updateComments() {
 
     // render new comments
     let loading = true;
-    app.api.comments.get({ query: { packid: select.value, page } }).then((res) => {
+    app.api.comments.get({ query: { packid: selectedPack, page } }).then((res) => {
         const comments = res.data;
         loading = false;
 
@@ -421,12 +411,13 @@ async function updateComments() {
             commentsDiv.innerHTML = "";
             for (const comment of comments) {
                 const commentElement = document.createElement("div");
+
                 commentElement.innerHTML = `
 <div class="commentInfo">
     <img loading="lazy" src="${comment.avatar}" alt="${comment.username}">
     <div>
         <h3>${comment.username}</h3>
-        <span>${luxon.DateTime.fromMillis(comment.date).toLocaleString(luxon.DateTime.DATETIME_SHORT)}</span>
+        <span>${dateFormatter.format(new Date(comment.date))}</span>
     </div>
 </div>
 <p>${comment.comment}</p>`;
@@ -466,10 +457,7 @@ async function updateComments() {
         }
     }, 200);
 }
-
-document.getElementById("togglecomments")?.addEventListener("click", () => {
-    document.querySelector<HTMLDivElement>("section.comments")?.classList.toggle("hidden");
-});
+//#endregion comments
 
 navigator.serviceWorker.addEventListener("message", (event) => {
     // check if the message is "sync-comments"

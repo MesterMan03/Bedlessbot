@@ -1,6 +1,6 @@
 import { treaty } from "@elysiajs/eden";
-import type { DashboardApp } from "..";
-import { XPToLevel, XPToLevelUp } from "../../levelfunctions";
+import type { DashboardApp } from "../..";
+import { XPToLevel, XPToLevelUp } from "../../../levelfunctions";
 
 const app = treaty<DashboardApp>(location.origin);
 

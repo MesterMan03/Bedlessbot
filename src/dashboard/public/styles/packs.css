@@ -2,7 +2,6 @@ html,
 body {
     width: 100%;
     height: 100%;
-    overflow: hidden;
 }
 
 body {
@@ -29,8 +28,6 @@ button {
 }
 
 main {
-    height: calc(100% - 5rem);
-
     display: flex;
     gap: 1rem;
 
@@ -55,6 +52,7 @@ main {
     flex-direction: column;
     position: sticky;
     top: 1rem;
+    gap: 0.5rem;
 
     form {
         display: flex;
@@ -134,7 +132,6 @@ main {
     }
 
     .pageSelect {
-        margin: 0.5rem 0;
         display: flex;
         gap: 1rem;
         justify-content: center;
@@ -154,6 +151,10 @@ main {
         span {
             font-weight: bold;
         }
+
+        &.hidden {
+            display: none;
+        }
     }
 }
 
@@ -171,11 +172,6 @@ main {
     outline: none;
     cursor: pointer;
     transition: all .2s ease;
-}
-
-::view-transition-new(root),
-::view-transition-old(root) {
-    animation-duration: 0.5s;
 }
 
 .packs {

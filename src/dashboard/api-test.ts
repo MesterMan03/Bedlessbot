@@ -15,20 +15,35 @@ import packData from "./data.json";
 import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 import SetupDB from "../../tools/setup_db";
 import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelfunctions";
+import { createAvatar } from "@dicebear/core";
+import * as pixelArt from "@dicebear/pixel-art";
+import { LoremIpsum } from "lorem-ipsum";
 
 // set up test database
 const db = new Database(":memory:");
 SetupDB(db);
 
 // fill pack comments with test data
-for (const pack of packData.packs) {
-    for (let i = 0; i < 50; i++) {
+const lorem = new LoremIpsum({
+    sentencesPerParagraph: {
+        min: 1,
+        max: 4
+    },
+    wordsPerSentence: {
+        min: 3,
+        max: 10
+    }
+});
+const start = Date.now() - 3 * 60 * 60 * 1000;
+for (let packIndex = 0; packIndex < packData.packs.length; packIndex++) {
+    const pack = packData.packs[packIndex];
+    for (let i = 0; i < packIndex * 5; i++) {
         db.run("INSERT INTO pack_comments (id, packid, userid, comment, date) VALUES (?, ?, ?, ?, ?)", [
             `${pack.id}-${i}`,
             pack.id,
-            "testuser",
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Pellentesque adipiscing commodo elit at imperdiet.\n\nSit amet consectetur adipiscing elit duis tristique sollicitudin. Euismod nisi porta lorem mollis aliquam ut porttitor leo a. Ultricies mi quis hendrerit dolor.",
-            Date.now()
+            `testuser${Math.floor(Math.random() * 200)}`,
+            lorem.generateParagraphs(Math.floor(Math.random() * (i % 5)) + 1),
+            start + i * 1.5 * 60 * 1000
         ]);
     }
 }
@@ -44,22 +59,13 @@ webpush.setVapidDetails(
     process.env["VAPID_PRIVATE_KEY"] as string
 );
 
+const avatarFromID = (userid: string) =>
+    createAvatar(pixelArt, {
+        seed: userid,
+        size: 256
+    }).toDataUri();
+
 export default class DashboardAPITest implements DashboardAPIInterface {
-    GenerateRandomName(): string {
-        const minLength = 3;
-        const maxLength = 32;
-        const characters = "abcdefghijklmnopqrstuvwxyz0123456789_."; // Only lowercase letters, numbers, underscore, and period
-        const length = Math.floor(Math.random() * (maxLength - minLength + 1)) + minLength;
-        let result = "";
-
-        for (let i = 0; i < length; i++) {
-            const randomIndex = Math.floor(Math.random() * characters.length);
-            result += characters.charAt(randomIndex);
-        }
-
-        return result;
-    }
-
     async FetchLbPage(pageOrId: number | string) {
         if (typeof pageOrId === "number" && pageOrId >= 10) {
             return null;
@@ -98,7 +104,7 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                     level,
                     xp: levelInfo.xp,
                     userid: levelInfo.userid,
-                    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+                    avatar: avatarFromID(levelInfo.userid),
                     username: levelInfo.userid,
                     progress: [progress, progressPercent]
                 } satisfies DashboardLbEntry;
@@ -120,12 +126,13 @@ export default class DashboardAPITest implements DashboardAPIInterface {
     }
 
     async ProcessOAuth2Callback(_: string) {
-        // return dummy user
+        const id = Math.floor(Math.random() * 200);
+        const name = `testuser${id}`;
         const user = {
-            id: Math.random().toString(10).substring(2),
-            username: this.GenerateRandomName(),
-            global_name: "Dummy Person",
-            avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+            id: name,
+            username: name,
+            global_name: name,
+            avatar: avatarFromID(name),
             discriminator: "0"
         } satisfies User;
 
@@ -199,16 +206,16 @@ export default class DashboardAPITest implements DashboardAPIInterface {
             )
             .all(packid);
 
-        return Promise.all(
+        const data = await Promise.all(
             comments.map(async (comment) => {
-                const user = await this.GetUser(comment.userid).catch(
-                    () =>
-                        ({
-                            username: this.GenerateRandomName(),
-                            avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-                            userid: comment.userid
-                        }) satisfies DashboardUser
-                );
+                const user = await this.GetUser(comment.userid).catch(() => {
+                    const user = {
+                        username: comment.userid,
+                        avatar: avatarFromID(comment.userid),
+                        userid: comment.userid
+                    } satisfies DashboardUser;
+                    return user;
+                });
 
                 return {
                     ...comment,
@@ -217,6 +224,11 @@ export default class DashboardAPITest implements DashboardAPIInterface {
                 } satisfies DashboardFinalPackComment;
             })
         );
+
+        // add a little delay to test the "Loading..." message in the client
+        return new Promise<typeof data>((resolve) => {
+            setTimeout(() => resolve(data), Math.floor(Math.random() * 6) * 100 + 100);
+        });
     }
 
     async GetUser(userid: string) {

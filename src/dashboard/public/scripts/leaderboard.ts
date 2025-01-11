@@ -1,9 +1,9 @@
 import { treaty } from "@elysiajs/eden";
-import type { DashboardApp } from "..";
+import type { DashboardApp } from "../..";
 import "./loadworker";
-import type { DashboardLbEntry } from "../api-types";
-import { XPToLevelUp } from "../../levelfunctions";
-import { user } from "./auth";
+import type { DashboardLbEntry } from "../../api-types";
+import { XPToLevelUp } from "../../../levelfunctions";
+import { GetUser } from "./auth";
 
 const app = treaty<DashboardApp>(location.origin);
 
@@ -215,7 +215,7 @@ nameoridInput.addEventListener("input", (event) => {
 
 // setup showme button
 const showmeButton = document.getElementById("showme") as HTMLButtonElement;
-user.then((user) => {
+GetUser().then((user) => {
     if (user) {
         showmeButton.addEventListener("click", () => {
             // fill nameorid input with the userid, then send Enter

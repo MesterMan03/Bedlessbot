@@ -1,19 +1,26 @@
 import { SHA256 } from "bun";
 import {
     ActionRowBuilder,
+    ApplicationCommandType,
+    Attachment,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChatInputCommandInteraction,
+    ComponentType,
+    ContextMenuCommandBuilder,
     EmbedBuilder,
+    InteractionContextType,
+    Message,
+    MessageContextMenuCommandInteraction,
     MessageFlags,
     MessageMentions,
     ModalBuilder,
+    PermissionsBitField,
     SlashCommandBuilder,
     SlashCommandStringOption,
     TextInputBuilder,
-    TextInputStyle,
-    type TextBasedChannel
+    TextInputStyle
 } from "discord.js";
 import { google } from "googleapis";
 import client, { GenerateSnowflake, GetGuild, db } from "..";
@@ -205,6 +212,126 @@ const allowedFileTypes = ["mp4", "mov", "webm", "gif", "png", "jpeg"];
 const allowedFileTypesString = allowedFileTypes.map((type) => `.${type}`).join(", ");
 const allowedWebsites = ["www.youtube.com", "youtube.com", "youtu.be", "imgur.com", "medal.tv", "streamable.com"];
 
+async function validateLinkProof(interaction: ChatInputCommandInteraction<"cached">, proof: string) {
+    proof = proof.trim();
+
+    // pre-validation 1 - check if link contains spaces
+    if (proof.includes(" ")) {
+        await interaction.editReply("Proof link cannot contain spaces.");
+        return false;
+    }
+
+    // pre-validation 2 - check if link contains periods
+    if (!proof.includes(".")) {
+        await interaction.editReply("Invalid proof link.");
+        return false;
+    }
+
+    // check if proof is valid but is missing https
+    let canParseProof = URL.canParse(proof);
+    if (!canParseProof && URL.canParse("https://" + proof)) {
+        proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
+        canParseProof = true;
+    }
+
+    // verify the proof is a valid url
+    if (!canParseProof) {
+        await interaction.editReply("Invalid proof link.");
+        return false;
+    }
+
+    const proofURL = new URL(proof);
+
+    // check if link is from an allowed website
+    if (!allowedWebsites.some((website) => proofURL.hostname === website)) {
+        await interaction.editReply("The proof link must be from YouTube, Imgur, Medal or Streamable.");
+        return false;
+    }
+
+    // check if video is private (either hostname is)
+    if (proofURL.hostname === "youtu.be" || /(www\.)?youtube\.com/.test(proofURL.hostname)) {
+        let isPrivate: VideoPrivacyResult;
+
+        // extract video id using search params
+        const pathname = proofURL.pathname.split("/");
+        pathname.shift();
+
+        let videoId: string | null;
+        if (proofURL.hostname === "youtu.be") {
+            videoId = pathname[0];
+        } else if (pathname[0] === "shorts") {
+            // shorts link
+            videoId = pathname[1];
+        } else {
+            videoId = proofURL.searchParams.get("v");
+        }
+
+        if (!videoId) {
+            await interaction.editReply("Invalid YouTube link.");
+            return false;
+        }
+
+        isPrivate = await checkVideoPrivacy(videoId);
+        if (isPrivate !== VideoPrivacyResult.Failed) {
+            await interaction.editReply("That video is private or doesn't exist.");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+async function validateFileProof(interaction: ChatInputCommandInteraction<"cached">, proof: Attachment) {
+    // check if the file is a valid type
+    const fileType = proof.contentType?.split("/")[1] ?? "null";
+    if (proof.contentType && !allowedFileTypes.includes(fileType)) {
+        await interaction.editReply(`Invalid file type. Allowed file types: ${allowedFileTypesString}`);
+        return null;
+    }
+
+    // check if the file is too big
+    if (proof.size > 50 * 1024 * 1024) {
+        await interaction.editReply("File is too big. Max 50MB.");
+        return null;
+    }
+
+    // calculate file hash
+    const file = await fetch(proof.url).then((res) => res.arrayBuffer());
+    const fileHashRaw = new Uint8Array(32);
+    SHA256.hash(file, fileHashRaw);
+    return Buffer.from(fileHashRaw).toString("hex");
+}
+
+async function validateGuideReaction(interaction: ChatInputCommandInteraction<"cached">, role: ApplyRole) {
+    // check if user has reacted to the guide message with a thumbsup
+    const guideMessage = await GetGuild()
+        .channels.fetch(isClutchRole(role) ? config.Channels.ClutchGuide : config.Channels.Guide)
+        .then((channel) => {
+            if (!channel?.isTextBased()) {
+                throw new Error("Guide channel is not a text channel");
+            }
+
+            return channel.messages.fetch(isClutchRole(role) ? config.Channels.ClutchGuideMessage : config.Channels.GuideMessage);
+        });
+
+    if (!guideMessage) {
+        await interaction.editReply("Guide message couldn't be found. This is not an epic moment, contact Mester.");
+        return false;
+    }
+
+    const guideReaction = guideMessage.reactions.cache.get("👍");
+    if (
+        !guideReaction ||
+        (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id
+    ) {
+        await interaction.editReply(
+            `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
+        );
+        return false;
+    }
+    return true;
+}
+
 async function validateCommand(interaction: ChatInputCommandInteraction<"cached">) {
     const role = interaction.options.getString("for", true);
     /**
@@ -226,148 +353,6 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
         throw new Error("Applied role is not part of config, wtf???");
     }
 
-    // check if user has reacted to the guide message with a thumbsup
-    const guideMessage = await GetGuild()
-        .channels.fetch(isClutchRole(role) ? config.Channels.ClutchGuide : config.Channels.Guide)
-        .then((channel) => {
-            if (!channel?.isTextBased()) {
-                throw new Error("Guide channel is not a text channel");
-            }
-
-            return channel.messages.fetch(isClutchRole(role) ? config.Channels.ClutchGuideMessage : config.Channels.GuideMessage);
-        });
-
-    if (!guideMessage) {
-        await interaction.editReply("Guide message couldn't be found. This is not an epic moment, contact Mester.");
-        return null;
-    }
-
-    const guideReaction = guideMessage.reactions.cache.get("👍");
-    if (
-        !guideReaction ||
-        (await guideReaction.users.fetch({ after: String(BigInt(interaction.user.id) - 1n), limit: 1 })).first()?.id !== interaction.user.id
-    ) {
-        await interaction.editReply(
-            `Please react to the [guide message](${guideMessage.url}) with a thumbs up before applying for a role.`
-        );
-        return null;
-    }
-
-    // check if user has at least 3 cheatpoints
-    const cheatpoint = db
-        .query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`)
-        .get()?.cheatpoint;
-
-    if (cheatpoint && cheatpoint >= 3) {
-        await interaction.editReply("You have been banned from applying for roles/clutches due to having at least 3 cheater points.");
-        return null;
-    }
-
-    // validate link proof
-    if (typeof proof === "string") {
-        proof = proof.trim();
-
-        // pre-validation 1 - check if link contains spaces
-        if (proof.includes(" ")) {
-            await interaction.editReply("Proof link cannot contain spaces.");
-            return null;
-        }
-
-        // pre-validation 2 - check if link contains periods
-        if (!proof.includes(".")) {
-            await interaction.editReply("Invalid proof link.");
-            return null;
-        }
-
-        // check if proof is valid but is missing https
-        let canParseProof = URL.canParse(proof);
-        if (!canParseProof && URL.canParse("https://" + proof)) {
-            proof = "https://" + proof; // make sure user cannot avoid duplicate system by removing/adding https
-            canParseProof = true;
-        }
-
-        // verify the proof is a valid url
-        if (!canParseProof) {
-            await interaction.editReply("Invalid proof link.");
-            return null;
-        }
-
-        const proofURL = new URL(proof);
-
-        // check if link is from an allowed website
-        if (!allowedWebsites.some((website) => proofURL.hostname === website)) {
-            await interaction.editReply("The proof link must be from YouTube, Imgur, Medal or Streamable.");
-            return null;
-        }
-
-        // check if video is private (either hostname is)
-        if (proofURL.hostname === "youtu.be" || /(www\.)?youtube\.com/.test(proofURL.hostname)) {
-            let isPrivate: VideoPrivacyResult;
-
-            // extract video id using search params
-            const pathname = proofURL.pathname.split("/");
-            pathname.shift();
-
-            let videoId: string | null;
-            if (proofURL.hostname === "youtu.be") {
-                videoId = pathname[0];
-            } else if (pathname[0] === "shorts") {
-                // shorts link
-                videoId = pathname[1];
-            } else {
-                videoId = proofURL.searchParams.get("v");
-            }
-
-            if (!videoId) {
-                await interaction.editReply("Invalid YouTube link.");
-                return null;
-            }
-
-            isPrivate = await checkVideoPrivacy(videoId);
-            if (isPrivate !== VideoPrivacyResult.Failed) {
-                await interaction.editReply("That video is private or doesn't exist.");
-                return null;
-            }
-        }
-
-        proofString = proof;
-    } else {
-        // check if the file is a valid type
-        const fileType = proof.contentType?.split("/")[1] ?? "null";
-        if (proof.contentType && !allowedFileTypes.includes(fileType)) {
-            await interaction.editReply(`Invalid file type. Allowed file types: ${allowedFileTypesString}`);
-            return null;
-        }
-
-        // check if the file is too big
-        if (proof.size > 50 * 1024 * 1024) {
-            await interaction.editReply("File is too big. Max 50MB.");
-            return null;
-        }
-
-        // calculate file hash
-        const file = await fetch(proof.url).then((res) => res.arrayBuffer());
-        const fileHashRaw = new Uint8Array(32);
-        SHA256.hash(file, fileHashRaw);
-        const fileHashString = Buffer.from(fileHashRaw).toString("hex");
-
-        proofString = proof.url;
-        proof = fileHashString;
-    }
-
-    // check if the proof has been submitted before and not by the same user
-    if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
-        await interaction.editReply("This proof has already been used before by someone else.");
-        return null;
-    }
-
-    // check if user already has this role
-    const roleToCheck = shortRoleToRoleID(role);
-    if (roleToCheck && interaction.member.roles.cache.has(roleToCheck) && !isClutchRole(role)) {
-        await interaction.editReply("You already have this role.");
-        return null;
-    }
-
     // check if user is on cooldown
     if (cooldowns.has(interaction.user.id) && !interaction.memberPermissions.has("Administrator")) {
         const cooldown = cooldowns.get(interaction.user.id);
@@ -382,10 +367,124 @@ async function validateCommand(interaction: ChatInputCommandInteraction<"cached"
             return null;
         }
     }
+
+    // check if user already has this role
+    const roleToCheck = shortRoleToRoleID(role);
+    if (roleToCheck && interaction.member.roles.cache.has(roleToCheck) && !isClutchRole(role)) {
+        await interaction.editReply("You already have this role.");
+        return null;
+    }
+
+    const reactedToGuide = await validateGuideReaction(interaction, role);
+    if (!reactedToGuide) {
+        return;
+    }
+
+    // check if user has at least 3 cheatpoints
+    const cheatpoint = db
+        .query<{ cheatpoint: number }, []>(`SELECT cheatpoint FROM cheatpoints WHERE userid = '${interaction.user.id}'`)
+        .get()?.cheatpoint;
+
+    if (cheatpoint && cheatpoint >= 3) {
+        await interaction.editReply("You have been banned from applying for roles/clutches due to having at least 3 cheater points.");
+        return null;
+    }
+
+    // validate link proof
+    if (typeof proof === "string") {
+        const valid = await validateLinkProof(interaction, proof);
+        if (!valid) {
+            return null;
+        }
+
+        proofString = proof;
+    } else {
+        const fileHashString = await validateFileProof(interaction, proof);
+        if (!fileHashString) {
+            return null;
+        }
+
+        proofString = proof.url;
+        proof = fileHashString;
+    }
+
+    // check if the proof has been submitted before and not by the same user
+    if (db.query(`SELECT * FROM proofs WHERE proof = $proof AND userid != '${interaction.user.id}'`).get({ $proof: proof })) {
+        await interaction.editReply("This proof has already been used before by someone else.");
+        return null;
+    }
+
+    // set cooldown
     cooldowns.set(interaction.user.id, Date.now() / 1000);
 
     // now that the command is valid, return the values to be used in the execute function
     return { role, proof, proofString, isLink };
+}
+
+function validateApplicationMessage(message: Message<true>) {
+    const messageEmbed = message.embeds[0];
+    if (!messageEmbed) {
+        return null;
+    }
+
+    const fields = messageEmbed.fields;
+    if (fields.length < 2) {
+        return null;
+    }
+
+    const userField = fields[0];
+    const userid = MessageMentions.UsersPattern.exec(userField.value)?.groups?.id;
+    if (!userid) {
+        return null;
+    }
+
+    const roleField = fields[1];
+    const role = roleNameToShort(roleField.value);
+    if (!role) {
+        return null;
+    }
+
+    return { userid, role } as { userid: string; role: ApplyRole };
+}
+
+async function processContextCommand(interaction: MessageContextMenuCommandInteraction<"cached">) {
+    const validMessage = validateApplicationMessage(interaction.targetMessage);
+    if (!validMessage) {
+        interaction.reply({
+            content: `This message is not an application message. Use this command on an application message in <#${config.Channels.ToReview}>.`,
+            flags: MessageFlags.Ephemeral
+        });
+        return;
+    }
+
+    const components = [
+        new ActionRowBuilder<ButtonBuilder>().setComponents(
+            new ButtonBuilder().setCustomId("-accept").setLabel("Accept").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("-deny").setLabel("Deny").setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId("-infraction")
+                .setEmoji("907725559352664154")
+                .setLabel("Infraction")
+                .setStyle(ButtonStyle.Secondary)
+        )
+    ];
+
+    const reply = await interaction.reply({
+        content: "Please select the option to override the application with!",
+        components,
+        flags: MessageFlags.Ephemeral
+    });
+
+    reply
+        .awaitMessageComponent({
+            filter: (i) => ["-accept", "-deny", "-infraction"].includes(i.customId),
+            componentType: ComponentType.Button
+        })
+        .then((oInteraction) => {
+            oInteraction.deferUpdate();
+            reply.edit({ content: "Application overriden!", components: [] });
+            console.log(oInteraction.customId);
+        });
 }
 
 const commandRoleOption = new SlashCommandStringOption()
@@ -421,15 +520,19 @@ export default {
         ),
 
     interactions: ["ap-accept", "ap-deny", "ap-infraction"],
-
     processInteraction,
 
-    async execute(interaction: ChatInputCommandInteraction) {
-        try {
-            if (!interaction.inCachedGuild()) {
-                return await interaction.reply("This command can only be used in the server.");
-            }
+    contextCommands: {
+        "Override Application": new ContextMenuCommandBuilder()
+            .setName("Override Application")
+            .setType(ApplicationCommandType.Message)
+            .setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
+            .setContexts(InteractionContextType.Guild)
+    },
+    processContextCommand,
 
+    async execute(interaction: ChatInputCommandInteraction<"cached">) {
+        try {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
             const validated = await validateCommand(interaction);
@@ -444,9 +547,9 @@ export default {
 
             interaction.editReply("Your application has been submitted for review.");
 
-            const reviewChannel = (await client.channels.fetch(config.Channels.ToReview)) as TextBasedChannel;
+            const reviewChannel = await client.channels.fetch(config.Channels.ToReview);
             if (!reviewChannel || reviewChannel.isDMBased() || !reviewChannel.isTextBased()) {
-                throw new Error("No review channel");
+                throw new Error("No review channel / not a text channel");
             }
 
             const embed = new EmbedBuilder()

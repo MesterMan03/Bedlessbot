@@ -36,20 +36,20 @@
         <meta name="twitter:site" content="@Bedlessnoob" />
 
         <!-- Favicon -->
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="icon" href="../static/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="../static/icon.png" />
 
         <!-- Canonical URL -->
         <link rel="canonical" href="https://bedless.mester.info/packs" />
 
         <!-- Stylesheets -->
-        <link rel="stylesheet" href="/styles/base.css" />
-        <link rel="stylesheet" href="/styles/packs.css" />
-        <link rel="stylesheet" href="/styles/header.css" />
+        <link rel="stylesheet" href="./styles/base.css" />
+        <link rel="stylesheet" href="./styles/packs.css" />
+        <link rel="stylesheet" href="./styles/header.css" />
 
         <!-- Scripts -->
-        <script src="/scripts/packs.js" type="module"></script>
+        <script src="./scripts/packs.ts" type="module"></script>
         <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 
         <!-- Structured Data (JSON-LD) -->
@@ -95,7 +95,6 @@
         <dialog id="packpopout">
             <section class="comments">
                 <form id="commentForm" autocomplete="off">
-                    <label for="comment">Comment:</label>
                     <textarea
                         id="comment"
                         name="comment"
@@ -109,7 +108,7 @@
                 </form>
 
                 <button id="loginbutton">
-                    <img src="/images/discord_logo.svg" alt="discord logo" width="24" height="24">
+                    <img src="./images/discord_logo.svg" alt="discord logo" width="24" height="24">
                     <span>Log in with Discord</span>
                 </button>
 
@@ -136,7 +135,7 @@
                 </div>
             </section>
             <form method="dialog">
-                <button><img src="/images/close.svg" alt="Close"></button>
+                <button><img src="./images/close.svg" alt="Close"></button>
             </form>
         </dialog>
         <dialog id="notifications">

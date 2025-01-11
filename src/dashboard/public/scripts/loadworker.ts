@@ -1,12 +1,13 @@
 import { treaty } from "@elysiajs/eden";
-import { type DashboardApp } from "..";
-import type { PushSubscriptionData } from "../api-types";
+import { type DashboardApp } from "../..";
+import type { PushSubscriptionData } from "../../api-types";
+import { GetUser } from "./auth";
 
 const app = treaty<DashboardApp>(location.origin);
 
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker
-        .register("/scripts/service-worker.js", { scope: "/", type: "module" })
+        .register("/service-worker.js", { scope: "/", type: "module" })
         .then(async (reg) => {
             // setup periodic sync for new pack comments
             if (reg.periodicSync) {
@@ -39,12 +40,12 @@ if ("serviceWorker" in navigator) {
         });
 }
 
-export async function subscribeToPushNotifications() {
+async function subscribeToPushNotifications() {
     const reg = await navigator.serviceWorker.ready;
 
     // check if we're logged in
-    const { error } = await app.api.user.get();
-    if (error) {
+    const user = await GetUser();
+    if (!user) {
         console.error("We're not logged in, aborting subscription.");
         return;
     }
@@ -87,3 +88,5 @@ export async function subscribeToPushNotifications() {
         })
         .catch(console.error);
 }
+
+export { subscribeToPushNotifications };

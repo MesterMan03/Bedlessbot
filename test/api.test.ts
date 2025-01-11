@@ -5,30 +5,6 @@ import DashboardAPITest from "../src/dashboard/api-test";
 
 const api = dashboardApi;
 
-if (api instanceof DashboardAPITest) {
-    describe("random name generation", () => {
-        const name = api.GenerateRandomName();
-
-        it(
-            "generates a string between 3 and 32 characters",
-            () => {
-                expect(name).toBeString();
-                expect(name.length).toBeGreaterThanOrEqual(3);
-                expect(name.length).toBeLessThanOrEqual(32);
-            },
-            { repeats: 100 }
-        );
-
-        it(
-            "generates a string with only lowercase letters, numbers, underscore, and period",
-            () => {
-                expect(name).toMatch(/^[a-z0-9_.]+$/);
-            },
-            { repeats: 100 }
-        );
-    });
-}
-
 describe("OAuth url", () => {
     const state = "test";
 

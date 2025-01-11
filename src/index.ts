@@ -5,6 +5,7 @@ import {
     ChatInputCommandInteraction,
     Client,
     Collection,
+    ContextMenuCommandInteraction,
     Events,
     Guild,
     Message,
@@ -14,7 +15,8 @@ import {
     Routes,
     ThreadAutoArchiveDuration,
     type Interaction,
-    type RESTPostAPIChatInputApplicationCommandsJSONBody
+    type RESTPostAPIChatInputApplicationCommandsJSONBody,
+    type RESTPostAPIContextMenuApplicationCommandsJSONBody
 } from "discord.js";
 import * as fs from "fs";
 import { Snowflake } from "nodejs-snowflake";
@@ -47,11 +49,15 @@ const clientID = process.env["CLIENT_ID"] as string;
 const guildID = process.env["GUILD_ID"] as string;
 
 type ClientCommand = {
-    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
     name?: string;
     data: RESTPostAPIChatInputApplicationCommandsJSONBody | null;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
     interactions?: string[];
     processInteraction?: (interaction: MessageComponentInteraction) => Promise<void>;
+    contextCommands?: {
+        [key: string]: RESTPostAPIContextMenuApplicationCommandsJSONBody;
+    };
+    processContextCommand?: (interaction: ContextMenuCommandInteraction) => Promise<void>;
 };
 const clientCommands = new Collection<string, ClientCommand>();
 
@@ -111,15 +117,23 @@ for (const commandPath of commandPaths) {
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
 
-// reload slash commands
+// reload commands
 try {
-    const commands = clientCommands.filter((command) => command.data).map((command) => command.data);
-    console.log(`Started refreshing ${commands.length} application (/) commands.`);
+    console.log(`Started refreshing client commands.`);
 
-    // The put method is used to fully refresh all commands in the guild with the current set
+    // Process slash commands
+    const commands = clientCommands.map((command) => command.data).filter((command) => command != null);
     await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: commands });
 
-    console.log(`Successfully reloaded ${commands.length} application (/) commands.`);
+    // Process context commands
+    const contextCommands = clientCommands
+        .map((command) => command.contextCommands)
+        .filter((contextCommands) => contextCommands != null)
+        .map((contextCommands) => Object.values(contextCommands))
+        .flat();
+    await rest.put(Routes.applicationGuildCommands(clientID, guildID), { body: [...commands, ...contextCommands] });
+
+    console.log(`Successfully reloaded client commands.`);
 } catch (error) {
     // And of course, make sure you catch and log any errors!
     console.error(error);
@@ -137,10 +151,14 @@ async function processInteraction(interaction: Interaction) {
             return;
         }
 
-        return await command.execute(interaction);
+        command.execute(interaction);
     }
 
     if (interaction.isMessageComponent()) {
+        if (interaction.customId.startsWith("-")) {
+            // - signals a component that is handled using a collector or similar
+            return;
+        }
         if (interaction.customId.startsWith("chatbot.")) {
             return;
         }
@@ -160,7 +178,20 @@ async function processInteraction(interaction: Interaction) {
             return;
         }
 
-        return await command.processInteraction(interaction);
+        command.processInteraction(interaction);
+    }
+
+    if (interaction.isContextMenuCommand()) {
+        const command = clientCommands.find((cmd) => cmd.contextCommands != null && interaction.commandName in cmd.contextCommands);
+        if (!command?.processContextCommand) {
+            await interaction.reply({
+                content: `Unimplemented context menu command.`,
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
+        command.processContextCommand(interaction);
     }
 }
 

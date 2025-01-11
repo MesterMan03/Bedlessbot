@@ -5,33 +5,75 @@ import { fileURLToPath } from "bun";
 import { randomBytes } from "crypto";
 import Elysia, { t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { rmSync } from "node:fs";
+import { copyFileSync, rmSync } from "node:fs";
 import { join } from "path";
 import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
+import UglifyJS from "uglify-js";
 
 // load the test or normal api based on DEV_DASH environment variable
 const DashboardAPI = process.env["DEV_DASH"] === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
 const api = new DashboardAPI();
 
 const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
+const publicLocation = "public";
+const distLocation = "dist";
+const staticLocation = "static";
 
-const scriptsLocation = "scripts";
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
-const scriptFiles = await Array.fromAsync(new Bun.Glob("*.ts").scan({ cwd: join(dirname, scriptsLocation) }));
+const entryFiles = await Array.fromAsync(new Bun.Glob("**/*.{html,ts}").scan({ cwd: join(dirname, publicLocation) })).then((files) =>
+    files.filter((file) => !file.endsWith(".d.ts"))
+);
 
 // clear the output directory
-rmSync(join(dirname, "public", scriptsLocation), { recursive: true, force: true });
+rmSync(join(dirname, distLocation), { recursive: true, force: true });
 
-console.log("Building scripts for dashboard:", scriptFiles);
-await Bun.build({
-    entrypoints: [...scriptFiles.map((file) => join(dirname, scriptsLocation, file))],
-    minify: true,
-    outdir: join(dirname, "public", scriptsLocation),
+console.log("Building files for dashboard:", entryFiles);
+const buildResult = await Bun.build({
+    entrypoints: [...entryFiles.map((file) => join(dirname, publicLocation, file))],
+    minify: {
+        identifiers: true,
+        syntax: true
+    },
+    outdir: join(dirname, distLocation),
     splitting: true,
-    sourcemap: "linked",
-    banner: `/** 
+    html: true,
+    experimentalCss: true,
+    sourcemap: "inline",
+    naming: {
+        entry: "[name].[ext]",
+        asset: "asset/[name].[ext]",
+        chunk: "chunk/[name]-[hash].[ext]"
+    },
+    plugins: [
+        {
+            name: "html",
+            setup(build) {
+                const rewriter = new HTMLRewriter().on("head", {
+                    element(el) {
+                        el.append(`<link rel="manifest" href="./manifest.webmanifest">`, { html: true });
+                    }
+                });
+                build.onLoad({ filter: /\.html$/ }, async (args) => {
+                    const html = await Bun.file(args.path).text();
+                    return {
+                        contents: rewriter.transform(html).replaceAll(/>\s+</g, "><").replaceAll(/\s+/g, " "),
+                        loader: "html"
+                    };
+                });
+            }
+        }
+    ]
+});
+
+if (!buildResult.success) {
+    console.error(buildResult.logs);
+    throw new Error("Build failed");
+}
+
+// minify the js files (temporary fix until whitespace minify removes <head> content from html)
+const banner = `/** 
  * Copyright 2025 MesterMan03
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,8 +87,30 @@ await Bun.build({
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */`.trim()
-});
+ */`;
+const jsFiles = await Array.fromAsync(new Bun.Glob("**/*.js").scan({ cwd: join(dirname, distLocation) }));
+console.log(`Began processing ${jsFiles.length} js files.`);
+for (const jsFile of jsFiles) {
+    const file = Bun.file(join(dirname, distLocation, jsFile));
+    const mapFile = Bun.file(join(dirname, distLocation, jsFile + ".map"));
+    const code = await file.text();
+    const minified = UglifyJS.minify(code, { sourceMap: { includeSources: true, content: "inline" } });
+    if (minified.error) {
+        console.error(minified.error);
+        throw new Error(`Minification failed for ${jsFile}`);
+    }
+    const suffix = `//# sourceMappingURL=${jsFile.split("/").at(-1)}.map`;
+    // write minified.code into  jsFile
+    await file.write(banner + "\n" + minified.code + "\n" + suffix);
+    // write minified.map into jsFile.map
+    await mapFile.write(minified.map);
+}
+
+// copy all static files into dist
+const staticFiles = await Array.fromAsync(new Bun.Glob("*.*").scan({ cwd: join(dirname, staticLocation) }));
+for (const staticFile of staticFiles) {
+    copyFileSync(join(dirname, staticLocation, staticFile), join(dirname, distLocation, staticFile));
+}
 
 // load EdDSA key from base64 secret
 const jwtSecret = Buffer.from(process.env["JWT_SECRET"] as string, "base64");
@@ -145,7 +209,8 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 page: t.Union([
                     t.Numeric({ default: 0, minimum: 0, description: "The page of the leaderboard to query (starts at 0)" }),
                     t.String({
-                        description: "The user ID to fetch the leaderboard for (returns a 400 error if the user is not in the leaderboard)"
+                        description:
+                            "The user ID or username to fetch the leaderboard for (returns a 400 error if the user is not in the leaderboard)"
                     })
                 ])
             }),
@@ -448,7 +513,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
 const app = new Elysia()
     .state("userid", "")
     .use(jwtPlugin)
-    .use(staticPlugin({ assets: join(dirname, "public"), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
+    .use(staticPlugin({ assets: join(dirname, distLocation), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
 
@@ -464,7 +529,7 @@ const app = new Elysia()
 
         // if path is empty (or ends with /), look for index.html
         if (url.pathname.endsWith("/") || url.pathname === "") {
-            const file = Bun.file(join(dirname, "public", url.pathname, "index.html"));
+            const file = Bun.file(join(dirname, distLocation, url.pathname, "index.html"));
             if (!(await file.exists())) {
                 return new Response("Not found", { status: 404 });
             }
@@ -473,7 +538,7 @@ const app = new Elysia()
 
         // check if there is no file extension and we are NOT in /api or /docs, then send the equivalent .html file
         if (!url.pathname.includes(".") && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/docs")) {
-            const file = Bun.file(join(dirname, "public", url.pathname + ".html"));
+            const file = Bun.file(join(dirname, distLocation, url.pathname + ".html"));
 
             if (!(await file.exists())) {
                 return new Response("Not found", { status: 404 });
@@ -487,7 +552,7 @@ const app = new Elysia()
         }
 
         const url = new URL(request.url);
-        if (url.pathname === "/scripts/service-worker.js") {
+        if (response.headers.get("content-type")?.includes("javascript")) {
             response.headers.set("Service-Worker-Allowed", "/");
         }
 
@@ -499,13 +564,14 @@ const app = new Elysia()
 
             response.headers.set(
                 process.env.NODE_ENV === "production" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' https://fonts.scalar.com; base-uri 'self'; report-to /dev/csp-violation-report;`
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`
             );
 
             const rewriter = new HTMLRewriter();
 
             // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
-            const addTracking = request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
+            const addTracking =
+                process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
             if (addTracking) {
                 // try to parse the jwt token
                 let userid: string | undefined;
@@ -521,13 +587,6 @@ const app = new Elysia()
                     }
                 });
             }
-
-            rewriter.on("head", {
-                element(el) {
-                    // add manifest.webmanifest
-                    el.append(`<link rel="manifest" href="/manifest.webmanifest">`, { html: true });
-                }
-            });
 
             // rewrite the response
             const processed = rewriter.transform(responseText);

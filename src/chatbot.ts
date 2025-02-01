@@ -316,17 +316,11 @@ async function ReplyToChatBotMessage(message: Message<true>) {
         console.log("Parsed reply:", parsedReply);
     }
 
-    const chatBotReply = parsedReply.text;
-    // if (testMode) {
-    //     console.log("pre-filter", chatBotReply);
-    // }
-    // // first check if the AI is a dumbass and hallucinated metadata in the beginning
-    // if (chatBotReply.startsWith("Bedlessbot")) {
-    //     chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
-    // }
-    // if (testMode) {
-    //     console.log("post-filter", chatBotReply);
-    // }
+    let chatBotReply = parsedReply.text;
+    // first check if the AI is a dumbass and hallucinated metadata in the beginning
+    if (chatBotReply.startsWith("Bedlessbot")) {
+        chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
+    }
     botMessage.edit({ content: chatBotReply });
 
     // enrich the reply with metadata

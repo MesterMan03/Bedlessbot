@@ -127,7 +127,7 @@ for (const pack of packData.packs) {
         downloadButton.addEventListener("click", () => {
             if (version === "bedrock") {
                 openModal(
-                    "<div>DISCLAIMER: The Bedrock pack does NOT support OptiFine features, which means you lose custom skies and connected textures.</div>",
+                    "<div>DISCLAIMER: The Bedrock pack does NOT support some OptiFine features like connected textures. Custom skies are still supported.</div>",
                     () => {
                         downloadPack(pack.id, version);
                     }

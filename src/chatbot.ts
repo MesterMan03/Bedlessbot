@@ -18,6 +18,7 @@ import config from "./config.js";
 import client from "./index.js";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { SHA256 } from "bun";
 
 const testMode = process.env.NODE_ENV === "development";
 
@@ -273,6 +274,7 @@ async function ReplyToChatBotMessage(message: Message<true>) {
             messages: prepareConversation(),
             max_completion_tokens: 1000,
             temperature: 1.2,
+            safety_identifier: SHA256.hash(message.author.id).toString(),
             tools: [
                 {
                     type: "function",

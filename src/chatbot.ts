@@ -267,12 +267,12 @@ async function ReplyToChatBotMessage(message: Message<true>) {
                 "The raw response without metadata. It only contains the text of the response, without and user id, channel id, timestamp etc."
         })
     });
-    const response = await openAIClient.beta.chat.completions
+    const response = await openAIClient.chat.completions
         .parse({
             model: ChatBotModel,
             messages: prepareConversation(),
-            max_tokens: 1000,
-            temperature: 1,
+            max_completion_tokens: 1000,
+            temperature: 1.2,
             tools: [
                 {
                     type: "function",

@@ -528,7 +528,15 @@ const apiRoute = new Elysia({ prefix: "/api" })
 const app = new Elysia()
     .state("userid", "")
     .use(jwtPlugin)
-    .use(staticPlugin({ assets: join(dirname, distLocation), prefix: "/", noCache: process.env.NODE_ENV === "development" }))
+    .use(
+        staticPlugin({
+            assets: join(dirname, distLocation),
+            prefix: "/",
+            noCache: process.env.NODE_ENV === "development",
+            noExtension: true,
+            ignorePatterns: [/\.html$/]
+        })
+    )
     .onBeforeHandle(async ({ request }) => {
         const url = new URL(request.url);
 

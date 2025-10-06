@@ -31,7 +31,7 @@
   "dependencies": {
     "@elysiajs/eden": "^1.0.14",
     "@elysiajs/jwt": "^1.0.2",
-    "@elysiajs/static": "^1.0.3",
+    "@elysiajs/static": "^1.4.0",
     "@elysiajs/swagger": "^1.0.5",
     "@hcaptcha/vanilla-hcaptcha": "^1.1.0-alpha2",
     "@twemoji/api": "^15.1.0",

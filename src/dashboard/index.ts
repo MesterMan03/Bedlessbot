@@ -180,14 +180,33 @@ document.addEventListener('DOMContentLoaded', matomoWaitForTracker());
 //@ts-ignore shut up
 const jwtPlugin = jwt({ name: "jwt", secret: jwtSecret, alg: "HS256", exp: "7d" });
 
+class CustomError extends Error {
+    status = 400;
+
+    constructor(
+        public message: string,
+        status = 400
+    ) {
+        super(message);
+        this.status = status;
+    }
+
+    toResponse() {
+        return Response.json({ error: this.message, code: this.status }, { status: this.status });
+    }
+}
+
 const apiRoute = new Elysia({ prefix: "/api" })
     .state("userid", "")
     .use(jwtPlugin)
+    .error({
+        CustomError
+    })
     .get(
         "/lbpage",
-        async ({ query: { page: pageOrId }, error }) => {
+        async ({ query: { page: pageOrId } }) => {
             if (typeof pageOrId === "number" && !Number.isInteger(pageOrId)) {
-                return error(400, "Page must be an integer");
+                throw new CustomError("Page must be an integer");
             }
 
             if (typeof pageOrId === "string") {
@@ -197,9 +216,9 @@ const apiRoute = new Elysia({ prefix: "/api" })
             const page = await api.FetchLbPage(pageOrId);
             if (!page) {
                 if (typeof pageOrId === "number") {
-                    return error(400, "Invalid page number");
+                    throw new CustomError("Invalid page number");
                 }
-                return error(400, "User ID doesn't exist in the leaderboard");
+                throw new CustomError("User ID doesn't exist in the leaderboard");
             }
 
             return page;
@@ -258,20 +277,20 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/callback",
-        async ({ query: { code, state }, cookie: { oauthState, auth, redirect: redirectCookie }, jwt, error, redirect }) => {
+        async ({ query: { code, state }, cookie: { oauthState, auth, redirect: redirectCookie }, jwt, redirect }) => {
             // validate state
             if (state !== oauthState.value) {
-                return error(401, "Invalid state");
+                throw new CustomError("Invalid state", 401);
             }
 
-            const redirectUrl = redirectCookie.value ?? "/";
+            const redirectUrl = (redirectCookie.value as string) ?? "/";
             oauthState.remove();
             redirectCookie.remove();
 
             // process the callback
             const result = await api.ProcessOAuth2Callback(code);
             if (!result) {
-                return error(401, "Unauthorised");
+                throw new CustomError("Unauthorized", 401);
             }
 
             // create a signed jwt token with userid
@@ -297,15 +316,15 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .guard(
         {
-            async beforeHandle({ cookie: { auth }, jwt, error, store }) {
-                const token = auth.value;
+            async beforeHandle({ cookie: { auth }, jwt, store }) {
+                const token = auth.value as string;
                 if (!token) {
-                    return error(401, "Missing token");
+                    throw new CustomError("Missing token", 401);
                 }
 
                 const validToken = await jwt.verify(token);
                 if (!validToken) {
-                    return error(401, "Unauthorized");
+                    throw new CustomError("Unauthorized", 401);
                 }
 
                 store.userid = validToken["userid"] as string;
@@ -322,7 +341,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
                     },
                     { detail: { tags: ["Auth", "Protected"], description: "Clear auth token cookie" } }
                 )
-                .guard((app) =>
+                .guard({}, (app) =>
                     app
                         .use(
                             rateLimit({
@@ -340,10 +359,13 @@ const apiRoute = new Elysia({ prefix: "/api" })
                         )
                         .post(
                             "/comments",
-                            async ({ body, store: { userid }, error }) => {
+                            async ({ body, store: { userid } }) => {
                                 // validate comment
                                 if (/^(?=.{1,1024}$).+$/s.test(body.comment) === false) {
-                                    return error(422, "Comment must be at least 1 character and no more than 1024 characters long.");
+                                    throw new CustomError(
+                                        "Comment must be at least 1 character and no more than 1024 characters long.",
+                                        400
+                                    );
                                 }
                                 api.SubmitPackComment(userid, body.packid, body.comment, body["h-captcha-response"]);
                                 return "ok";
@@ -378,10 +400,10 @@ const apiRoute = new Elysia({ prefix: "/api" })
                 )
                 .post(
                     "/register-push",
-                    async ({ store: { userid }, body, error }) => {
+                    async ({ store: { userid }, body }) => {
                         // make sure body.keys only contain auth and p256dh
                         if (!Object.keys(body.keys).every((key) => ["auth", "p256dh"].includes(key))) {
-                            return error(422, "Invalid keys");
+                            throw new CustomError("Invalid keys", 400);
                         }
                         api.RegisterPushSubscription(userid, body);
 
@@ -420,18 +442,18 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/comments",
-        async ({ query: { page, packid }, error }) => {
+        async ({ query: { page, packid } }) => {
             if (!Number.isInteger(page)) {
-                return error(400, "Page must be an integer");
+                throw new CustomError("Page must be an integer", 400);
             }
 
             if (!packData.packs.find((pack) => pack.id === packid)) {
-                return error(400, "Pack not found");
+                throw new CustomError("Pack not found", 400);
             }
 
             const comments = await api.FetchPackComments(packid, page);
             if (!comments) {
-                return error(400, "Invalid page number");
+                throw new CustomError("Invalid page number", 400);
             }
 
             return comments;
@@ -452,9 +474,9 @@ const apiRoute = new Elysia({ prefix: "/api" })
     )
     .get(
         "/comments/maxpage",
-        ({ query: { packid }, error }) => {
+        ({ query: { packid } }) => {
             if (!packData.packs.find((pack) => pack.id === packid)) {
-                return error(400, "Pack not found");
+                throw new CustomError("Pack not found", 404);
             }
             return api.GetMaxCommentsPage(packid);
         },
@@ -469,18 +491,18 @@ const apiRoute = new Elysia({ prefix: "/api" })
     .get("/packdata", () => packData, { detail: { tags: ["App", "Pack"], description: "Fetch the pack data" }, response: PackDataSchema })
     .get(
         "/downloadpack",
-        ({ query: { packid, version }, error, redirect }) => {
+        ({ query: { packid, version }, redirect }) => {
             const cdn = "https://bedless-cdn.mester.info";
 
             // find pack and return download link
             const pack = packData.packs.find((pack) => pack.id === packid);
             if (!pack) {
-                return error(400, "Invalid pack ID");
+                throw new CustomError("Invalid pack ID", 400);
             }
 
             const file = pack.downloads[version];
             if (!file) {
-                return error(400, "Invalid version");
+                throw new CustomError("Invalid version", 400);
             }
 
             return redirect(`${cdn}/${file}`);
@@ -577,7 +599,7 @@ const app = new Elysia()
                 let userid: string | undefined;
                 const token = auth.value;
                 if (token) {
-                    const validToken = await jwt.verify(token);
+                    const validToken = await jwt.verify(token as string);
                     userid = validToken ? (validToken["userid"] as string) : undefined;
                 }
 

@@ -7,7 +7,8 @@ import {
     EmbedBuilder,
     italic,
     Message,
-    MessageFlags
+    MessageFlags,
+    TextDisplayBuilder
 } from "discord.js";
 import { DateTime } from "luxon";
 import openai from "openai";
@@ -270,7 +271,7 @@ async function ReplyToChatBotMessage(message: Message<true>) {
         .parse({
             model: ChatBotModel,
             messages: prepareConversation(),
-            max_tokens: 400,
+            max_tokens: 1000,
             temperature: 1,
             tools: [
                 {
@@ -321,7 +322,8 @@ async function ReplyToChatBotMessage(message: Message<true>) {
     if (chatBotReply.startsWith("Bedlessbot")) {
         chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
     }
-    botMessage.edit({ content: chatBotReply });
+    const clampedMessage = chatBotReply.length > 3500 ? chatBotReply.slice(0, 3500) + "..." : chatBotReply;
+    botMessage.edit({ content: "", components: [new TextDisplayBuilder().setContent(clampedMessage)], flags: "IsComponentsV2" });
 
     // enrich the reply with metadata
     const storedReply = `Bedlessbot {${botMessage.channelId}} (${botMessage.id}) <${DateTime.fromJSDate(botMessage.createdAt).toFormat("yyyy-MM-dd HH:mm:ss")}>: ${chatBotReply}`;

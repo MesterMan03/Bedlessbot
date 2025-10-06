@@ -22,9 +22,7 @@ const staticLocation = "static";
 
 const port = parseInt(process.env["PORT"] as string) || 8146;
 
-const entryFiles = await Array.fromAsync(new Bun.Glob("**/*.{html,ts}").scan({ cwd: join(dirname, publicLocation) })).then((files) =>
-    files.filter((file) => !file.endsWith(".d.ts"))
-);
+const entryFiles = await Array.fromAsync(new Bun.Glob("**/*.{html}").scan({ cwd: join(dirname, publicLocation) }));
 
 // clear the output directory
 rmSync(join(dirname, distLocation), { recursive: true, force: true });
@@ -32,15 +30,10 @@ rmSync(join(dirname, distLocation), { recursive: true, force: true });
 console.log("Building files for dashboard:", entryFiles);
 const buildResult = await Bun.build({
     entrypoints: [...entryFiles.map((file) => join(dirname, publicLocation, file))],
-    minify: {
-        identifiers: true,
-        syntax: true
-    },
+    minify: true,
     outdir: join(dirname, distLocation),
     splitting: true,
-    html: true,
-    experimentalCss: true,
-    sourcemap: "inline",
+    sourcemap: process.env.NODE_ENV === "production" ? "none" : "inline",
     naming: {
         entry: "[name].[ext]",
         asset: "asset/[name].[ext]",

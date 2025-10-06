@@ -528,16 +528,7 @@ const apiRoute = new Elysia({ prefix: "/api" })
 const app = new Elysia()
     .state("userid", "")
     .use(jwtPlugin)
-    .use(
-        staticPlugin({
-            assets: join(dirname, distLocation),
-            prefix: "/",
-            noCache: process.env.NODE_ENV === "development",
-            noExtension: true,
-            ignorePatterns: [/\.html$/]
-        })
-    )
-    .onBeforeHandle(async ({ request }) => {
+    .onRequest(async ({ request }) => {
         const url = new URL(request.url);
 
         // check if url ends with .html, then redirect without the extension
@@ -569,32 +560,35 @@ const app = new Elysia()
             return new Response(file);
         }
     })
-    .onAfterHandle({ as: "global" }, async ({ response, request, jwt, cookie: { auth } }) => {
-        if (!(response instanceof Response && request instanceof Request)) {
-            return;
-        }
-
+    .use(
+        staticPlugin({
+            assets: join(dirname, distLocation),
+            prefix: "/",
+            noCache: process.env.NODE_ENV === "development",
+            noExtension: true,
+            ignorePatterns: [/\.html$/]
+        })
+    )
+    .onAfterHandle({ as: "global" }, async ({ set, request, jwt, cookie: { auth }, responseValue }) => {
         const url = new URL(request.url);
-        if (response.headers.get("content-type")?.includes("javascript")) {
-            response.headers.set("Service-Worker-Allowed", "/");
+        if (set.headers["content-type"]?.includes("javascript")) {
+            set.headers["service-worker-allowed"] = "/";
         }
 
-        if (response.headers.get("content-type")?.includes("text/html")) {
-            const responseText = await response.text();
+        if (set.headers["content-type"]?.includes("html")) {
+            const responseText = responseValue as string;
 
             // generate random nonce
             const nonce = randomBytes(32).toString("base64");
 
-            response.headers.set(
-                process.env.NODE_ENV === "production" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`
-            );
+            set.headers[process.env.NODE_ENV === "production" ? "content-security-policy" : "content-security-policy-report-only"] =
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`;
 
             const rewriter = new HTMLRewriter();
 
             // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
             const addTracking =
-                process.env.NODE_ENV === "production" && request.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
+                process.env.NODE_ENV === "production" && set.headers["user-agent"] !== "internal" && url.pathname !== "/rank";
             if (addTracking) {
                 // try to parse the jwt token
                 let userid: string | undefined;
@@ -622,7 +616,7 @@ const app = new Elysia()
                 }
             });
 
-            return new Response(nonceRewriter.transform(processed), { headers: response.headers });
+            return new Response(nonceRewriter.transform(processed));
         }
     })
     .use(apiRoute)

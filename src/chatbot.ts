@@ -272,7 +272,6 @@ async function ReplyToChatBotMessage(message: Message<true>) {
         .parse({
             model: ChatBotModel,
             messages: prepareConversation(),
-            max_completion_tokens: 1000,
             safety_identifier: SHA256.hash(message.author.id).toString(),
             tools: [
                 {

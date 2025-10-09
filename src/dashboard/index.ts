@@ -528,14 +528,6 @@ const apiRoute = new Elysia({ prefix: "/api" })
 const app = new Elysia()
     .state("userid", "")
     .use(jwtPlugin)
-    .use(
-        staticPlugin({
-            assets: join(dirname, distLocation),
-            prefix: "/",
-            noCache: process.env.NODE_ENV === "development",
-            noExtension: true
-        })
-    )
     .onRequest(async ({ request, redirect }) => {
         const url = new URL(request.url);
 
@@ -624,6 +616,14 @@ const app = new Elysia()
     .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
     .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))
     .use(apiRoute)
+    .use(
+        staticPlugin({
+            assets: join(dirname, distLocation),
+            prefix: "/",
+            noCache: process.env.NODE_ENV === "development",
+            noExtension: true
+        })
+    )
     .use(
         swagger({
             scalarConfig: { theme: "moon", layout: "modern" },

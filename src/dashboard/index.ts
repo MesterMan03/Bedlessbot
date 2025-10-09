@@ -9,7 +9,6 @@ import { copyFileSync, rmSync } from "node:fs";
 import { join } from "path";
 import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
-import UglifyJS from "uglify-js";
 
 // load the test or normal api based on DEV_DASH environment variable
 const DashboardAPI = process.env["DEV_DASH"] === "yes" ? (await import("./api-test")).default : (await import("./api")).default;
@@ -28,12 +27,28 @@ const entryFiles = await Array.fromAsync(new Bun.Glob("**/*.{html}").scan({ cwd:
 rmSync(join(dirname, distLocation), { recursive: true, force: true });
 
 console.log("Building files for dashboard:", entryFiles);
+const banner = `/** 
+ * Copyright 2025 MesterMan03
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */`;
 const buildResult = await Bun.build({
     entrypoints: [...entryFiles.map((file) => join(dirname, publicLocation, file))],
     minify: true,
     outdir: join(dirname, distLocation),
     splitting: true,
     sourcemap: process.env.NODE_ENV === "production" ? "none" : "inline",
+    banner,
     naming: {
         entry: "[name].[ext]",
         asset: "asset/[name].[ext]",
@@ -63,40 +78,6 @@ const buildResult = await Bun.build({
 if (!buildResult.success) {
     console.error(buildResult.logs);
     throw new Error("Build failed");
-}
-
-// minify the js files (temporary fix until whitespace minify removes <head> content from html)
-const banner = `/** 
- * Copyright 2025 MesterMan03
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */`;
-const jsFiles = await Array.fromAsync(new Bun.Glob("**/*.js").scan({ cwd: join(dirname, distLocation) }));
-console.log(`Began processing ${jsFiles.length} js files.`);
-for (const jsFile of jsFiles) {
-    const file = Bun.file(join(dirname, distLocation, jsFile));
-    const mapFile = Bun.file(join(dirname, distLocation, jsFile + ".map"));
-    const code = await file.text();
-    const minified = UglifyJS.minify(code, { sourceMap: { includeSources: true, content: "inline" } });
-    if (minified.error) {
-        console.error(minified.error);
-        throw new Error(`Minification failed for ${jsFile}`);
-    }
-    const suffix = `//# sourceMappingURL=${jsFile.split("/").at(-1)}.map`;
-    // write minified.code into  jsFile
-    await file.write(banner + "\n" + minified.code + "\n" + suffix);
-    // write minified.map into jsFile.map
-    await mapFile.write(minified.map);
 }
 
 // copy all static files into dist
@@ -529,6 +510,7 @@ const app = new Elysia()
     .state("userid", "")
     .use(jwtPlugin)
     .onRequest(async ({ request, redirect }) => {
+        console.log(`${request.method} ${new URL(request.url).pathname}`);
         const url = new URL(request.url);
 
         // check if url ends with .html, then redirect without the extension
@@ -557,7 +539,6 @@ const app = new Elysia()
         } */
     })
     .onAfterHandle({ as: "global" }, async ({ set, request, jwt, cookie: { auth }, responseValue: response }) => {
-        console.log(`${request.method} ${new URL(request.url).pathname}`);
         if (response instanceof Response === false) {
             return;
         }

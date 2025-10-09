@@ -1,5 +1,4 @@
 import jwt from "@elysiajs/jwt";
-import staticPlugin from "@elysiajs/static";
 import swagger from "@elysiajs/swagger";
 import { fileURLToPath } from "bun";
 import { randomBytes } from "crypto";
@@ -103,7 +102,7 @@ const trackingCode = (userid?: string) => `
     _paq.push(['enableHeartBeatTimer']);
     ${userid ? `_paq.push(["setUserId", "${userid}"]);` : ""}
     (function() {
-        var u="//matomo.gedankenversichert.com/";
+        var u="//matomo.mester.info/";
         _paq.push(['setTrackerUrl', u+'matomo.php']);
         _paq.push(['setSiteId', '1']);
         var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
@@ -113,7 +112,7 @@ const trackingCode = (userid?: string) => `
 
 <!-- Matomo Image Tracker-->
 <noscript>
-<img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.gedankenversichert.com/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
+<img referrerpolicy="no-referrer-when-downgrade" src="https://matomo.mester.info/matomo.php?idsite=1&amp;rec=1" style="border:0" alt="" />
 </noscript>
 <!-- End Matomo Code -->
 
@@ -556,7 +555,7 @@ const app = new Elysia()
             const nonce = randomBytes(32).toString("base64");
 
             set.headers[process.env.NODE_ENV === "production" ? "content-security-policy" : "content-security-policy-report-only"] =
-                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`;
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.mester.info cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.mester.info https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`;
 
             const rewriter = new HTMLRewriter();
 
@@ -597,15 +596,26 @@ const app = new Elysia()
     .get("/rank", () => new Response(Bun.file(join(dirname, distLocation, "rank.html"))))
     .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
     .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))
+    .get("/chunk/:file", async ({ params }) => {
+        const file = Bun.file(join(dirname, distLocation, "chunk", params.file));
+        if (!(await file.exists())) {
+            return new Response("Not found", { status: 404 });
+        }
+        return new Response(file);
+    })
+    .get("/asset/:file", async ({ params }) => {
+        const file = Bun.file(join(dirname, distLocation, "asset", params.file));
+        if (!(await file.exists())) {
+            return new Response("Not found", { status: 404 });
+        }
+        return new Response(file);
+    })
+    .get("/icon.png", () => new Response(Bun.file(join(dirname, staticLocation, "icon.png"))))
+    .get("/favicon.ico", () => new Response(Bun.file(join(dirname, staticLocation, "favicon.ico"))))
+    .get("/robots.txt", () => new Response(Bun.file(join(dirname, staticLocation, "robots.txt"))))
+    .get("/sitemap.xml", () => new Response(Bun.file(join(dirname, staticLocation, "sitemap.xml"))))
+    .get("/icon.gif", () => new Response(Bun.file(join(dirname, staticLocation, "icon.gif"))))
     .use(apiRoute)
-    .use(
-        staticPlugin({
-            assets: join(dirname, distLocation),
-            prefix: "/",
-            noCache: process.env.NODE_ENV === "development",
-            noExtension: true
-        })
-    )
     .use(
         swagger({
             scalarConfig: { theme: "moon", layout: "modern" },

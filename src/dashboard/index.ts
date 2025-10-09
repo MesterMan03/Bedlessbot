@@ -593,6 +593,7 @@ const app = new Elysia()
             return new Response(nonceRewriter.transform(processed), { headers: response.headers, status: response.status });
         }
     })
+    .get("/", () => new Response(Bun.file(join(dirname, distLocation, "index.html"))))
     .get("/rank", () => new Response(Bun.file(join(dirname, distLocation, "rank.html"))))
     .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
     .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))

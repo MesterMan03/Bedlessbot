@@ -533,8 +533,7 @@ const app = new Elysia()
             assets: join(dirname, distLocation),
             prefix: "/",
             noCache: process.env.NODE_ENV === "development",
-            noExtension: true,
-            ignorePatterns: [/\.html$/]
+            noExtension: true
         })
     )
     .onRequest(async ({ request, redirect }) => {
@@ -565,71 +564,65 @@ const app = new Elysia()
             return new Response(file);
         } */
     })
-    .guard({}, (app) =>
-        app
-            .onAfterHandle({ as: "global" }, async ({ set, request, jwt, cookie: { auth }, responseValue: response }) => {
-                if (response instanceof Response === false) {
-                    return;
+    .onAfterHandle({ as: "global" }, async ({ set, request, jwt, cookie: { auth }, responseValue: response }) => {
+        console.log(`${request.method} ${new URL(request.url).pathname}`);
+        if (response instanceof Response === false) {
+            return;
+        }
+
+        const url = new URL(request.url);
+        const contentType = response.headers.get("content-type") ?? "";
+        if (contentType.includes("javascript")) {
+            set.headers["service-worker-allowed"] = "/";
+        }
+
+        if (contentType.includes("html")) {
+            const responseText = await response.text();
+
+            // generate random nonce
+            const nonce = randomBytes(32).toString("base64");
+
+            set.headers[process.env.NODE_ENV === "production" ? "content-security-policy" : "content-security-policy-report-only"] =
+                `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`;
+
+            const rewriter = new HTMLRewriter();
+
+            // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
+            const addTracking =
+                process.env.NODE_ENV === "production" && response.headers.get("user-agent") !== "internal" && url.pathname !== "/rank";
+            if (addTracking) {
+                // try to parse the jwt token
+                let userid: string | undefined;
+                const token = auth.value;
+                if (token) {
+                    const validToken = await jwt.verify(token as string);
+                    userid = validToken ? (validToken["userid"] as string) : undefined;
                 }
 
-                const url = new URL(request.url);
-                const contentType = response.headers.get("content-type") ?? "";
-                if (contentType.includes("javascript")) {
-                    set.headers["service-worker-allowed"] = "/";
-                }
-
-                if (contentType.includes("html")) {
-                    const responseText = await response.text();
-
-                    // generate random nonce
-                    const nonce = randomBytes(32).toString("base64");
-
-                    set.headers[process.env.NODE_ENV === "production" ? "content-security-policy" : "content-security-policy-report-only"] =
-                        `default-src 'self'; script-src 'strict-dynamic' 'nonce-${nonce}' 'self' matomo.gedankenversichert.com cdn-cookieyes.com https://hcaptcha.com https://*.hcaptcha.com; frame-src 'self' https://hcaptcha.com https://*.hcaptcha.com; style-src 'self' https://hcaptcha.com https://*.hcaptcha.com 'unsafe-inline'; connect-src 'self' https://hcaptcha.com https://*.hcaptcha.com https://matomo.gedankenversichert.com https://log.cookieyes.com https://cdn-cookieyes.com https://bedless-cdn.mester.info; img-src 'self' data: https://cdn.discordapp.com https://bedless-cdn.mester.info https://cdn-cookieyes.com; font-src 'self' data:; base-uri 'self'; report-to /dev/csp-violation-report;`;
-
-                    const rewriter = new HTMLRewriter();
-
-                    // add tracking code (must be production, user agent must not be "internal" and must not be /rank)
-                    const addTracking =
-                        process.env.NODE_ENV === "production" &&
-                        response.headers.get("user-agent") !== "internal" &&
-                        url.pathname !== "/rank";
-                    if (addTracking) {
-                        // try to parse the jwt token
-                        let userid: string | undefined;
-                        const token = auth.value;
-                        if (token) {
-                            const validToken = await jwt.verify(token as string);
-                            userid = validToken ? (validToken["userid"] as string) : undefined;
-                        }
-
-                        rewriter.on("head", {
-                            element(el) {
-                                el.append(trackingCode(userid), { html: true });
-                            }
-                        });
+                rewriter.on("head", {
+                    element(el) {
+                        el.append(trackingCode(userid), { html: true });
                     }
+                });
+            }
 
-                    // rewrite the response
-                    const processed = rewriter.transform(responseText);
+            // rewrite the response
+            const processed = rewriter.transform(responseText);
 
-                    // rewrite every script tag to add nonce
-                    const nonceRewriter = new HTMLRewriter();
-                    nonceRewriter.on("script", {
-                        element(el) {
-                            el.setAttribute("nonce", nonce);
-                        }
-                    });
-
-                    return new Response(nonceRewriter.transform(processed), { headers: response.headers, status: response.status });
+            // rewrite every script tag to add nonce
+            const nonceRewriter = new HTMLRewriter();
+            nonceRewriter.on("script", {
+                element(el) {
+                    el.setAttribute("nonce", nonce);
                 }
-            })
-            .get("/", () => new Response(Bun.file(join(dirname, distLocation, "index.html"))))
-            .get("/rank", () => new Response(Bun.file(join(dirname, distLocation, "rank.html"))))
-            .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
-            .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))
-    )
+            });
 
+            return new Response(nonceRewriter.transform(processed), { headers: response.headers, status: response.status });
+        }
+    })
+    .get("/rank", () => new Response(Bun.file(join(dirname, distLocation, "rank.html"))))
+    .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
+    .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))
     .use(apiRoute)
     .use(
         swagger({

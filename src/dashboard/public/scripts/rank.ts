@@ -80,7 +80,6 @@ const search = new URLSearchParams(window.location.search);
             return;
         }
         const user = res.data[0];
-        console.log(XPToLevel(user.level));
         setUserValues({
             userImage: user.avatar,
             leaderboard: user.pos,

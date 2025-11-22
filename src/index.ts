@@ -25,7 +25,7 @@ import { join } from "path";
 import puppeteer from "puppeteer";
 import { SendRequest } from "./apimanager";
 import { FixBirthdayDatenums, WishBirthdays, wishBirthdaysCronjob } from "./birthdaymanager";
-import { addChatBotMessage, ClearConversation, isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
+import { ClearConversation, isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
 import config from "./config";
 import {
     AwardXPToMessage,
@@ -40,6 +40,7 @@ import { StartQuickTime } from "./quicktime";
 import SetupDB from "../tools/setup_db";
 import { XPToLevel } from "./levelfunctions";
 import { addUserMessage } from "./chatbot/conversation.js";
+import { createConversationMessage, replyToChatBotMessage } from "./chatbot/main.js";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -213,10 +214,10 @@ function processSelfPing(message: Message<true>) {
             }
 
             message.member?.roles.add(config.Roles.Chatbot);
-            addChatBotMessage(message);
+            replyToChatBotMessage(message);
         });
     } else {
-        addChatBotMessage(message);
+        replyToChatBotMessage(message);
     }
 }
 
@@ -412,7 +413,7 @@ client.on(Events.MessageCreate, async (message) => {
     processAIRequest(message);
 
     // add the message to the chatbot context
-    addUserMessage(message, message.content);
+    addUserMessage(JSON.stringify(createConversationMessage(message)));
 });
 
 client.on(Events.GuildMemberAdd, (member) => {

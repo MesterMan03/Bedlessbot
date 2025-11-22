@@ -8,6 +8,15 @@ export type ConversationEntry = {
     system?: openai.ChatCompletionSystemMessageParam;
 };
 
+export type ConversationMessage = {
+    messageId: string;
+    userId: string;
+    username: string;
+    content: string;
+    channelId: string;
+    date: string;
+}
+
 export type SearchResult = {
     title: string;
     url: string;

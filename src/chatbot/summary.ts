@@ -53,9 +53,6 @@ export async function shouldGenerateSummary(query: string): Promise<boolean> {
                 },
                 strict: true
             }
-        },
-        reasoning: {
-            effort: "minimal"
         }
     });
 

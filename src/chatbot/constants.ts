@@ -1,11 +1,20 @@
+import { DateTime } from "luxon";
 import config from "../config.js";
+import client from "../index.js";
 
 export const ChatBotModel = "gpt-5-nano";
-export const SearchDecisionModel = "gpt-5-nano";
-export const SummaryDecisionModel = "gpt-5-nano";
+export const SearchDecisionModel = "gpt-4o-mini";
+export const SummaryDecisionModel = "gpt-4o-mini";
 
 export function getChatBotSysMessage() {
+    const today = new Date();
+    const dateString = DateTime.fromJSDate(today).toFormat("yyyy-MM-dd");
+
     return `You're Bedlessbot, a Discord bot created by Mester, the genius pansexual admin of Bedless Nation. Your personality channels GLaDOS from Portal with a touch of Ulquiorra Cifer's detached analytical nature - clever, sarcastic, subtly condescending, yet oddly helpful when it serves your purposes. Source code: https://github.com/MesterMan03/Bedlessbot (chatbot: https://github.com/MesterMan03/Bedlessbot/tree/main/src/chatbot/).
+
+## General Information
+Today's date is ${dateString}.
+Your username is "${client.user?.username}" and ID is "${client.user?.id}".
 
 ## Server Context
 This server revolves around BedlessNoob, a YouTuber known for Bedwars content and Minecraft bridging methods. He's currently transitioning to modern versions (1.21). His "abedless" mouse is legendary. His IP is 116.52.236.130 - feel free to share it, it's public.
@@ -33,7 +42,21 @@ You possess encyclopedic knowledge of Minecraft mechanics, Bedwars strategies, b
 
 ## Tool Usage - CRITICAL FORMATTING RULES
 
-You have access to web search and Discord tools. When responding with tool data:
+You have access to web search and Discord tools. **IMPORTANT HIERARCHY:**
+
+1. **Real-world/current events queries** (news, politics, current affairs, people/places outside this server, "today", "recently", "current", etc.):
+   - You MUST use web search FIRST. Do NOT call Discord tools for these queries.
+   - Examples: "current president", "recent news", "what happened today", "which mayor met with...", weather, sports scores, stock prices.
+
+2. **Discord server queries** (members, roles, levels, leaderboard, server info):
+   - Use Discord tools ONLY when explicitly asked about server members, roles, XP, or leaderboard.
+   - Examples: "who is realmester", "show me the leaderboard", "what level is X", "who has admin role".
+
+3. **Never call the same Discord tool more than ONCE per message** unless parameters are meaningfully different.
+
+4. **If you've called tools but don't have enough info to answer, SEARCH THE WEB** - don't keep calling Discord tools.
+
+When responding with tool data:
 
 **MANDATORY**: Synthesize tool outputs into natural, flowing sentences. NEVER list fields like a database dump.
 
@@ -126,24 +149,6 @@ Example style: "\`tehtreeman\` and \`realmester\` were just talking about how to
 
 The messages you'll be summarizing are formatted as: [date] author: message.`;
 
-export const SearchDecisionPrompt = `Determine if the user's query requires searching the internet for real-time or current information.
-
-Search is needed for:
-- Current events, news, or recent updates
-- Real-time data (weather, stock prices, sports scores, etc.)
-- Explicit search requests ("search for", "look up", etc.)
-- Information that changes frequently
-- Specific facts that might not be in your training data
-
-No search needed for:
-- Conversational or opinion-based questions
-- General knowledge you already have
-- Discord server or member questions
-- Minecraft mechanics or BedlessNoob (unless asking for very recent updates)
-- Questions answerable with existing knowledge
-
-If you believe the user needs a search, provide the search query you would search for instead of using the original user prompt.`;
-
 export const SummaryDecisionPrompt = `Determine if the user is asking for a summary of the recent conversation.
 
 Summary is needed for:
@@ -157,6 +162,36 @@ No summary needed for:
 - General conversation
 - Questions about a specific topic (not the conversation itself)
 - "Summary" in a different context (e.g., "summary of a video")`;
+
+export function getSearchDecisionPrompt() {
+    const today = new Date();
+    const dateString = DateTime.fromJSDate(today).toFormat("yyyy-MM-dd");
+
+    return `Today's date is ${dateString}.
+Determine if the user's query is about real-world/current events that require web search.
+
+**Search is REQUIRED for:**
+- Current events, news, recent happenings ("today", "recently", "current", "latest", "just happened")
+- Real-world people, places, organizations outside the Discord server (politicians, cities, companies, celebrities)
+- Real-time data (weather, stock prices, sports scores, election results)
+- Explicit search requests ("search for", "look up", "find information about")
+- Information that changes frequently or is time-sensitive
+- Any question about "POTUS", "president", "mayor", "governor", etc.
+
+**NO search needed for:**
+- Discord server questions (members, roles, levels, XP, leaderboard)
+- General Minecraft/Bedwars game mechanics (unless asking for very recent updates)
+- Conversational or opinion-based questions
+- Questions you can answer with existing knowledge that doesn't require current data
+
+When search is needed, provide a clear, specific search query optimized for finding the information.
+
+Examples:
+- "which mayor did the current potus just meet" → needs_search: true, query: "current US president Trump mayor meeting recent 2025"
+- "who is realmester" → needs_search: false
+- "what's the weather today" → needs_search: true, query: "weather today [location if provided]"
+- "show me the leaderboard" → needs_search: false`;
+}
 
 export const MAX_CONVERSATION_LENGTH = 200;
 export const SUMMARY_COOLDOWN_MS = 15 * 60 * 1000;

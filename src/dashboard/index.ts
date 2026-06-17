@@ -1,11 +1,11 @@
+import { randomBytes } from "crypto";
+import { copyFileSync, rmSync } from "node:fs";
+import { join } from "path";
 import jwt from "@elysiajs/jwt";
 import swagger from "@elysiajs/swagger";
 import { fileURLToPath } from "bun";
-import { randomBytes } from "crypto";
 import Elysia, { t } from "elysia";
 import { rateLimit } from "elysia-rate-limit";
-import { copyFileSync, rmSync } from "node:fs";
-import { join } from "path";
 import { DashboardFinalPackCommentSchema, DashboardLbEntrySchema, DashboardUserSchema, PackDataSchema } from "./api-types";
 import packData from "./data.json";
 
@@ -596,6 +596,7 @@ const app = new Elysia()
     .get("/rank", () => new Response(Bun.file(join(dirname, distLocation, "rank.html"))))
     .get("/leaderboard", () => new Response(Bun.file(join(dirname, distLocation, "leaderboard.html"))))
     .get("/packs", () => new Response(Bun.file(join(dirname, distLocation, "packs.html"))))
+    .get("/privacy", () => new Response(Bun.file(join(dirname, distLocation, "privacy.html"))))
     .get("/chunk/:file", async ({ params }) => {
         const file = Bun.file(join(dirname, distLocation, "chunk", params.file));
         if (!(await file.exists())) {

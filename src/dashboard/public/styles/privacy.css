@@ -1,0 +1,67 @@
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+.legal {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    line-height: 1.6;
+}
+
+.legal .back a {
+    color: var(--secondary);
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.legal .back a:hover {
+    text-decoration: underline;
+}
+
+.legal h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.25rem;
+    color: var(--primary);
+}
+
+.legal .meta {
+    margin-top: 0;
+    opacity: 0.7;
+    font-size: 0.9rem;
+}
+
+.legal h2 {
+    font-size: 1.5rem;
+    margin-top: 2.5rem;
+    border-bottom: 1px solid color-mix(in oklch, var(--text) 20%, transparent);
+    padding-bottom: 0.3rem;
+}
+
+.legal h3 {
+    font-size: 1.15rem;
+    margin-top: 1.5rem;
+    color: var(--accent);
+}
+
+.legal a {
+    color: var(--secondary);
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+
+.legal ul {
+    padding-left: 1.4rem;
+}
+
+.legal li {
+    margin-bottom: 0.6rem;
+}
+
+.legal code {
+    background-color: color-mix(in oklch, var(--text) 12%, transparent);
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.3rem;
+    font-size: 0.9em;
+}

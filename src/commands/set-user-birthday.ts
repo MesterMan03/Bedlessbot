@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import * as luxon from "luxon";
 import { DateToNumber } from "../birthdaymanager";
-import { db } from "..";
+import { db } from "../runtime";
 
 export default {
     data: new SlashCommandBuilder()

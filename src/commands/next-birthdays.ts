@@ -1,7 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { db } from "..";
-import { DateToNumber, birthdayTimezone, type Birthday } from "../birthdaymanager";
 import * as luxon from "luxon";
+import { type Birthday, DateToNumber, birthdayTimezone } from "../birthdaymanager";
+import { db } from "../runtime";
 
 const cooldowns = new Map<string, number>();
 
@@ -23,7 +23,7 @@ export default {
         // now we just need to find the offset, so find every birthday that is today or later
         const birthdays = db
             .query<Omit<Birthday, "datenum">, []>(
-                `SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum ASC LIMIT 10`
+                `SELECT userid, date FROM birthdays WHERE datenum >= ${todayNum} ORDER BY datenum LIMIT 10`
             )
             .all();
 
@@ -31,7 +31,7 @@ export default {
         if (birthdays.length < 10) {
             const wraparound = db
                 .query<Omit<Birthday, "datenum">, []>(
-                    `SELECT userid, date FROM birthdays ORDER BY datenum ASC LIMIT ${10 - birthdays.length}`
+                    `SELECT userid, date FROM birthdays ORDER BY datenum LIMIT ${10 - birthdays.length}`
                 )
                 .all()
                 // deduplicate (technically with a big enough database this bot operates with this isn't necessary, but it's good practice)

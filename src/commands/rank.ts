@@ -1,8 +1,8 @@
 import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "@discordjs/builders";
 import { ButtonStyle, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
-import { browser, db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
 import { GetLeaderboardPos, type LevelInfo } from "../levelmanager";
+import { browser, db } from "../runtime";
 
 const rankPath = `${process.env.NODE_ENV === "production" ? "https://bedless.mester.info" : "http://localhost:8146"}/rank`;
 
@@ -64,7 +64,7 @@ export default {
         // create the screenshot
         await page.goto(destination.toString(), { waitUntil: "networkidle0" });
         const buffer = await page.screenshot({ type: "png" });
-        
+
         // Create the "View in Browser" button
         const browserURL = new URL(rankPath);
         browserURL.searchParams.append("userid", user.id);

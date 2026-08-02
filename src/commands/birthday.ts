@@ -1,8 +1,8 @@
 import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { db } from "..";
-import { DateToNumber, type Birthday } from "../birthdaymanager";
 import * as luxon from "luxon";
 import ordinal from "ordinal";
+import { type Birthday, DateToNumber } from "../birthdaymanager";
+import { db } from "../runtime";
 
 const cooldowns = new Map<string, number>();
 

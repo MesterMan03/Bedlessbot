@@ -1,7 +1,7 @@
 import * as luxon from "luxon";
 import cron from "node-cron";
-import client, { GetGuild, db } from ".";
 import config from "./config";
+import client, { GetGuild, db } from "./runtime";
 
 /**
  * Converts a date into an orderable number

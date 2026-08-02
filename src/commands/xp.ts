@@ -1,8 +1,8 @@
-import { db } from "../index.js";
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, MessageFlags } from "discord.js";
-import { AddRankFieldEmbeds } from "./rank.js";
-import { GetLevelConfig } from "../levelmanager.js";
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, PermissionsBitField, SlashCommandBuilder } from "discord.js";
 import { LevelToXP, XPToLevel } from "../levelfunctions.js";
+import { GetLevelConfig } from "../levelmanager.js";
+import { db } from "../runtime.js";
+import { AddRankFieldEmbeds } from "./rank.js";
 
 export default {
     data: new SlashCommandBuilder()

@@ -23,8 +23,8 @@ import {
     TextInputStyle
 } from "discord.js";
 import { google } from "googleapis";
-import client, { GenerateSnowflake, GetGuild, db } from "..";
 import config, { isApplyRole, isClutchRole, type ApplyRole } from "../config";
+import client, { GenerateSnowflake, GetGuild, db } from "../runtime";
 
 /**
  * A map storing the last time a user used a command.

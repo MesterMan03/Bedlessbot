@@ -1,4 +1,3 @@
-import { Database, SQLiteError } from "bun:sqlite";
 import * as fs from "fs";
 import * as path from "path";
 import { join } from "path";
@@ -6,11 +5,9 @@ import { fileURLToPath } from "bun";
 import {
     ActivityType,
     ChatInputCommandInteraction,
-    Client,
     Collection,
     ContextMenuCommandInteraction,
     Events,
-    Guild,
     type Interaction,
     Message,
     MessageComponentInteraction,
@@ -21,12 +18,10 @@ import {
     Routes,
     ThreadAutoArchiveDuration
 } from "discord.js";
-import { Snowflake } from "nodejs-snowflake";
 import puppeteer from "puppeteer";
-import SetupDB from "../tools/setup_db";
 import { SendRequest } from "./apimanager";
 import { FixBirthdayDatenums, WishBirthdays, wishBirthdaysCronjob } from "./birthdaymanager";
-import { addAmbientMessage, configureConversationPersistence, getConversationKey } from "./chatbot/conversation.js";
+import { addAmbientMessage, getConversationKey } from "./chatbot/conversation.js";
 import { ClearConversation, isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
 import { createConversationMessage, replyToChatBotMessage } from "./chatbot/main.js";
 import config from "./config";
@@ -41,10 +36,9 @@ import {
     StartVoiceChat
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
+import client, { browser, db, GetGuild, setBrowser } from "./runtime";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
-
-const snowflake = new Snowflake({ custom_epoch: 1704063600, instance_id: 69 });
 
 const token = process.env["TOKEN"] as string;
 const clientID = process.env["CLIENT_ID"] as string;
@@ -68,41 +62,26 @@ const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const foldersPath = path.join(dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
 
-const db = new Database(join(dirname, "..", "data.db"));
-try {
-    SetupDB(db);
-} catch (error) {
-    // ignore everything except SQLiteError
-    if (!(error instanceof SQLiteError)) {
-        throw error;
-    }
-}
-configureConversationPersistence(db);
-
-const client = new Client({
-    allowedMentions: {
-        parse: ["users"]
-    },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
-});
-
 const executablePath = process.env["PUPPETEER_EXEC"] ?? undefined;
 console.log(`Launching puppeteer with executable path: ${executablePath}`);
-const browser = await puppeteer
-    .launch({
-        headless: true,
-        userDataDir: join(dirname, "..", "chrome-data"),
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        executablePath
-    })
-    .then((browser) => {
-        console.log("Puppeteer launched successfully");
-        return browser;
-    })
-    .catch((error) => {
-        console.warn("Could not launch puppeteer, some functionalities might not work");
-        console.warn(error);
-    });
+setBrowser(
+    await puppeteer
+        .launch({
+            headless: true,
+            userDataDir: join(dirname, "..", "chrome-data"),
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            executablePath
+        })
+        .then((browser) => {
+            console.log("Puppeteer launched successfully");
+            return browser;
+        })
+        .catch((error) => {
+            console.warn("Could not launch puppeteer, some functionalities might not work");
+            console.warn(error);
+            return undefined;
+        })
+);
 
 for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
@@ -296,14 +275,6 @@ function ExecuteAdminCommand(message: Message<true>) {
     return false;
 }
 
-function GetResFolder() {
-    return join(dirname, "..", "res");
-}
-
-function GetGuild() {
-    return client.guilds.cache.get(guildID) as Guild;
-}
-
 function shutdown(reason?: string) {
     if (reason) {
         console.error(`Shutting down client: ${reason}`);
@@ -313,11 +284,6 @@ function shutdown(reason?: string) {
     db.close();
     wishBirthdaysCronjob.stop();
     process.exit(0);
-}
-
-function GenerateSnowflake() {
-    // use 2024-01-01 as the epoch
-    return snowflake.getUniqueID().toString();
 }
 
 // set up client events
@@ -529,6 +495,7 @@ process.on("SIGTERM", () => {
 // start the bot
 client.login(token);
 
-export { GenerateSnowflake, GetGuild, GetResFolder, browser, db, type ClientCommand };
+export { GenerateSnowflake, GetGuild, GetResFolder, browser, db } from "./runtime";
+export type { ClientCommand };
 
 export default client;

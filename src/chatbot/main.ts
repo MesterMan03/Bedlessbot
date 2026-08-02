@@ -14,7 +14,7 @@ import {
 import { DateTime } from "luxon";
 import type OpenAI from "openai";
 import type { ResponseInputMessageContentList } from "openai/resources/responses/responses.mjs";
-import client from "../index.js";
+import client from "../runtime.js";
 import { openAIClient } from "./client.js";
 import { ChatBotModel, TEST_MODE, getChatBotSysMessage } from "./constants.js";
 import { commitConversationTurn, createConversationSnapshot, getConversationKey, runInConversation } from "./conversation.js";

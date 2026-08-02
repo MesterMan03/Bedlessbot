@@ -1,7 +1,7 @@
 import type { GuildMember } from "discord.js";
 import type { FunctionTool } from "openai/resources/responses/responses.mjs";
-import client, { GetGuild, db } from "../index.js";
 import { XPToLevel, XPToLevelUp } from "../levelfunctions.js";
+import client, { GetGuild, db } from "../runtime.js";
 import type { DiscordToolResult } from "./types.js";
 
 /**

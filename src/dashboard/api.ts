@@ -2,9 +2,9 @@ import DiscordOauth2 from "discord-oauth2";
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, OAuth2Scopes } from "discord.js";
 import { verify } from "hcaptcha";
 import webpush from "web-push";
-import client, { GenerateSnowflake, db } from "..";
 import config from "../config";
-import { LevelToXP, XPToLevel, XPToLevelUp, type LevelInfo } from "../levelfunctions";
+import { type LevelInfo, LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
+import client, { GenerateSnowflake, db } from "../runtime";
 import { CONSTANTS, GetLeaderboardPos, IGetMaxCommentsPage } from "./api-common";
 import type {
     DashboardAPIInterface,

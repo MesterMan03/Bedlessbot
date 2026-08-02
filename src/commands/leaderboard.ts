@@ -1,15 +1,15 @@
 import {
-    SlashCommandBuilder,
-    ChatInputCommandInteraction,
-    EmbedBuilder,
-    type Interaction,
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    MessageFlags
+    ChatInputCommandInteraction,
+    EmbedBuilder,
+    type Interaction,
+    MessageFlags,
+    SlashCommandBuilder
 } from "discord.js";
-import client, { db } from "..";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
+import client, { db } from "../runtime";
 
 const pageSize = 10;
 
@@ -56,7 +56,10 @@ export default {
                 new ButtonBuilder().setCustomId("lb-back15").setLabel("15").setEmoji("◀").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("lb-for15").setLabel("15").setEmoji("▶").setStyle(ButtonStyle.Secondary),
                 new ButtonBuilder().setCustomId("lb-for50").setLabel("50").setEmoji("⏩").setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder().setURL("https://bedless.mester.info/leaderboard?mtm_campaign=Discord-Bot&mtm_kwd=leaderboard").setLabel("View in Browser").setStyle(ButtonStyle.Link)
+                new ButtonBuilder()
+                    .setURL("https://bedless.mester.info/leaderboard?mtm_campaign=Discord-Bot&mtm_kwd=leaderboard")
+                    .setLabel("View in Browser")
+                    .setStyle(ButtonStyle.Link)
             )
         ];
 

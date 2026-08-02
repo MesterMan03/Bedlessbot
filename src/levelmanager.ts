@@ -1,7 +1,7 @@
-import { Collection, VoiceState, type GuildMember, type Message } from "discord.js";
-import client, { GetGuild, db } from ".";
+import { Collection, type GuildMember, type Message, VoiceState } from "discord.js";
 import config from "./config";
-import { XPToLevel, type LevelInfo } from "./levelfunctions";
+import { type LevelInfo, XPToLevel } from "./levelfunctions";
+import client, { GetGuild, db } from "./runtime";
 
 /**
  * Get the leaderboard position of a user based on their ID
@@ -120,7 +120,6 @@ function GetLevelConfig(userId: string): LevelInfo {
  * A function for alerting a member that they've leveled up.
  * @param member The member to alert.
  * @param newlevel The member's new level.
- * @param messageUrl The message that made the member level up.
  * @param newRole The role id that was added to the user.
  */
 async function AlertMember(member: GuildMember, newlevel: number, newRole: string | null = null) {

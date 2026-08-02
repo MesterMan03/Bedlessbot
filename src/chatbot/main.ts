@@ -12,30 +12,25 @@ import {
     italic
 } from "discord.js";
 import { DateTime } from "luxon";
-import openai from "openai";
+import type OpenAI from "openai";
 import type { ResponseInputMessageContentList } from "openai/resources/responses/responses.mjs";
 import client from "../index.js";
-import { ChatBotModel, SearchDecisionModel, TEST_MODE, getChatBotSysMessage, getSearchDecisionPrompt } from "./constants.js";
-import {
-    addAssistantMessageToSnapshot,
-    addFunctionCallOutputToSnapshot,
-    addResponseOutputToSnapshot,
-    addUserMessageToSnapshot,
-    commitConversationSnapshot,
-    createConversationSnapshot
-} from "./conversation.js";
-import { generateSummary, shouldGenerateSummary } from "./summary.js";
+import { openAIClient } from "./client.js";
+import { ChatBotModel, TEST_MODE, getChatBotSysMessage } from "./constants.js";
+import { commitConversationTurn, createConversationSnapshot, getConversationKey, runInConversation } from "./conversation.js";
+import { isSummaryRequest } from "./intents.js";
+import { generateSummary } from "./summary.js";
+import { recordChatbotMetric } from "./telemetry.js";
 import { discordTools, executeDiscordTool } from "./tools.js";
 import type { ConversationMessage } from "./types.js";
 
-const openAIClient = new openai.OpenAI({
-    apiKey: process.env.OPENAI_KEY,
-    organization: process.env.OPENAI_ORG,
-    project: process.env.OPENAI_PROJECT
-});
-
 const tavilyMCPUrl = new URL("https://mcp.tavily.com/mcp/");
-tavilyMCPUrl.searchParams.append("tavilyApiKey", process.env.TAVILY_API_KEY ?? "");
+if (process.env.TAVILY_API_KEY) {
+    tavilyMCPUrl.searchParams.append("tavilyApiKey", process.env.TAVILY_API_KEY);
+}
+
+const GLOBAL_TIMEOUT_MS = 90_000;
+const MAX_ITERATIONS = 5;
 
 export function createConversationMessage(message: Message<true>, content?: string): ConversationMessage {
     return {
@@ -49,21 +44,17 @@ export function createConversationMessage(message: Message<true>, content?: stri
 }
 
 export async function isReplyingToUs(message: Message<true>) {
-    return message.mentions.repliedUser != null && message.mentions.repliedUser?.id === client.user?.id;
+    return message.mentions.repliedUser != null && message.mentions.repliedUser.id === client.user?.id;
 }
 
 export async function showChatBotWarning(message: Message<true>) {
-    // Show a warning first
     const embed = new EmbedBuilder()
         .setDescription(
             `**Warning: please read carefully before using the chatbot.**\n
 	The chatbot might say false information, especially about how to use channels and commands.
 	You must first agree you've read and understood this warning before using the chatbot.`
         )
-        .setFooter({
-            text: "You have 30 seconds to choose an option"
-        });
-
+        .setFooter({ text: "You have 30 seconds to choose an option" });
     const components = [
         new ActionRowBuilder<ButtonBuilder>().addComponents([
             new ButtonBuilder().setCustomId("chatbot.agree").setLabel("I agree").setStyle(ButtonStyle.Primary),
@@ -71,459 +62,333 @@ export async function showChatBotWarning(message: Message<true>) {
         ])
     ];
 
-    /**
-     * This is really simple, we create two buttons and return true if the user clicked the agree button.
-     */
-    const acceptedWarning = await message
-        .reply({
-            embeds: [embed],
-            components
-        })
-        .then(async (botMessage) => {
-            try {
-                const decision = await botMessage.awaitMessageComponent({
-                    filter: (i) => i.user.id === message.author.id && i.customId.startsWith("chatbot."),
-                    time: 30000,
-                    componentType: ComponentType.Button
-                });
-                decision.deferUpdate();
-                return decision.customId === "chatbot.agree";
-            } catch {
-                return false;
-            } finally {
-                botMessage.delete();
-            }
-        });
-
-    return acceptedWarning;
+    return await message.reply({ embeds: [embed], components }).then(async (botMessage) => {
+        try {
+            const decision = await botMessage.awaitMessageComponent({
+                filter: (interaction) => interaction.user.id === message.author.id && interaction.customId.startsWith("chatbot."),
+                time: 30_000,
+                componentType: ComponentType.Button
+            });
+            await decision.deferUpdate();
+            return decision.customId === "chatbot.agree";
+        } catch {
+            return false;
+        } finally {
+            await botMessage.delete().catch(() => undefined);
+        }
+    });
 }
 
 export async function replyToChatBotMessage(message: Message<true>) {
     if (!message.member) {
         return;
     }
+    const key = getConversationKey(message);
+    try {
+        return await runInConversation(key, () => processChatBotMessage(message, key));
+    } catch (error) {
+        console.error("Unhandled chatbot request failure", { messageId: message.id, channelId: message.channelId, error });
+        await message
+            .reply({ content: "__I couldn't process that request right now.__ Please try again later.", allowedMentions: { users: [] } })
+            .catch(() => undefined);
+    }
+}
 
+async function processChatBotMessage(message: Message<true>, key: ReturnType<typeof getConversationKey>) {
     const userMessage = createConversationMessage(message);
-    const imageAttachments = message.attachments
-        .filter((attachment) => ["png", "jpeg", "webp", "gif"].includes(attachment.contentType?.split("/")[1] ?? ""))
-        .map((attachment) => attachment.url);
-
-    if (TEST_MODE) {
-        console.log("Message content:", userMessage.content);
-        console.log("Image attachments:", imageAttachments);
+    const responseInput: ResponseInputMessageContentList = [{ type: "input_text", text: JSON.stringify(userMessage) }];
+    for (const attachment of message.attachments.values()) {
+        if (["png", "jpeg", "webp", "gif"].includes(attachment.contentType?.split("/")[1] ?? "")) {
+            responseInput.push({
+                type: "input_image",
+                image_url: attachment.url,
+                detail: "low"
+            });
+        }
     }
 
-    // Create a snapshot of the current conversation for this message
-    const conversationSnapshot = createConversationSnapshot();
-
-    // Construct the content to be sent to OpenAI
-    const responseInput: ResponseInputMessageContentList = [
-        {
-            type: "input_text",
-            text: JSON.stringify(userMessage)
-        }
-    ];
-    imageAttachments.forEach((imageAttachment) => {
-        responseInput.push({
-            type: "input_image",
-            image_url: imageAttachment,
-            detail: "auto"
-        });
-    });
-    addUserMessageToSnapshot(conversationSnapshot, responseInput);
-
     const botMessage = await message.reply({ content: italic("Preparing..."), allowedMentions: { users: [] } });
+    const userInput: OpenAI.Responses.ResponseInput = [{ type: "message", role: "user", content: responseInput }];
 
-    // Check if user is asking for a summary
-    const needsSummary = await shouldGenerateSummary(message.content);
-
-    // If user wants a summary, handle it separately
-    if (needsSummary) {
-        const summaryGenerated = await generateSummary(message, botMessage);
-        if (summaryGenerated) {
-            // Summary was generated and sent, we're done
+    if (isSummaryRequest(message.content)) {
+        const summaryResult = await generateSummary(message, botMessage);
+        if (summaryResult.handled) {
+            if (summaryResult.summary) {
+                commitConversationTurn(key, message.id, [
+                    ...userInput,
+                    {
+                        type: "message",
+                        role: "assistant",
+                        content: JSON.stringify(createConversationMessage(botMessage, summaryResult.summary))
+                    }
+                ]);
+            }
             return;
         }
     }
 
-    // Decide if we need to search first
-    const searchDecision = await decideIfSearchNeeded(message.content);
-
-    if (TEST_MODE) {
-        console.log("Search decision:", searchDecision);
-    }
-
-    // If search is needed, perform it and add to snapshot before main loop
-    if (searchDecision.needs_search) {
-        botMessage.edit({ content: italic("Searching the web...") });
-        // The MCP server will handle search in the loop, but we signal it's a search-first query
-    }
-
-    // Set up 90 second global timeout
-    const startTime = Date.now();
-    const globalTimeout = 90000; // 90 seconds
-
-    const finalResponse = await executeChatBotLoop(
-        message,
-        botMessage,
-        conversationSnapshot,
-        startTime,
-        globalTimeout,
-        searchDecision.needs_search
-    );
-
-    if (!finalResponse) {
-        // Error message already shown by executeChatBotLoop
+    const conversation = createConversationSnapshot(key);
+    const existingItemCount = conversation.length;
+    conversation.push(...userInput);
+    const startedAt = Date.now();
+    const result = await executeChatBotLoop(message, botMessage, conversation, startedAt);
+    if (!result) {
         return;
     }
 
-    if (TEST_MODE) {
-        console.dir(conversationSnapshot, { depth: null });
-    }
-
-    const outputText = finalResponse.response.output_text;
-    const parsedReply = outputText ? (JSON.parse(outputText).text as string) : null;
-    if (!parsedReply) {
-        message.reply("__An unexpected error has happened:__ no output text was found in the response");
+    let chatBotReply: string;
+    try {
+        const parsed = JSON.parse(result.response.output_text) as { text?: unknown };
+        if (typeof parsed.text !== "string" || parsed.text.trim().length === 0) {
+            throw new Error("Missing response text");
+        }
+        chatBotReply = parsed.text.trim();
+    } catch (error) {
+        if (TEST_MODE) {
+            console.error("Could not parse chatbot structured output", error, result.response.output_text);
+        }
+        await botMessage.edit({ content: "__I couldn't format that response correctly.__ Please try again.", components: [] });
         return;
     }
 
-    if (TEST_MODE) {
-        console.log("Parsed reply:", parsedReply);
-    }
-
-    // First check if the AI is a dumbass and hallucinated metadata in the beginning
-    let chatBotReply = parsedReply;
-    if (chatBotReply.startsWith("Bedlessbot")) {
-        chatBotReply = chatBotReply.split(":").splice(3).join(":").trim();
-    }
-
-    const clampedMessage = chatBotReply.length > 3500 ? chatBotReply.slice(0, 3500) + "..." : chatBotReply;
-
-    const reasoningText = finalResponse.reasoningOutput
-        .map((x) => x.summary)
-        .flat()
-        .map((x) => x.text)
+    const clampedMessage = chatBotReply.length > 3_500 ? `${chatBotReply.slice(0, 3_500)}...` : chatBotReply;
+    const reasoningText = result.reasoningOutput
+        .flatMap((item) => item.summary)
+        .map((summary) => summary.text)
         .join("\n\n");
-
-    // beautiful typescript <3
     const components: NonNullable<BaseMessageOptions["components"]>[number][] = [new TextDisplayBuilder().setContent(clampedMessage)];
-
-    if (reasoningText.length > 0) {
-        // create a button that will show the reasoning text for 30 minutes
-        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-            new ButtonBuilder()
-                .setCustomId(`chatbot.showreasoning.${botMessage.id}`)
-                .setLabel("Show reasoning")
-                .setStyle(ButtonStyle.Secondary)
+    if (reasoningText) {
+        components.push(
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`chatbot.showreasoning.${botMessage.id}`)
+                    .setLabel("Show reasoning summary")
+                    .setStyle(ButtonStyle.Secondary)
+            )
         );
-        components.push(buttonRow);
     }
+    await botMessage.edit({ content: "", components, flags: "IsComponentsV2" });
+    attachReasoningCollector(message, botMessage, reasoningText);
 
-    botMessage.edit({ content: "", components, flags: "IsComponentsV2" });
+    conversation.push({
+        type: "message",
+        role: "assistant",
+        content: JSON.stringify(createConversationMessage(botMessage, chatBotReply))
+    });
+    commitConversationTurn(key, message.id, conversation.slice(existingItemCount));
+    recordChatbotMetric({
+        requestId: message.id,
+        operation: "chat",
+        model: result.response.model,
+        durationMs: Date.now() - startedAt,
+        iterations: result.iterations,
+        toolCalls: result.toolCalls,
+        ...result.usage
+    });
+}
+
+function attachReasoningCollector(message: Message<true>, botMessage: Message<true>, reasoningText: string) {
+    if (!reasoningText) {
+        return;
+    }
     botMessage
         .createMessageComponentCollector({
-            filter: (i) => i.user.id === message.author.id && i.customId === `chatbot.showreasoning.${botMessage.id}`,
+            filter: (interaction) =>
+                interaction.user.id === message.author.id && interaction.customId === `chatbot.showreasoning.${botMessage.id}`,
             componentType: ComponentType.Button,
-            time: 30 * 60 * 1000 // 30 minutes
+            time: 30 * 60 * 1_000
         })
         .on("collect", async (interaction) => {
             await interaction.deferUpdate();
-            interaction.followUp({
-                //components: [new FileBuilder().setURL("attachment://reasoning.txt")],
+            await interaction.followUp({
                 files: [
                     new AttachmentBuilder(Buffer.from(reasoningText, "utf-8"))
-                        .setName("reasoning.txt")
-                        .setDescription("Reasoning steps taken by the AI to arrive at its final answer.")
+                        .setName("reasoning-summary.txt")
+                        .setDescription("A model-generated summary of its reasoning.")
                 ],
                 ephemeral: true
             });
         })
-        .on("end", () => {
-            // remove the button after timeout
+        .on("end", async () => {
             const updatedComponents = botMessage.components.filter((row) => row.type !== ComponentType.ActionRow);
-            botMessage.edit({ components: updatedComponents });
+            await botMessage.edit({ components: updatedComponents }).catch(() => undefined);
         });
-
-    // Add the assistant's final message to the snapshot
-    addAssistantMessageToSnapshot(conversationSnapshot, createConversationMessage(botMessage, chatBotReply));
-
-    // Commit the entire conversation snapshot back to the global conversation
-    commitConversationSnapshot(conversationSnapshot);
 }
 
-/**
- * Decides if a query needs web search based on content analysis
- */
-async function decideIfSearchNeeded(query: string): Promise<{ needs_search: boolean; query?: string }> {
-    try {
-        const response = await openAIClient.chat.completions.create({
-            model: SearchDecisionModel,
-            messages: [
-                { role: "system", content: getSearchDecisionPrompt() },
-                { role: "user", content: query }
-            ],
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                    name: "SearchDecision",
-                    strict: true,
-                    schema: {
-                        type: "object",
-                        properties: {
-                            needs_search: {
-                                type: "boolean",
-                                description: "Whether the query requires web search for current/real-world information"
-                            },
-                            query: {
-                                type: "string",
-                                description: "Optimized search query if needs_search is true, empty string otherwise"
-                            }
-                        },
-                        required: ["needs_search", "query"],
-                        additionalProperties: false
-                    }
-                }
-            }
-        });
+type LoopResult = {
+    response: OpenAI.Responses.Response;
+    reasoningOutput: OpenAI.Responses.ResponseReasoningItem[];
+    iterations: number;
+    toolCalls: string[];
+    usage: {
+        inputTokens: number;
+        cachedInputTokens: number;
+        cacheWriteTokens: number;
+        outputTokens: number;
+        reasoningTokens: number;
+    };
+};
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-            return { needs_search: false };
-        }
-
-        return JSON.parse(content);
-    } catch (error) {
-        if (TEST_MODE) {
-            console.error("Search decision error:", error);
-        }
-        return { needs_search: false };
-    }
-}
-
-/**
- * Continuously executes the model in a loop, handling tool calls until we get a final text response
- * or hit the global timeout (90 seconds)
- */
 async function executeChatBotLoop(
     message: Message<true>,
     botMessage: Message<true>,
-    conversationSnapshot: openai.Responses.ResponseInput,
-    startTime: number,
-    globalTimeout: number,
-    isSearchQuery: boolean
-) {
-    let iteration = 0;
-    const maxIterations = 5; // Safety limit to prevent infinite loops
-    const reasoningOutput: openai.Responses.ResponseReasoningItem[] = [];
-    const usedTools = new Set<string>(); // Track which tools have been called
-    let consecutiveToolOnlyIterations = 0; // Track iterations with only tool calls, no text
+    conversation: OpenAI.Responses.ResponseInput,
+    startedAt: number
+): Promise<LoopResult | null> {
+    const reasoningOutput: OpenAI.Responses.ResponseReasoningItem[] = [];
+    const usedCalls = new Set<string>();
+    const calledTools: string[] = [];
+    const usage = {
+        inputTokens: 0,
+        cachedInputTokens: 0,
+        cacheWriteTokens: 0,
+        outputTokens: 0,
+        reasoningTokens: 0
+    };
 
-    while (iteration < maxIterations) {
-        iteration++;
-
+    for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
+        if (Date.now() - startedAt >= GLOBAL_TIMEOUT_MS) {
+            await botMessage.edit({ content: "__Response timeout.__ Please try again.", components: [] });
+            return null;
+        }
         await botMessage.edit({ content: italic(`Thinking... #${iteration}`) });
-
-        // Check if we've exceeded the global timeout
-        const elapsed = Date.now() - startTime;
-        if (elapsed >= globalTimeout) {
-            botMessage.edit({
-                content: "__Response timeout:__ The AI took too long to respond (>90 seconds). Please try again."
-            });
-            return null;
-        }
-
-        // Calculate remaining time for this iteration
-        const remainingTime = globalTimeout - elapsed;
-        const timeoutPromise = new Promise<"timeout">((resolve) => {
-            setTimeout(() => resolve("timeout"), remainingTime);
-        });
-
-        if (TEST_MODE) {
-            console.log(`Iteration ${iteration}, elapsed: ${elapsed}ms, remaining: ${remainingTime}ms`);
-        }
-
-        // Build dynamic tool list based on context
-        const availableTools = buildToolsForIteration(iteration, isSearchQuery, usedTools);
-
-        // Execute model call with timeout
-        const response = await Promise.race([executeModelCall(message, botMessage, conversationSnapshot, availableTools), timeoutPromise]);
-
-        if (response === "timeout") {
-            botMessage.edit({
-                content: "__Response timeout:__ The AI took too long to respond (>90 seconds). Please try again."
-            });
-            return null;
-        }
-
+        const response = await executeModelCall(message, conversation, GLOBAL_TIMEOUT_MS - (Date.now() - startedAt));
         if (!response) {
-            // Error already handled in executeModelCall
+            await botMessage.edit({
+                content: "__I couldn't reach the language model right now.__ Please try again later.",
+                components: []
+            });
             return null;
         }
+        usage.inputTokens += response.usage?.input_tokens ?? 0;
+        usage.cachedInputTokens += response.usage?.input_tokens_details?.cached_tokens ?? 0;
+        usage.cacheWriteTokens += response.usage?.input_tokens_details?.cache_write_tokens ?? 0;
+        usage.outputTokens += response.usage?.output_tokens ?? 0;
+        usage.reasoningTokens += response.usage?.output_tokens_details?.reasoning_tokens ?? 0;
+        reasoningOutput.push(...response.output.filter((item) => item.type === "reasoning"));
 
-        addResponseOutputToSnapshot(conversationSnapshot, response.output);
-        reasoningOutput.push(...response.output.filter((x) => x.type === "reasoning"));
-
-        // Check if we have a final text response
         if (response.output_text) {
-            return { response, reasoningOutput };
+            return { response, reasoningOutput, iterations: iteration, toolCalls: calledTools, usage };
         }
 
-        // Handle tool calls
-        const toolCalls = response.output.filter((x) => x.type === "function_call");
-
+        // Tool-call output items from the tools enabled above are replayable input items.
+        // SDK 7's broad output union also includes unrelated tool outputs with a wider
+        // status type, so narrow it at this boundary.
+        conversation.push(...(response.output as unknown as OpenAI.Responses.ResponseInput));
+        const toolCalls = response.output.filter((item) => item.type === "function_call");
         if (toolCalls.length === 0) {
-            // No text output and no tool calls - something is wrong
-            consecutiveToolOnlyIterations++;
-
-            if (consecutiveToolOnlyIterations >= 2) {
-                // Force a synthesis-only call
-                if (TEST_MODE) {
-                    console.log("Forcing synthesis-only iteration after consecutive tool calls");
-                }
-                const synthesisResponse = await executeModelCall(message, botMessage, conversationSnapshot, []);
-                if (synthesisResponse?.output_text) {
-                    addResponseOutputToSnapshot(conversationSnapshot, synthesisResponse.output);
-                    return { response: synthesisResponse, reasoningOutput };
-                }
-            }
-
-            botMessage.edit({
-                content: "__An unexpected error has happened:__ The AI didn't provide a response or tool calls."
-            });
-            return null;
+            continue;
         }
-
-        consecutiveToolOnlyIterations++;
-
-        // Check for duplicate tool calls
-        const duplicateCalls = toolCalls.filter((tc) => usedTools.has(tc.name));
-        if (duplicateCalls.length > 0) {
-            if (TEST_MODE) {
-                console.log(
-                    "Detected duplicate tool calls:",
-                    duplicateCalls.map((tc) => tc.name)
-                );
-            }
-            // Force synthesis on next iteration by clearing tools
-            const synthesisResponse = await executeModelCall(message, botMessage, conversationSnapshot, []);
-            if (synthesisResponse?.output_text) {
-                addResponseOutputToSnapshot(conversationSnapshot, synthesisResponse.output);
-                return { response: synthesisResponse, reasoningOutput };
-            }
-            botMessage.edit({
-                content: "__An unexpected error has happened:__ Detected tool call loop. Please try rephrasing your question."
-            });
-            return null;
-        }
-
-        // Execute Discord tools
         for (const toolCall of toolCalls) {
-            const args = JSON.parse(toolCall.arguments);
-            const result = await executeDiscordTool(toolCall.name, args);
-
-            if (TEST_MODE) {
-                console.log("Tool call:", toolCall.name, "Arguments:", args, "Result:", result);
+            const signature = `${toolCall.name}:${toolCall.arguments}`;
+            if (usedCalls.has(signature)) {
+                conversation.push({
+                    type: "function_call_output",
+                    call_id: toolCall.call_id,
+                    output: JSON.stringify({ success: false, error: "Duplicate tool call suppressed." })
+                });
+                continue;
             }
-
-            const data = result.success ? result.data : result;
-            addFunctionCallOutputToSnapshot(conversationSnapshot, toolCall.call_id, JSON.stringify(data));
-
-            // Track this tool as used
-            usedTools.add(toolCall.name);
+            usedCalls.add(signature);
+            calledTools.push(toolCall.name);
+            let result;
+            try {
+                const args = JSON.parse(toolCall.arguments) as Record<string, unknown>;
+                result = await executeDiscordTool(toolCall.name, args);
+            } catch (error) {
+                result = { success: false, error: error instanceof Error ? error.message : String(error) };
+            }
+            conversation.push({
+                type: "function_call_output",
+                call_id: toolCall.call_id,
+                output: JSON.stringify(result)
+            });
         }
-
-        // Reset consecutive counter since we're continuing
-        consecutiveToolOnlyIterations = 0;
     }
 
-    // Hit max iterations
-    botMessage.edit({
-        content: `__An unexpected error has happened:__ The AI exceeded the maximum number of iterations (${maxIterations}).`
+    await botMessage.edit({
+        content: "__I couldn't finish that request within the tool-call limit.__ Please rephrase it.",
+        components: []
     });
     return null;
 }
 
-/**
- * Builds the appropriate tool list for each iteration based on context
- */
-function buildToolsForIteration(iteration: number, isSearchQuery: boolean, usedTools: Set<string>) {
-    const tools: openai.Responses.Tool[] = [];
-
-    // Always include MCP search
-    tools.push({
-        type: "mcp",
-        require_approval: "never",
-        server_url: tavilyMCPUrl.toString(),
-        server_label: "tavily-web-search"
-    });
-
-    // Include Discord tools only if:
-    // 1. It's the first iteration AND
-    // 2. It's NOT a search query (real-world/current events)
-    if (iteration === 1 && !isSearchQuery) {
-        // Filter out already-used tools
-        const availableDiscordTools = discordTools.filter((tool) => !usedTools.has(tool.name));
-        tools.push(...availableDiscordTools);
+function buildTools(): OpenAI.Responses.Tool[] {
+    const tools: OpenAI.Responses.Tool[] = [...discordTools];
+    if (process.env.TAVILY_API_KEY) {
+        tools.push({
+            type: "mcp",
+            require_approval: "never",
+            server_url: tavilyMCPUrl.toString(),
+            server_label: "tavily-web-search",
+            server_description: "Search the public web for current, changing, real-world, or explicitly requested information."
+        });
     }
-
     return tools;
 }
 
 async function executeModelCall(
     message: Message<true>,
-    botMessage: Message<true>,
-    conversationSnapshot: openai.Responses.ResponseInput,
-    tools: openai.Responses.Tool[]
-) {
+    conversation: OpenAI.Responses.ResponseInput,
+    timeout: number
+): Promise<OpenAI.Responses.Response | null> {
     try {
-        const response = await openAIClient.responses.create({
-            model: ChatBotModel,
-            instructions: getChatBotSysMessage(),
-            safety_identifier: SHA256.hash(message.author.id).toString().substring(0, 64),
-            input: conversationSnapshot,
-            tools,
-            metadata: {
-                messageId: message.id,
-                channelId: message.channelId,
-                userId: message.author.id
-            },
-            text: {
-                verbosity: "low",
-                format: {
-                    name: "ChatBotResponse",
-                    type: "json_schema",
-                    schema: {
-                        type: "object",
-                        properties: {
-                            text: {
-                                type: "string",
-                                description:
-                                    "The raw response from the chatbot without any metadata. It only contains the text of the response, without any user id, channel id, timestamp etc."
-                            }
+        const response = await openAIClient.responses.create(
+            {
+                model: ChatBotModel,
+                instructions: getChatBotSysMessage({ username: client.user?.username, id: client.user?.id }),
+                safety_identifier: SHA256.hash(message.author.id).toString().substring(0, 64),
+                input: conversation,
+                tools: buildTools(),
+                metadata: {
+                    operation: "chat",
+                    messageId: message.id,
+                    channelId: message.channelId,
+                    userId: message.author.id
+                },
+                text: {
+                    verbosity: "low",
+                    format: {
+                        name: "ChatBotResponse",
+                        type: "json_schema",
+                        schema: {
+                            type: "object",
+                            properties: {
+                                text: {
+                                    type: "string",
+                                    description: "The raw Discord response without metadata or a wrapper."
+                                }
+                            },
+                            required: ["text"],
+                            additionalProperties: false
                         },
-                        required: ["text"],
-                        additionalProperties: false
-                    },
-                    strict: true
+                        strict: true
+                    }
+                },
+                parallel_tool_calls: false,
+                reasoning: {
+                    context: "current_turn",
+                    summary: "detailed",
+                    effort: "medium"
                 }
             },
-            parallel_tool_calls: false,
-            reasoning: {
-                summary: "detailed",
-                effort: "medium"
-            }
-        });
+            { timeout: Math.max(1_000, timeout) }
+        );
         if (TEST_MODE) {
-            console.log("Response output:", response.output);
-            console.log("Input tokens:", response.usage?.input_tokens);
-            console.log("Cached input tokens:", response.usage?.input_tokens_details?.cached_tokens);
-            console.log("Output tokens:", response.usage?.output_tokens);
+            console.log("Chatbot response usage", response.usage);
         }
         return response;
     } catch (error) {
-        if (error instanceof Error) {
-            botMessage.edit({ content: `__An unexpected error has happened__: ${error.message}` });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        recordChatbotMetric({
+            requestId: message.id,
+            operation: "chat",
+            model: ChatBotModel,
+            durationMs: GLOBAL_TIMEOUT_MS - timeout,
+            error: errorMessage
+        });
+        if (TEST_MODE) {
+            console.error("Chatbot model call failed", error);
         }
         return null;
     }

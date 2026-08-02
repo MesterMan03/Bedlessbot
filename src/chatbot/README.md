@@ -6,10 +6,10 @@ This directory contains the modular chatbot implementation for Bedlessbot.
 
 - **`index.ts`** - Public API exports
 - **`main.ts`** - Main chatbot logic and message handling
-- **`conversation.ts`** - Conversation state management
-- **`queue.ts`** - Message queue processing
+- **`conversation.ts`** - Per-channel, persistent conversation state and request serialization
 - **`summary.ts`** - Conversation summary generation
-- **`search.ts`** - Web search integration using Tavily
+- **`client.ts`** - Shared OpenAI client configuration
+- **`telemetry.ts`** - Structured request and token metrics
 - **`tools.ts`** - Discord-specific tools the AI can invoke
 - **`constants.ts`** - System prompts and configuration
 - **`types.ts`** - TypeScript type definitions
@@ -18,8 +18,8 @@ This directory contains the modular chatbot implementation for Bedlessbot.
 
 ### 1. Web Search
 The chatbot can search the web using Tavily when it needs real-time information:
-- A lightweight model first determines if search is needed
-- If yes, Tavily performs the search and returns relevant results
+- The main model decides whether live web data is needed
+- Tavily performs the search through MCP
 - Results are formatted with proper source citations
 - The AI uses this context to provide accurate, up-to-date information
 
@@ -32,7 +32,11 @@ The chatbot has access to Discord-specific tools:
   - Returns roles, join date, permissions, etc.
 
 ### 3. Conversation Management
-- Maintains conversation history (up to 50 messages)
+- Isolates history by guild and channel/thread
+- Persists history in SQLite and serializes concurrent requests per conversation
+- Deletes persisted turns and compacted summaries 30 days after their original Discord message timestamp
+- Excludes chatbot conversation content from database backups
+- Compacts complete older turns when the estimated context exceeds 24,000 tokens
 - Supports image analysis
 - Handles metadata for proper context
 
@@ -100,6 +104,5 @@ Example:
 
 ## Models Used
 
-- **Main chatbot:** `gpt-4o-mini-2024-07-18`
-- **Search decision:** `gpt-4o-mini-2024-07-18`
-- **Summary generation:** `gpt-4o-mini-2024-07-18`
+- **Main chatbot:** `gpt-5.6-luna`
+- **Summary generation:** `gpt-5.6-luna`

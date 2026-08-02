@@ -358,7 +358,7 @@ Bot response: [member information]
 2. **Token Costs:** Monitor OpenAI dashboard for usage
 3. **Search Quality:** Tavily works best with specific queries
 4. **Tool Usage:** AI decides tools automatically, don't force it
-5. **Conversation Limit:** After 50 messages, oldest are dropped
+5. **Conversation Limit:** Older complete turns are compacted when the per-channel context exceeds its token budget
 
 ---
 

@@ -38,7 +38,8 @@ current_date=$(date +"%Y-%m-%d_%H-%M-%S-%3N")
 backup_subdir="$backup_dir/$current_date"
 mkdir "$backup_subdir"
 
-# Copy files matching "data.db*" into the newly created directory
-cp "$script_dir"/data.db* "$backup_subdir"
+# Create a consistent SQLite snapshot containing every table except retained
+# chatbot conversation content.
+bun run "$script_dir/tools/backup_db.ts" "$script_dir/data.db" "$backup_subdir/data.db"
 
 echo "Backup completed successfully in $backup_subdir."

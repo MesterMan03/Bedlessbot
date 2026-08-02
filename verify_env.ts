@@ -18,7 +18,11 @@ const envSchema = devEnvSchema.and(z.object({
     YOUTUBE_API_KEY: z.string(),
     API_ENDPOINT: z.optional(z.string()),
     CLIENT_SECRET: z.string(),
-    HCAPTCHA_SECRET: z.string()
+    HCAPTCHA_SECRET: z.string(),
+    OPENAI_KEY: z.string(),
+    OPENAI_ORG: z.optional(z.string()),
+    OPENAI_PROJECT: z.optional(z.string()),
+    TAVILY_API_KEY: z.optional(z.string())
 }));
 
 

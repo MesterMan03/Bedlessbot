@@ -74,10 +74,22 @@ export const discordTools: FunctionTool[] = [
 export async function executeDiscordTool(toolName: string, args: Record<string, unknown>): Promise<DiscordToolResult> {
     switch (toolName) {
         case "get_member_information":
-            return await getMemberInformation(args.identifier as string);
+            if (typeof args.identifier !== "string" || args.identifier.trim().length === 0) {
+                return { success: false, error: "identifier must be a non-empty string" };
+            }
+            return await getMemberInformation(args.identifier);
         case "get_level_information":
-            return await getLevelInformation(args.identifier as string);
+            if (typeof args.identifier !== "string" || args.identifier.trim().length === 0) {
+                return { success: false, error: "identifier must be a non-empty string" };
+            }
+            return await getLevelInformation(args.identifier);
         case "get_leaderboard_information":
+            if (
+                (args.startPosition !== undefined && (!Number.isInteger(args.startPosition) || (args.startPosition as number) < 1)) ||
+                (args.endPosition !== undefined && (!Number.isInteger(args.endPosition) || (args.endPosition as number) < 1))
+            ) {
+                return { success: false, error: "leaderboard positions must be positive integers" };
+            }
             return await getLeaderboardInformation(args.startPosition as number | undefined, args.endPosition as number | undefined);
         default:
             return {

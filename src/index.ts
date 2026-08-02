@@ -1,5 +1,8 @@
-import { fileURLToPath } from "bun";
 import { Database, SQLiteError } from "bun:sqlite";
+import * as fs from "fs";
+import * as path from "path";
+import { join } from "path";
+import { fileURLToPath } from "bun";
 import {
     ActivityType,
     ChatInputCommandInteraction,
@@ -8,25 +11,26 @@ import {
     ContextMenuCommandInteraction,
     Events,
     Guild,
+    type Interaction,
     Message,
     MessageComponentInteraction,
     MessageFlags,
     REST,
-    Routes,
-    ThreadAutoArchiveDuration,
-    type Interaction,
     type RESTPostAPIChatInputApplicationCommandsJSONBody,
-    type RESTPostAPIContextMenuApplicationCommandsJSONBody
+    type RESTPostAPIContextMenuApplicationCommandsJSONBody,
+    Routes,
+    ThreadAutoArchiveDuration
 } from "discord.js";
-import * as fs from "fs";
 import { Snowflake } from "nodejs-snowflake";
-import * as path from "path";
-import { join } from "path";
 import puppeteer from "puppeteer";
+import SetupDB from "../tools/setup_db";
 import { SendRequest } from "./apimanager";
 import { FixBirthdayDatenums, WishBirthdays, wishBirthdaysCronjob } from "./birthdaymanager";
+import { addAmbientMessage, configureConversationPersistence, getConversationKey } from "./chatbot/conversation.js";
 import { ClearConversation, isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
+import { createConversationMessage, replyToChatBotMessage } from "./chatbot/main.js";
 import config from "./config";
+import { XPToLevel } from "./levelfunctions";
 import {
     AwardXPToMessage,
     EndVoiceChat,
@@ -37,10 +41,6 @@ import {
     StartVoiceChat
 } from "./levelmanager";
 import { StartQuickTime } from "./quicktime";
-import SetupDB from "../tools/setup_db";
-import { XPToLevel } from "./levelfunctions";
-import { addUserMessage } from "./chatbot/conversation.js";
-import { createConversationMessage, replyToChatBotMessage } from "./chatbot/main.js";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -77,6 +77,7 @@ try {
         throw error;
     }
 }
+configureConversationPersistence(db);
 
 const client = new Client({
     allowedMentions: {
@@ -288,7 +289,7 @@ function ExecuteAdminCommand(message: Message<true>) {
 
     if (command === "clear-chat") {
         message.reply("Successfully cleared the chatbot history.");
-        ClearConversation();
+        ClearConversation(getConversationKey(message));
         return true;
     }
 
@@ -413,7 +414,7 @@ client.on(Events.MessageCreate, async (message) => {
     processAIRequest(message);
 
     // add the message to the chatbot context
-    addUserMessage(JSON.stringify(createConversationMessage(message)));
+    addAmbientMessage(getConversationKey(message), message.id, JSON.stringify(createConversationMessage(message)));
 });
 
 client.on(Events.GuildMemberAdd, (member) => {

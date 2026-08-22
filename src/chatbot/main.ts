@@ -111,7 +111,7 @@ async function processChatBotMessage(message: Message<true>, key: ReturnType<typ
     const userInput: OpenAI.Responses.ResponseInput = [{ type: "message", role: "user", content: responseInput }];
 
     if (isSummaryRequest(message.content)) {
-        const summaryResult = await generateSummary(message, botMessage);
+        const summaryResult = await generateSummary(message, botMessage, createConversationSnapshot(key));
         if (summaryResult.handled) {
             if (summaryResult.summary) {
                 commitConversationTurn(key, message.id, [

@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import * as path from "path";
-import { join } from "path";
 import { fileURLToPath } from "bun";
 import {
     ActivityType,
@@ -18,25 +17,14 @@ import {
     Routes,
     ThreadAutoArchiveDuration
 } from "discord.js";
-import puppeteer from "puppeteer";
-import { SendRequest } from "./apimanager";
-import { FixBirthdayDatenums, WishBirthdays, wishBirthdaysCronjob } from "./birthdaymanager";
-import { addAmbientMessage, getConversationKey } from "./chatbot/conversation.js";
-import { ClearConversation, isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
-import { createConversationMessage, replyToChatBotMessage } from "./chatbot/main.js";
+import { wishBirthdaysCronjob } from "./birthdaymanager";
+import { isReplyingToUs, showChatBotWarning } from "./chatbot/index.js";
+import { replyToChatBotMessage } from "./chatbot/main.js";
 import config from "./config";
 import { XPToLevel } from "./levelfunctions";
-import {
-    AwardXPToMessage,
-    EndVoiceChat,
-    GetLevelConfig,
-    GetXPMultiplier,
-    ManageLevelRole,
-    SetXPMultiplier,
-    StartVoiceChat
-} from "./levelmanager";
-import { StartQuickTime } from "./quicktime";
-import client, { browser, db, GetGuild, setBrowser } from "./runtime";
+import { AwardXPToMessage, EndVoiceChat, GetLevelConfig, ManageLevelRole, StartVoiceChat } from "./levelmanager";
+import { StartQuickTime, isQuickTimeReply } from "./quicktime";
+import client, { db, GetGuild } from "./runtime";
 
 console.log(`Starting ${process.env.NODE_ENV} bot...`);
 
@@ -61,27 +49,6 @@ const clientCommands = new Collection<string, ClientCommand>();
 const dirname = fileURLToPath(new URL(".", import.meta.url).toString());
 const foldersPath = path.join(dirname, "commands");
 const commandPaths = fs.readdirSync(foldersPath).filter((file) => file.endsWith(".ts"));
-
-const executablePath = process.env["PUPPETEER_EXEC"] ?? undefined;
-console.log(`Launching puppeteer with executable path: ${executablePath}`);
-setBrowser(
-    await puppeteer
-        .launch({
-            headless: true,
-            userDataDir: join(dirname, "..", "chrome-data"),
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-            executablePath
-        })
-        .then((browser) => {
-            console.log("Puppeteer launched successfully");
-            return browser;
-        })
-        .catch((error) => {
-            console.warn("Could not launch puppeteer, some functionalities might not work");
-            console.warn(error);
-            return undefined;
-        })
-);
 
 for (const commandPath of commandPaths) {
     const filePath = path.join(foldersPath, commandPath);
@@ -178,13 +145,6 @@ async function processInteraction(interaction: Interaction) {
 }
 
 function processSelfPing(message: Message<true>) {
-    if (message.member?.permissions.has("Administrator")) {
-        // only stop if the command ran successfully
-        if (ExecuteAdminCommand(message)) {
-            return;
-        }
-    }
-
     // start the chatbot
     const usedChatbot = message.member?.roles.cache.has(config.Roles.Chatbot);
     if (!usedChatbot) {
@@ -201,85 +161,10 @@ function processSelfPing(message: Message<true>) {
     }
 }
 
-function processAIRequest(message: Message<true>) {
-    SendRequest({ text: message.content }).then((response) => {
-        if (response.status !== 200) {
-            return;
-        }
-
-        //@ts-ignore shut up
-        const answer = response.data.answer as string;
-
-        message.reply(answer).catch(() => {
-            // the message was probably deleted
-            return;
-        });
-    });
-}
-
-function ExecuteAdminCommand(message: Message<true>) {
-    const command = message.content.split(" ")[1];
-    const args = message.content.split(" ").slice(2);
-
-    if (command === "set-xpmul") {
-        if (args.length === 0) {
-            // return the current xp multiplier
-            message.reply(`Current XP multiplier: ${GetXPMultiplier()}`);
-            return true;
-        }
-
-        const mult = parseFloat(args[0]);
-        if (Number.isNaN(mult) || !Number.isFinite(mult)) {
-            message.reply("Invalid XP multiplier");
-            return true;
-        }
-        SetXPMultiplier(mult);
-        message.reply(`Set XP multiplier to ${mult}`);
-
-        return true;
-    }
-
-    if (command === "wish-birthdays") {
-        WishBirthdays();
-        message.reply("Wished birthdays");
-
-        return true;
-    }
-
-    if (command === "fix-birthday-datenums") {
-        FixBirthdayDatenums();
-        message.reply("Fixed birthday datenums");
-
-        return true;
-    }
-
-    if (command === "hi") {
-        message.reply({
-            content: `Hi! API Latency: ${Math.round(client.ws.ping)}ms`,
-            allowedMentions: { repliedUser: false }
-        });
-        return true;
-    }
-
-    if (command === "quick-time") {
-        StartQuickTime(message.channel, args[0]);
-        return true;
-    }
-
-    if (command === "clear-chat") {
-        message.reply("Successfully cleared the chatbot history.");
-        ClearConversation(getConversationKey(message));
-        return true;
-    }
-
-    return false;
-}
-
 function shutdown(reason?: string) {
     if (reason) {
         console.error(`Shutting down client: ${reason}`);
     }
-    browser?.close();
     client.destroy();
     db.close();
     wishBirthdaysCronjob.stop();
@@ -358,16 +243,9 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     // check if message starts with the bots mention and member has admin
-    if (message.content.startsWith(`<@${clientID}>`) || (await isReplyingToUs(message))) {
+    if (!isQuickTimeReply(message) && (message.content.startsWith(`<@${clientID}>`) || (await isReplyingToUs(message)))) {
         processSelfPing(message);
         return;
-    }
-
-    if (message.content.toLowerCase().includes("oh my god")) {
-        // 50% chance
-        if (Math.random() < 0.5) {
-            await message.reply("oh my god");
-        }
     }
 
     // 0.5% chance to start a quick time event (in development mode 100%)
@@ -375,12 +253,6 @@ client.on(Events.MessageCreate, async (message) => {
     if (config.QuickTimeChannels.includes(message.channelId) && Math.random() < 0.005 /*|| process.env.NODE_ENV === "development"*/) {
         StartQuickTime(message.channel);
     }
-
-    // use transformation model to find potential answers to a question
-    processAIRequest(message);
-
-    // add the message to the chatbot context
-    addAmbientMessage(getConversationKey(message), message.id, JSON.stringify(createConversationMessage(message)));
 });
 
 client.on(Events.GuildMemberAdd, (member) => {
@@ -495,7 +367,7 @@ process.on("SIGTERM", () => {
 // start the bot
 client.login(token);
 
-export { GenerateSnowflake, GetGuild, GetResFolder, browser, db } from "./runtime";
+export { GenerateSnowflake, GetGuild, GetResFolder, db } from "./runtime";
 export type { ClientCommand };
 
 export default client;

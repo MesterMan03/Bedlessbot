@@ -16,6 +16,7 @@ type ConversationSummary = {
 };
 
 type ConversationState = {
+    version: 2;
     summaries: ConversationSummary[];
     turns: ConversationTurn[];
 };
@@ -158,10 +159,6 @@ export function commitConversationTurn(key: ConversationKey, id: string, items: 
     persistState(key, state);
 }
 
-export function addAmbientMessage(key: ConversationKey, id: string, content: string) {
-    commitConversationTurn(key, id, [{ type: "message", role: "user", content }]);
-}
-
 export function clearConversation(key?: ConversationKey) {
     if (key) {
         states.delete(key);
@@ -193,7 +190,7 @@ export function resetConversationStoreForTests() {
 }
 
 function emptyState(): ConversationState {
-    return { summaries: [], turns: [] };
+    return { version: 2, summaries: [], turns: [] };
 }
 
 function normalizeState(value: unknown, rowUpdatedAt: number): ConversationState {
@@ -202,23 +199,25 @@ function normalizeState(value: unknown, rowUpdatedAt: number): ConversationState
     }
 
     const raw = value as {
+        version?: unknown;
         summary?: unknown;
         summaries?: unknown;
         turns?: unknown;
     };
-    const summaries = Array.isArray(raw.summaries)
-        ? raw.summaries.flatMap((entry) => {
-              if (
-                  !entry ||
-                  typeof entry !== "object" ||
-                  typeof (entry as ConversationSummary).content !== "string" ||
-                  !isValidTimestamp((entry as ConversationSummary).createdAt)
-              ) {
-                  return [];
-              }
-              return [entry as ConversationSummary];
-          })
-        : [];
+    const summaries =
+        raw.version === 2 && Array.isArray(raw.summaries)
+            ? raw.summaries.flatMap((entry) => {
+                  if (
+                      !entry ||
+                      typeof entry !== "object" ||
+                      typeof (entry as ConversationSummary).content !== "string" ||
+                      !isValidTimestamp((entry as ConversationSummary).createdAt)
+                  ) {
+                      return [];
+                  }
+                  return [entry as ConversationSummary];
+              })
+            : [];
     const turns = Array.isArray(raw.turns)
         ? raw.turns.flatMap((entry) => {
               if (!entry || typeof entry !== "object") {
@@ -232,7 +231,8 @@ function normalizeState(value: unknown, rowUpdatedAt: number): ConversationState
               if (createdAt === undefined) {
                   return [];
               }
-              return [{ id: turn.id, items: turn.items, createdAt }];
+              const normalizedTurn = { id: turn.id, items: turn.items, createdAt };
+              return isChatbotTurn(normalizedTurn) ? [normalizedTurn] : [];
           })
         : [];
 
@@ -242,7 +242,11 @@ function normalizeState(value: unknown, rowUpdatedAt: number): ConversationState
         console.warn("Discarded legacy chatbot summary without retention metadata", { rowUpdatedAt });
     }
 
-    return { summaries, turns };
+    return { version: 2, summaries, turns };
+}
+
+function isChatbotTurn(turn: ConversationTurn) {
+    return turn.items.some((item) => item.type === "message" && item.role === "assistant");
 }
 
 function timestampFromDiscordSnowflake(id: string) {

@@ -4,17 +4,18 @@
   "type": "module",
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "@dicebear/core": "^9.2.2",
-    "@dicebear/pixel-art": "^9.2.2",
+    "@dicebear/core": "^10.6.1",
+    "@dicebear/pixel-art": "^9.4.2",
     "@types/dompurify": "^3.0.5",
     "@types/luxon": "^3.4.2",
     "@types/node-cron": "^3.0.11",
     "@types/uglify-js": "^3.17.5",
     "@types/web-push": "^3.6.3",
-    "bun-types": "1.1.43-canary.20250104T140550",
+    "@types/bun": "^1.4.0",
     "csv-parser": "^3.0.0",
     "csv-writer": "^1.6.0",
-    "lorem-ipsum": "^2.0.8"
+    "lorem-ipsum": "^2.0.8",
+    "typescript": "^7.0.2"
   },
   "scripts": {
     "dev": "NODE_ENV=development bun run src/index.ts",
@@ -25,21 +26,17 @@
     "check": "biome check .",
     "devdash": "NODE_ENV=development DEV_DASH=yes bun run src/dashboard/index.ts"
   },
-  "peerDependencies": {
-    "typescript": "^5.5.3"
-  },
   "dependencies": {
     "@elysiajs/eden": "^1.0.14",
     "@elysiajs/jwt": "^1.0.2",
     "@elysiajs/static": "^1.4.0",
     "@elysiajs/swagger": "^1.0.5",
     "@hcaptcha/vanilla-hcaptcha": "^1.1.0-alpha2",
-    "@twemoji/api": "^15.1.0",
-    "@types/bun": "^1.2.23",
+    "@twemoji/api": "^17.0.3",
     "discord-oauth2": "^2.12.1",
     "discord.js": "^14.22.1",
-    "dompurify": "^3.1.6",
-    "elysia": "^1.4.9",
+    "dompurify": "^3.4.14",
+    "elysia": "^1.4.29",
     "elysia-rate-limit": "^4.1.0",
     "googleapis": "^134.0.0",
     "hcaptcha": "^0.1.1",
@@ -49,7 +46,6 @@
     "nodejs-snowflake": "^2.0.1",
     "openai": "^7.2.0",
     "ordinal": "^1.0.3",
-    "puppeteer": "^22.13.0",
     "sharp": "^0.33.4",
     "svg-captcha": "^1.4.0",
     "uglify-js": "^3.19.3",

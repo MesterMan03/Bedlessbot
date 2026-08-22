@@ -2,20 +2,19 @@ import twemoji from "@twemoji/api";
 import {
     ActionRowBuilder,
     ButtonBuilder,
-    ButtonComponent,
     ButtonInteraction,
     ButtonStyle,
     ComponentType,
     GuildMember,
-    inlineCode,
     type GuildTextBasedChannel,
     type Message,
-    type MessageReaction
+    type MessageReaction,
+    inlineCode
 } from "discord.js";
 import sharp from "sharp";
 import svgCaptcha from "svg-captcha";
-import wordList from "../res/wordlist.json" with { type: "json" };
 import emojis from "../res/emojis.json" with { type: "json" };
+import wordList from "../res/wordlist.json" with { type: "json" };
 import { AddXPToUser, GetLevelConfig } from "./levelmanager";
 
 enum QuickTimeType {
@@ -33,6 +32,7 @@ enum QuickTimeType {
 
 const RandomButtonColors = <const>["red", "green", "blue", "gray"];
 type RandomButtonColor = (typeof RandomButtonColors)[number];
+const activeTextPromptIds = new Set<string>();
 
 const RandomButtonColorToStyle: Record<RandomButtonColor, ButtonStyle> = <const>{
     red: ButtonStyle.Danger,
@@ -110,7 +110,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
     if (type === QuickTimeType.RandomText) {
         const randomText = svgCaptcha.create({ ignoreChars: "01lioLIO", color: true, size: 7, background: "FE0000", noise: 4 });
         const message = await channel.send({
-            content: `Quick time event, type the text shown on the image to win! You have 30 seconds.`,
+            content: `Quick time event, reply directly to this message with the text shown on the image to win! You have 30 seconds.`,
             files: [
                 {
                     attachment: await sharp(Buffer.from(randomText.data)).resize(300).png().toBuffer(),
@@ -119,8 +119,9 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
                 }
             ]
         });
+        activeTextPromptIds.add(message.id);
 
-        const filter = (message: Message) => message.content === randomText.text;
+        const filter = (reply: Message) => isCorrectDirectReply(reply, message.id, randomText.text);
         const collector = channel.createMessageCollector({ filter, time: 30_000, max: 1 });
 
         collector.on("collect", async (m) => {
@@ -130,6 +131,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
         });
 
         collector.on("end", (collected) => {
+            activeTextPromptIds.delete(message.id);
             // do something when the time runs out
             if (collected.size === 0) {
                 message.reply(`No one typed the text in time! The text was ${randomText.text}`);
@@ -187,8 +189,8 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
         const collector = message.createMessageComponentCollector<ComponentType.Button>({ filter, time: 30_000 });
 
         collector.once("collect", async (i) => {
-            i.deferUpdate();
-            RewardUser(i.member, channel, 0.75);
+            await i.deferUpdate();
+            await RewardUser(i.member, channel, 0.75);
             collector.stop();
         });
 
@@ -197,9 +199,9 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
                 message.reply(`No one clicked the correct button!`);
             }
             // disable all buttons
-            const components = message.components.map((row) =>
+            const components = grid.map((row) =>
                 new ActionRowBuilder<ButtonBuilder>().setComponents(
-                    row.components.map((button) => ButtonBuilder.from((button as ButtonComponent).toJSON()).setDisabled(true))
+                    row.components.map((button) => ButtonBuilder.from(button.toJSON()).setDisabled(true))
                 )
             );
             message.edit({ components });
@@ -209,8 +211,9 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
         const scrambledWord = shuffleWord(randomWord);
 
         // send the message
-        const messageContent = `Quick time event, unscramble the word "${scrambledWord}" to win! You have a minute.`;
+        const messageContent = `Quick time event, reply directly to this message with the unscrambled word "${scrambledWord}" to win! You have a minute.`;
         const message = await channel.send(messageContent);
+        activeTextPromptIds.add(message.id);
 
         // set up a timer that automatically reveals a letter and decreases the multiplier
         let multiplier = 2.0;
@@ -242,7 +245,7 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
         }, 7500);
 
         // set up the message collector
-        const filter = (m: Message) => m.content === randomWord;
+        const filter = (reply: Message) => isCorrectDirectReply(reply, message.id, randomWord);
         const collector = message.channel.createMessageCollector({ filter, time: 60_000 });
 
         collector.once("collect", async (m) => {
@@ -253,11 +256,21 @@ async function StartQuickTime(channel: GuildTextBasedChannel, inputType?: string
         });
 
         collector.on("end", (collected) => {
+            activeTextPromptIds.delete(message.id);
             if (collected.size === 0) {
                 message.reply(`No one typed the word "${randomWord}"`);
             }
         });
     }
+}
+
+function isCorrectDirectReply(message: Pick<Message, "content" | "reference">, targetMessageId: string, answer: string) {
+    return message.reference?.messageId === targetMessageId && message.content === answer;
+}
+
+function isQuickTimeReply(message: Pick<Message, "reference">) {
+    const repliedTo = message.reference?.messageId;
+    return repliedTo !== undefined && activeTextPromptIds.has(repliedTo);
 }
 
 async function RewardUser(member: GuildMember, channel: GuildTextBasedChannel, mult = 1.0) {
@@ -268,4 +281,4 @@ async function RewardUser(member: GuildMember, channel: GuildTextBasedChannel, m
     channel.send(`Congratulations <@${member.id}>! You won ${finalXP} Social Credit for winning the quick time event!`);
 }
 
-export { StartQuickTime };
+export { StartQuickTime, isCorrectDirectReply, isQuickTimeReply };

@@ -3,7 +3,6 @@ import { join } from "path";
 import { fileURLToPath } from "bun";
 import { Client, type Guild } from "discord.js";
 import { Snowflake } from "nodejs-snowflake";
-import type { Browser } from "puppeteer";
 import SetupDB from "../tools/setup_db";
 import { configureConversationPersistence } from "./chatbot/conversation.js";
 
@@ -25,14 +24,8 @@ const client = new Client({
     allowedMentions: {
         parse: ["users"]
     },
-    intents: ["Guilds", "GuildMessages", "MessageContent", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
+    intents: ["Guilds", "GuildMessages", "GuildMessageReactions", "GuildVoiceStates", "GuildMembers"]
 });
-
-export let browser: Browser | undefined;
-
-export function setBrowser(value: Browser | undefined) {
-    browser = value;
-}
 
 export function GetResFolder() {
     return join(dirname, "..", "res");

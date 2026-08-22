@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it } from "bun:test";
 import {
     CONVERSATION_RETENTION_MS,
     type ConversationKey,
-    addAmbientMessage,
     clearConversation,
     commitConversationTurn,
     configureConversationPersistence,
@@ -22,9 +21,9 @@ afterEach(() => {
 
 describe("conversation store", () => {
     it("isolates channels and ignores duplicate Discord messages", () => {
-        addAmbientMessage(channelA, "message-1", "from A");
-        addAmbientMessage(channelA, "message-1", "duplicate");
-        addAmbientMessage(channelB, "message-2", "from B");
+        commitConversationTurn(channelA, "message-1", [{ type: "message", role: "user", content: "from A" }]);
+        commitConversationTurn(channelA, "message-1", [{ type: "message", role: "user", content: "duplicate" }]);
+        commitConversationTurn(channelB, "message-2", [{ type: "message", role: "user", content: "from B" }]);
 
         expect(JSON.stringify(createConversationSnapshot(channelA))).toContain("from A");
         expect(JSON.stringify(createConversationSnapshot(channelA))).not.toContain("duplicate");
@@ -35,12 +34,27 @@ describe("conversation store", () => {
     it("persists and reloads conversation state", () => {
         const database = new Database(":memory:");
         configureConversationPersistence(database);
-        commitConversationTurn(channelA, "turn-1", [{ type: "message", role: "user", content: "persist me" }]);
+        commitConversationTurn(channelA, "turn-1", [
+            { type: "message", role: "user", content: "persist me" },
+            { type: "message", role: "assistant", content: "persisted reply" }
+        ]);
 
         resetConversationStoreForTests();
         configureConversationPersistence(database);
 
         expect(JSON.stringify(createConversationSnapshot(channelA))).toContain("persist me");
+        database.close();
+    });
+
+    it("discards legacy ambient messages when persisted state is loaded", () => {
+        const database = new Database(":memory:");
+        configureConversationPersistence(database);
+        commitConversationTurn(channelA, "ambient-message", [{ type: "message", role: "user", content: "ambient content" }]);
+
+        resetConversationStoreForTests();
+        configureConversationPersistence(database);
+
+        expect(JSON.stringify(createConversationSnapshot(channelA))).not.toContain("ambient content");
         database.close();
     });
 
@@ -54,13 +68,19 @@ describe("conversation store", () => {
         commitConversationTurn(
             channelA,
             "expired-turn",
-            [{ type: "message", role: "user", content: "delete me" }],
+            [
+                { type: "message", role: "user", content: "delete me" },
+                { type: "message", role: "assistant", content: "expired reply" }
+            ],
             now - CONVERSATION_RETENTION_MS
         );
         commitConversationTurn(
             channelA,
             "recent-turn",
-            [{ type: "message", role: "user", content: "keep me" }],
+            [
+                { type: "message", role: "user", content: "keep me" },
+                { type: "message", role: "assistant", content: "recent reply" }
+            ],
             now - CONVERSATION_RETENTION_MS + 60_000
         );
 
@@ -88,7 +108,10 @@ describe("conversation store", () => {
                     turns: [
                         {
                             id: recentSnowflake,
-                            items: [{ type: "message", role: "user", content: "recent legacy turn" }]
+                            items: [
+                                { type: "message", role: "user", content: "recent legacy turn" },
+                                { type: "message", role: "assistant", content: "recent legacy reply" }
+                            ]
                         },
                         {
                             id: "not-a-discord-snowflake",
@@ -109,8 +132,8 @@ describe("conversation store", () => {
     });
 
     it("clears one conversation without clearing another", () => {
-        addAmbientMessage(channelA, "message-1", "from A");
-        addAmbientMessage(channelB, "message-2", "from B");
+        commitConversationTurn(channelA, "message-1", [{ type: "message", role: "user", content: "from A" }]);
+        commitConversationTurn(channelB, "message-2", [{ type: "message", role: "user", content: "from B" }]);
         clearConversation(channelA);
 
         expect(createConversationSnapshot(channelA)).toEqual([]);

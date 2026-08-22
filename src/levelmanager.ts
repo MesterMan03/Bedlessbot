@@ -26,7 +26,7 @@ const xpCooldown = new Collection<string, number>();
  * @returns The amount of xp gained from the message.
  */
 async function AwardXPToMessage(message: Message<true>) {
-    if (!message.member || message.content.length === 0) {
+    if (!message.member || message.author.bot || message.system) {
         return;
     }
 

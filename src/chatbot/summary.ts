@@ -8,8 +8,10 @@ import {
     type Message,
     TextDisplayBuilder
 } from "discord.js";
+import type OpenAI from "openai";
 import { openAIClient } from "./client.js";
 import { SUMMARY_COOLDOWN_MS, SummaryModel, SummarySysMessage, TEST_MODE } from "./constants.js";
+import { prepareConversationForSummary } from "./summary-format.js";
 import { recordChatbotMetric } from "./telemetry.js";
 
 const summaryCooldown = new Map<string, number>();
@@ -19,7 +21,11 @@ export type SummaryResult = {
     summary?: string;
 };
 
-export async function generateSummary(userMessage: Message<true>, botMessage: Message<true>): Promise<SummaryResult> {
+export async function generateSummary(
+    userMessage: Message<true>,
+    botMessage: Message<true>,
+    conversation: OpenAI.Responses.ResponseInput
+): Promise<SummaryResult> {
     const components = [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
             new ButtonBuilder().setCustomId("chatbot.summary.accept").setLabel("Yes").setStyle(ButtonStyle.Success),
@@ -43,6 +49,12 @@ export async function generateSummary(userMessage: Message<true>, botMessage: Me
         return { handled: false };
     }
 
+    const summaryInput = prepareConversationForSummary(conversation);
+    if (!summaryInput) {
+        await botMessage.edit({ content: "There isn't any chatbot conversation to summarize yet.", components: [] });
+        return { handled: true };
+    }
+
     const cooldown = summaryCooldown.get(userMessage.channelId);
     if (cooldown && cooldown > Date.now()) {
         await botMessage.edit({
@@ -57,10 +69,6 @@ export async function generateSummary(userMessage: Message<true>, botMessage: Me
     summaryCooldown.set(userMessage.channelId, Date.now() + SUMMARY_COOLDOWN_MS);
     await botMessage.edit({ content: "Generating summary...", components: [] });
 
-    const messages = await userMessage.channel.messages.fetch({ limit: 50, before: userMessage.id });
-    const summaryInput = prepareMessagesForSummary(
-        messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp).map((message) => message)
-    );
     const startedAt = Date.now();
 
     try {
@@ -113,17 +121,4 @@ export async function generateSummary(userMessage: Message<true>, botMessage: Me
     }
 }
 
-export function prepareMessagesForSummary(messages: Message[]) {
-    return messages
-        .filter((message) => message.content.length > 0)
-        .map((message) => {
-            const date = message.createdAt.toLocaleString("en-US", {
-                timeZone: "Europe/Budapest",
-                timeZoneName: "short",
-                hour12: false
-            });
-            const content = message.cleanContent.length > 1_000 ? `${message.cleanContent.slice(0, 1_000)}...` : message.cleanContent;
-            return `[${date}] ${message.author.tag}: ${content} <${message.attachments.size} attachments>`;
-        })
-        .join("\n");
-}
+export { prepareConversationForSummary } from "./summary-format.js";

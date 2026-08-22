@@ -29,11 +29,7 @@ Create a `.env` file by following `.env.example`.
  
 Finally, set up `src/config.ts`. It's already prefilled with data, so you will have to change the values to your own.
 
-5. (optional) **Set up secret**:
-
-If you want to use the [machine-learning API](https://github.com/MesterMan03/Bedlessbot-API), you must provide the secret you generated for the API. Create a `secret` file in the root directory and paste the secret in it (it should be a hexadecimal string).
-
-6. (optional) **Set up test.localhost domain**:
+5. (optional) **Set up test.localhost domain**:
 
 For hCaptcha to work, you cannot use localhost. To fix this, you can set up a domain in your hosts file. Add the following line to your hosts file:
 

@@ -2,9 +2,10 @@ import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from "@discordjs/builde
 import { ButtonStyle, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { LevelToXP, XPToLevel, XPToLevelUp } from "../levelfunctions";
 import { GetLeaderboardPos, type LevelInfo } from "../levelmanager";
-import { browser, db } from "../runtime";
+import { db } from "../runtime";
+import { WebView } from "bun";
 
-const rankPath = `${process.env.NODE_ENV === "production" ? "https://bedless.mester.info" : "http://localhost:8146"}/rank`;
+const rankPath = "http://localhost:8146/rank";
 
 export default {
     data: new SlashCommandBuilder()
@@ -16,10 +17,6 @@ export default {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        if (!browser) {
-            return "Puppeteer is not available, cannot render rank card.";
-        }
-
         const user = interaction.options.getUser("member") ?? interaction.user;
 
         // get level info
@@ -48,9 +45,11 @@ export default {
         const avatar = user.displayAvatarURL({ size: 256, extension: "png", forceStatic: true });
         const lbPos = GetLeaderboardPos(levelInfo.userid);
 
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1200, height: 300 });
-        await page.setUserAgent("internal");
+        await using view = new WebView({
+            width: 1200,
+            height: 300,
+            backend: "chrome"
+        });
 
         const destination = new URL(rankPath);
         destination.searchParams.append("avatar", avatar);
@@ -62,8 +61,17 @@ export default {
         destination.searchParams.append("max", XPToLevelUp(userLevel).toString());
 
         // create the screenshot
-        await page.goto(destination.toString(), { waitUntil: "networkidle0" });
-        const buffer = await page.screenshot({ type: "png" });
+        await view.navigate(destination.toString());
+        await view.cdp("Emulation.setUserAgentOverride", {
+            userAgent: "internal",
+        });
+
+        // The constructor dimensions can become the outer window bounds when
+        // Bun auto-connects to a headed Chrome instance. Reapply the size after
+        // navigation so it targets the final page's content viewport.
+        await view.resize(1200, 300);
+
+        const buffer = await view.screenshot({ encoding: "buffer" });
 
         // Create the "View in Browser" button
         const browserURL = new URL(rankPath);
@@ -74,19 +82,15 @@ export default {
             )
         ];
 
-        interaction
-            .editReply({
-                files: [
-                    {
-                        attachment: buffer,
-                        name: "rank.png"
-                    }
-                ],
-                components
-            })
-            .then(() => {
-                page.close();
-            });
+        await interaction.editReply({
+            files: [
+                {
+                    attachment: buffer,
+                    name: "rank.png"
+                }
+            ],
+            components
+        });
     }
 };
 
